@@ -1,0 +1,37 @@
+<odoo>
+  <data noupdate="1">
+
+    <!-- Demandeur: demandes du user -->
+    <record id="rule_ar_recrutement_demandeur_own" model="ir.rule">
+      <field name="name">Recrutement - Demandeur: Own</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="groups" eval="[(4, ref('ar_recrutement.group_ar_recrutement_demandeur'))]"/>
+      <field name="domain_force">[('demandeur_id','=',user.id)]</field>
+    </record>
+
+    <!-- Manager: demandes où manager_id = user OU ses propres demandes -->
+    <record id="rule_ar_recrutement_manager_related" model="ir.rule">
+      <field name="name">Recrutement - Manager: Related</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="groups" eval="[(4, ref('ar_recrutement.group_ar_recrutement_manager'))]"/>
+      <field name="domain_force">['|',('manager_id','=',user.id),('demandeur_id','=',user.id)]</field>
+    </record>
+
+    <!-- RH: tout -->
+    <record id="rule_ar_recrutement_rh_all" model="ir.rule">
+      <field name="name">Recrutement - RH: All</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="groups" eval="[(4, ref('ar_recrutement.group_ar_recrutement_rh'))]"/>
+      <field name="domain_force">[(1,'=',1)]</field>
+    </record>
+
+    <!-- MD: tout -->
+    <record id="rule_ar_recrutement_md_all" model="ir.rule">
+      <field name="name">Recrutement - MD: All</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="groups" eval="[(4, ref('ar_recrutement.group_ar_recrutement_md'))]"/>
+      <field name="domain_force">[(1,'=',1)]</field>
+    </record>
+
+  </data>
+</odoo>

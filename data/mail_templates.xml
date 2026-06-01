@@ -1,0 +1,1479 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <!-- A) Soumission -> Manager -->
+    <record id="mail_template_rec_to_manager_validation" model="mail.template">
+      <field name="name">Recrutement - Validation Manager N+1</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="subject">[Recrutement] {{ object.name }} - Validation Manager requise</field>
+      <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+      <field name="email_to"></field>
+      <field name="body_html" type="html">
+        <div>
+          <p>Bonjour,</p>
+          <p>Une demande de recrutement nécessite votre validation (Manager N+1).</p>
+         <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+
+          <t t-set="base_url" t-value="object.get_base_url()"/>
+          <div style="margin: 16px 0px;">
+            <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+               style="background-color:#1481f4;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+              Accéder à la demande
+            </a>
+          </div>
+        </div>
+      </field>
+    </record>
+
+    <!-- B1) Manager valide -> Demandeur -->
+    <record id="mail_template_rec_manager_approved_to_demandeur" model="mail.template">
+      <field name="name">Recrutement - Validée par Manager (Demandeur)</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="subject">[Recrutement] {{ object.name }} - Validée par votre Manager</field>
+      <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+      <field name="email_to"></field>
+      <field name="body_html" type="html">
+        <div>
+          <p>Bonjour,</p>
+          <p>Votre demande <b><t t-out="object.name"/></b> a été validée par votre Manager N+1.</p>
+         <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+          <t t-set="base_url" t-value="object.get_base_url()"/>
+          <div style="margin: 16px 0px;">
+            <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+               style="background-color:#16a34a;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+              Voir la demande
+            </a>
+          </div>
+        </div>
+      </field>
+    </record>
+
+    <!-- B2) Manager valide -> RH -->
+    <record id="mail_template_rec_to_rh_processing" model="mail.template">
+      <field name="name">Recrutement - À traiter par RH</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="subject">[Recrutement] {{ object.name }} - Traitement RH requis</field>
+      <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+      <field name="email_to"></field>
+      <field name="body_html" type="html">
+        <div>
+          <p>Bonjour,</p>
+          <p>Une demande nécessite votre traitement (RH).</p>
+          <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+          <t t-set="base_url" t-value="object.get_base_url()"/>
+          <div style="margin: 16px 0px;">
+            <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+               style="background-color:#f59e0b;padding:8px 16px;text-decoration:none;color:#111;border-radius:5px;font-size:13px;">
+              Accéder à la demande
+            </a>
+          </div>
+        </div>
+      </field>
+    </record>
+
+    <!-- C1) RH valide -> Demandeur -->
+    <record id="mail_template_rec_rh_approved_to_demandeur" model="mail.template">
+      <field name="name">Recrutement - Validée par RH (Demandeur)</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="subject">[Recrutement] {{ object.name }} - Validée par RH</field>
+      <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+      <field name="email_to"></field>
+      <field name="body_html" type="html">
+        <div>
+          <p>Bonjour,</p>
+          <p>Votre demande <b><t t-out="object.name"/></b> a été validée par RH et transmise au MD.</p>
+        <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+          <t t-set="base_url" t-value="object.get_base_url()"/>
+          <div style="margin: 16px 0px;">
+            <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+               style="background-color:#1481f4;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+              Voir la demande
+            </a>
+          </div>
+        </div>
+      </field>
+    </record>
+
+    <!-- C2) RH valide -> MD -->
+    <record id="mail_template_rec_to_md_processing" model="mail.template">
+      <field name="name">Recrutement - À traiter par MD</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="subject">[Recrutement] {{ object.name }} - Validation MD requise</field>
+      <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+      <field name="email_to"></field>
+      <field name="body_html" type="html">
+        <div>
+          <p>Bonjour,</p>
+          <p>Une demande nécessite votre validation (MD).</p>
+          <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+          <t t-set="base_url" t-value="object.get_base_url()"/>
+          <div style="margin: 16px 0px;">
+            <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+               style="background-color:#111827;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+              Accéder à la demande
+            </a>
+          </div>
+        </div>
+      </field>
+    </record>
+
+    <record id="mail_template_rec_to_rh_annonce" model="mail.template">
+  <field name="name">Recrutement - ANNONCE à préparer (RH)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Préparation de l’ANNONCE</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+
+  <field name="body_html" type="html">
+    <div>
+      <p>
+        La demande de recrutement <b><t t-out="object.name"/></b> a été validée par le <b>MD</b>
+        et passe à l’étape <b>ANNONCE</b>.
+      </p>
+
+      <p>
+        Merci de :
+        <ul>
+          <li>renseigner le <b>lien d’annonce</b> (si disponible),</li>
+          <li>uploader le <b>fichier d’annonce</b> (obligatoire),</li>
+          <li>puis valider l’étape pour passer à <b>CVthèques</b>.</li>
+        </ul>
+      </p>
+
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#2563eb;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Ouvrir la demande
+        </a>
+      </div>
+
+      <p>Merci.</p>
+    </div>
+  </field>
+</record>
+
+    <!-- D) MD valide -> RH (saisie candidats) -->
+    <record id="mail_template_rec_md_approved_to_rh" model="mail.template">
+      <field name="name">Recrutement - Annonce ajoutée (RH saisir candidats)</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="subject">[Recrutement] {{ object.name }} - Annonce approuvé, saisir candidats</field>
+      <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+      <field name="email_to"></field>
+      <field name="body_html" type="html">
+        <div>
+          <p>Bonjour,</p>
+          <p>L'annonce est ajoutée. Merci de saisir les candidats et leurs CV.</p>
+         <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+          <t t-set="base_url" t-value="object.get_base_url()"/>
+          <div style="margin: 16px 0px;">
+            <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+               style="background-color:#f59e0b;padding:8px 16px;text-decoration:none;color:#111;border-radius:5px;font-size:13px;">
+              Accéder à la demande
+            </a>
+          </div>
+        </div>
+      </field>
+    </record>
+
+    <!-- E) RH candidats prêts -> Demandeur -->
+    <record id="mail_template_rec_candidates_ready_to_demandeur" model="mail.template">
+      <field name="name">Recrutement - Candidats disponibles (Demandeur)</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="subject">[Recrutement] {{ object.name }} - Sélection candidats entretien</field>
+      <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+      <field name="email_to"></field>
+      <field name="body_html" type="html">
+        <div>
+          <p>Bonjour,</p>
+          <p>Les candidats ont été saisis. Merci de sélectionner ceux qui passeront l’entretien puis Soumettre.</p>
+        <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+          <t t-set="base_url" t-value="object.get_base_url()"/>
+          <div style="margin: 16px 0px;">
+            <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+               style="background-color:#1481f4;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+              Accéder à la demande
+            </a>
+          </div>
+        </div>
+      </field>
+    </record>
+
+    <!-- F) Demandeur soumet choix -> RH planifier -->
+    <record id="mail_template_rec_to_rh_schedule_interview" model="mail.template">
+      <field name="name">Recrutement - Planifier entretiens (RH)</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="subject">[Recrutement] {{ object.name }} - Planification entretiens requise</field>
+      <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+      <field name="email_to"></field>
+      <field name="body_html" type="html">
+        <div>
+          <p>Bonjour,</p>
+          <p>Le demandeur a sélectionné les candidats. Merci de renseigner la date/heure d’entretien puis Valider.</p>
+          <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+          <t t-set="base_url" t-value="object.get_base_url()"/>
+          <div style="margin: 16px 0px;">
+            <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+               style="background-color:#f59e0b;padding:8px 16px;text-decoration:none;color:#111;border-radius:5px;font-size:13px;">
+              Accéder à la demande
+            </a>
+          </div>
+        </div>
+      </field>
+    </record>
+
+    <!-- G) RH planifié -> Demandeur retenu -->
+    <record id="mail_template_rec_interview_planned_to_demandeur" model="mail.template">
+      <field name="name">Recrutement - Entretiens planifiés (Demandeur)</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="subject">[Recrutement] {{ object.name }} - Choix du candidat retenu</field>
+      <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+      <field name="email_to"></field>
+      <field name="body_html" type="html">
+        <div>
+          <p>Bonjour,</p>
+          <p>Les entretiens ont été planifiés. Merci d’indiquer le candidat retenu puis Soumettre.</p>
+          <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+          <t t-set="base_url" t-value="object.get_base_url()"/>
+          <div style="margin: 16px 0px;">
+            <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+               style="background-color:#1481f4;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+              Accéder à la demande
+            </a>
+          </div>
+        </div>
+      </field>
+    </record>
+
+    <record id="mail_template_rec_to_rh_validation_rh" model="mail.template">
+  <field name="name">Recrutement - Validation RH + FA RH (RH)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Validation RH + FA RH à renseigner</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>
+        Le demandeur a validé le candidat retenu.
+        Merci de compléter, pour le(s) candidat(s) retenu(s) :
+        <b>Validation RH</b> et <b>FA RH</b>, puis Valider.
+      </p>
+
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#f59e0b;padding:8px 16px;text-decoration:none;color:#111;border-radius:5px;font-size:13px;">
+          Accéder à la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+    <!-- H)  RH date embauche -->
+    <record id="mail_template_rec_to_rh_hiring_date" model="mail.template">
+      <field name="name">Recrutement - Saisir date embauche (RH)</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="subject">[Recrutement] {{ object.name }} - Date d'embauche à renseigner</field>
+      <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+      <field name="email_to"></field>
+      <field name="body_html" type="html">
+        <div>
+          <p>Bonjour,</p>
+          <p>Merci de renseigner la date d’embauche puis Valider.</p>
+          <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+          <t t-set="base_url" t-value="object.get_base_url()"/>
+          <div style="margin: 16px 0px;">
+            <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+               style="background-color:#f59e0b;padding:8px 16px;text-decoration:none;color:#111;border-radius:5px;font-size:13px;">
+              Accéder à la demande
+            </a>
+          </div>
+        </div>
+      </field>
+    </record>
+
+    <!-- I) RH hiring done -> Demandeur -->
+    <record id="mail_template_rec_hiring_done_to_demandeur" model="mail.template">
+  <field name="name">Recrutement - Acceptée (Demandeur)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Demande acceptée</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>Votre demande <b><t t-out="object.name"/></b> a été <b>acceptée</b> après validation de la période d’essai.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#16a34a;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Voir la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+    <!-- J) Return if retenu_final = Non -->
+    <record id="mail_template_rec_back_to_cvtech_no_selected" model="mail.template">
+  <field name="name">Recrutement - Retour CV-TECH (RH)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Aucun candidat retenu</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+
+      <p>
+        Aucun candidat n’a été retenu pour cette demande.
+        La demande est automatiquement revenue à l’étape <b>CV-TECH</b>
+        afin de poursuivre le traitement.
+      </p>
+
+   <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#2563eb;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Reprendre le traitement
+        </a>
+      </div>
+
+      <p>Merci de mettre à jour les candidatures et relancer le processus.</p>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_back_to_cvtech_no_selected_demandeur" model="mail.template">
+  <field name="name">Recrutement - Retour CV-TECH (Demandeur)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Reprise du traitement (CVthèques)</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>
+        La demande <b><t t-out="object.name"/></b> revient à l’étape <b>CVthèques</b> pour compléter/mettre à jour les candidatures.
+      </p>
+
+<p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#2563eb;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Ouvrir la demande
+        </a>
+      </div>
+      <p>Merci.</p>
+    </div>
+  </field>
+</record>
+
+    <!-- Refus -->
+    <record id="mail_template_rec_refused_to_demandeur" model="mail.template">
+      <field name="name">Recrutement - Refusée (Demandeur)</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="subject">[Recrutement] {{ object.name }} - Refusée</field>
+      <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+      <field name="email_to"></field>
+      <field name="body_html" type="html">
+        <div>
+          <p>Bonjour,</p>
+          <p>Votre demande <b><t t-out="object.name"/></b> a été refusée.</p>
+ <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+          <t t-set="base_url" t-value="object.get_base_url()"/>
+          <div style="margin: 16px 0px;">
+            <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+               style="background-color:#dc2626;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+              Voir la demande
+            </a>
+          </div>
+        </div>
+      </field>
+    </record>
+
+    <!-- Parcours -->
+    <record id="mail_template_rec_to_rh_parcours_integration" model="mail.template">
+  <field name="name">Recrutement - Parcours d'intégration (RH)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Parcours d'intégration à valider</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>La demande <b><t t-out="object.name"/></b> est passée à l’étape <b>Parcours d'Intégration</b>.</p>
+      <p>Merci de valider cette étape pour poursuivre le workflow.</p>
+    <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#f59e0b;padding:8px 16px;text-decoration:none;color:#111;border-radius:5px;font-size:13px;">
+          Accéder à la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_parcours_integration_to_demandeur" model="mail.template">
+  <field name="name">Recrutement - Passage au parcours d'intégration (Demandeur)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Passage au parcours d'intégration</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>Votre demande <b><t t-out="object.name"/></b> passe à l’étape <b>Parcours d'Intégration</b>.</p>
+  <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#1481f4;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Voir la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<!-- Période N+1 -->
+<record id="mail_template_rec_to_rh_matricule_a_renseigner" model="mail.template">
+  <field name="name">Recrutement - Matricule à renseigner (RH)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Matricule à renseigner</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>La demande <b><t t-out="object.name"/></b> est passée à l'étape <b>Matricule à Renseigner</b>.</p>
+      <p>Merci de renseigner l'ancien matricule et la nouvelle affectation de matricule, puis valider.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+      <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+      <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#f59e0b;padding:8px 16px;text-decoration:none;color:#111;border-radius:5px;font-size:13px;">
+          Accéder à la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_matricule_a_renseigner_to_demandeur" model="mail.template">
+  <field name="name">Recrutement - Passage Matricule à renseigner (Demandeur)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Passage à l'étape Matricule</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>Votre demande <b><t t-out="object.name"/></b> passe à l'étape <b>Matricule à Renseigner</b>.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+      <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+      <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#1481f4;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Voir la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_to_rh_envoie_annonce" model="mail.template">
+  <field name="name">Recrutement - Announcement (RH)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Announcement</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>La demande <b><t t-out="object.name"/></b> est passée à l'étape <b>Announcement</b>.</p>
+      <p>Merci de réaliser l'envoi de l'announcement, puis valider pour poursuivre le traitement.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+      <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+      <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#f59e0b;padding:8px 16px;text-decoration:none;color:#111;border-radius:5px;font-size:13px;">
+          Accéder à la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_envoie_annonce_to_demandeur" model="mail.template">
+  <field name="name">Recrutement - Passage Announcement (Demandeur)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Passage à l'étape Announcement</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>Votre demande <b><t t-out="object.name"/></b> passe à l'étape <b>Announcement</b>.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+      <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+      <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#1481f4;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Voir la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_announcement_to_employees" model="mail.template">
+  <field name="name">Recrutement - Announcement employés</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">Note de bienvenue</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div style="font-family: Arial, sans-serif; color: #000; font-size: 14px; line-height: 1.45;">
+      <t t-set="candidate" t-value="object._get_announcement_candidate()"/>
+      <t t-set="photo_src" t-value="object._get_announcement_photo_data_uri()"/>
+      <p>Bonjour à tous ,</p>
+      <br/>
+      <p>
+        Nous avons le plaisir de vous annoncer que
+        <b><t t-out="object._get_announcement_civility_label()"/> <t t-out="candidate.candidate_name if candidate else ''"/></b>
+        a rejoint ARaymond Maroc
+        <t t-if="object._format_announcement_date()">
+          le <t t-out="object._format_announcement_date()"/>
+        </t>
+        en tant que « <t t-out="object.objet_recrutement or ''"/> »
+        <t t-if="object.department_id">
+          au sein du département <t t-out="object.department_id.name"/>
+        </t>
+        .
+      </p>
+      <p t-if="photo_src" style="margin: 18px 0 54px 14px;">
+        <img t-att-src="photo_src"
+             alt="Photo candidat"
+             style="width: 178px; max-width: 178px; height: auto; display: block;"/>
+      </p>
+      <p>
+        Nous lui souhaitons la bienvenue dans notre entreprise et beaucoup de succès dans ses nouvelles fonctions.
+        Nous lui adressons également tous nos encouragements pour la réalisation de ses missions.
+      </p>
+      <br/>
+      <p>Cordialement</p>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_to_rh_dossier_candidat" model="mail.template">
+  <field name="name">Recrutement - Dossier du Candidat (RH)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Dossier du Candidat à compléter</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>La demande <b><t t-out="object.name"/></b> est passée à l'étape <b>Dossier du Candidat</b>.</p>
+      <p>Merci d'ajouter les documents requis et d'uploader les fichiers correspondants, puis valider.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+      <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+      <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#f59e0b;padding:8px 16px;text-decoration:none;color:#111;border-radius:5px;font-size:13px;">
+          Accéder à la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_dossier_candidat_to_demandeur" model="mail.template">
+  <field name="name">Recrutement - Passage Dossier du Candidat (Demandeur)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Passage à l'étape Dossier du Candidat</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>Votre demande <b><t t-out="object.name"/></b> passe à l'étape <b>Dossier du Candidat</b>.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+      <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+      <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#1481f4;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Voir la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_to_rh_visite_medicale" model="mail.template">
+  <field name="name">Recrutement - Visite médicale (RH)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Visite médicale à confirmer</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>La demande <b><t t-out="object.name"/></b> est passée à l'étape <b>Visite médicale</b>.</p>
+      <p>Merci de confirmer que la visite médicale est faite, puis valider.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+      <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+      <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#f59e0b;padding:8px 16px;text-decoration:none;color:#111;border-radius:5px;font-size:13px;">
+          Accéder à la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_visite_medicale_to_demandeur" model="mail.template">
+  <field name="name">Recrutement - Passage Visite médicale (Demandeur)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Passage à l'étape Visite médicale</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>Votre demande <b><t t-out="object.name"/></b> passe à l'étape <b>Visite médicale</b>.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+      <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+      <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#1481f4;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Voir la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_to_n1_periode_essai" model="mail.template">
+  <field name="name">Recrutement - Période d'essai N+1</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Validation période d'essai N+1 requise</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>La demande <b><t t-out="object.name"/></b> est arrivée à l’étape <b>Période d'Essai N+1</b>.</p>
+      <p>Merci de renseigner <b>Validation N+1</b> ainsi que le <b>commentaire</b>, puis valider.</p>
+ <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#2563eb;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Ouvrir la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_periode_essai_n1_to_demandeur" model="mail.template">
+  <field name="name">Recrutement - Passage à la période d'essai N+1 (Demandeur)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Passage à la période d'essai N+1</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>Votre demande <b><t t-out="object.name"/></b> passe à l’étape <b>Période d'Essai N+1</b>.</p>
+<p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#1481f4;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Voir la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<!-- Période RH -->
+<record id="mail_template_rec_to_rh_periode_essai" model="mail.template">
+  <field name="name">Recrutement - Période d'essai RH</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Validation période d'essai RH requise</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>La demande <b><t t-out="object.name"/></b> est arrivée à l’étape <b>Période d'Essai RH</b>.</p>
+      <p>Merci de renseigner <b>Validation RH</b> ainsi que le <b>commentaire RH</b>, puis valider.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#f59e0b;padding:8px 16px;text-decoration:none;color:#111;border-radius:5px;font-size:13px;">
+          Accéder à la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_periode_essai_rh_to_demandeur" model="mail.template">
+  <field name="name">Recrutement - Passage à la période d'essai RH (Demandeur)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Passage à la période d'essai RH</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>Votre demande <b><t t-out="object.name"/></b> passe à l’étape <b>Période d'Essai RH</b>.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#1481f4;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Voir la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<!-- Rupture -->
+<record id="mail_template_rec_rupture_to_demandeur" model="mail.template">
+  <field name="name">Recrutement - Rupture (Demandeur)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Passage à l'état Rupture</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>Votre demande <b><t t-out="object.name"/></b> est passée à l’état <b>Rupture</b>.</p>
+      <p>Cette décision fait suite à une validation négative durant la période d’essai.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#dc2626;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Voir la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<!-- periode_essai_rh → direction_generale : notifier MD -->
+<record id="mail_template_rec_to_md_direction_generale" model="mail.template">
+  <field name="name">Recrutement - Direction générale (MD)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Validation Direction générale requise</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>La demande <b><t t-out="object.name"/></b> est arrivée à l’étape <b>Direction générale</b>.</p>
+      <p>Merci de renseigner la validation <b>Direction générale</b> puis valider la demande.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#111827;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Accéder à la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<!-- direction_generale -> deliberation_finale : notifier RH -->
+<record id="mail_template_rec_to_rh_deliberation_finale" model="mail.template">
+  <field name="name">Recrutement - Délibération finale RH</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Délibération finale requise</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>La demande <b><t t-out="object.name"/></b> est arrivée à l'étape <b>Délibération finale</b>.</p>
+      <p>Merci de renseigner la colonne <b>Délibération</b>, puis valider la demande.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+      <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+      <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#f59e0b;padding:8px 16px;text-decoration:none;color:#111;border-radius:5px;font-size:13px;">
+          Accéder à la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<!-- direction_generale → accepte : notifier demandeur -->
+<record id="mail_template_rec_direction_generale_approved_to_demandeur" model="mail.template">
+  <field name="name">Recrutement - Acceptée par Direction générale (Demandeur)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Demande acceptée</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>Votre demande <b><t t-out="object.name"/></b> a été <b>acceptée</b> après validation par la <b>Direction générale</b>.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#16a34a;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Voir la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<!-- direction_generale → rupture : notifier demandeur -->
+<record id="mail_template_rec_direction_generale_rupture_to_demandeur" model="mail.template">
+  <field name="name">Recrutement - Rupture après Direction générale (Demandeur)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Passage à l'état Rupture</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>Votre demande <b><t t-out="object.name"/></b> est passée à l’état <b>Rupture</b> après validation par la <b>Direction générale</b>.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#dc2626;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Voir la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<!-- direction_generale → rupture : notifier RH -->
+<record id="mail_template_rec_direction_generale_rupture_to_rh" model="mail.template">
+  <field name="name">Recrutement - Rupture après Direction générale (RH)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Notification de rupture</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>La demande <b><t t-out="object.name"/></b> est passée à l’état <b>Rupture</b> après décision de la <b>Direction générale</b>.</p>
+      <p>Merci de consulter la demande pour le détail de la décision.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#dc2626;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Accéder à la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+
+
+<record id="mail_template_rec_stagiaire_md_approved_to_demandeur" model="mail.template">
+    <field name="name">Recrutement Stagiaire - MD validé (Demandeur)</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Demande stagiaire validée par le MD</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+
+            <p>
+                Votre <b>demande de stagiaire</b> <b><t t-out="object.name"/></b>
+                a été validée par le <b>MD</b>.
+            </p>
+
+            <p>
+                La demande passe maintenant à l’étape <b>Date d'embauche</b>.
+            </p>
+
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#2563eb;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                    Voir la demande
+                </a>
+            </div>
+
+            <p>Merci.</p>
+        </div>
+    </field>
+</record>
+
+
+<record id="mail_template_rec_stagiaire_to_rh_hiring_date" model="mail.template">
+    <field name="name">Recrutement Stagiaire - RH Date d'embauche</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Renseigner la date d'embauche du stagiaire</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+
+            <p>
+                La <b>demande de stagiaire</b> <b><t t-out="object.name"/></b>
+                a été validée par le <b>MD</b>.
+            </p>
+
+            <p>
+                Merci de renseigner la <b>date d'embauche</b> pour finaliser cette étape.
+            </p>
+
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#16a34a;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                    Accéder à la demande
+                </a>
+            </div>
+
+            <p>Merci.</p>
+        </div>
+    </field>
+</record>
+
+
+
+
+<record id="mail_template_rec_rupture_to_rh" model="mail.template">
+  <field name="name">Recrutement - Rupture (RH)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Notification de rupture</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>La demande <b><t t-out="object.name"/></b> est passée à l’état <b>Rupture</b>.</p>
+      <p>Merci de consulter la demande pour le détail de la décision et des commentaires.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#dc2626;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Accéder à la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+
+
+<record id="mail_template_rec_to_rh_feedback_rh" model="mail.template">
+    <field name="name">Recrutement - Feedback RH à renseigner</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Feedback RH à compléter</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+            <p>
+                La demande de recrutement <b><t t-out="object.name"/></b> a atteint l'étape
+                <b>Feedback RH</b>.
+            </p>
+            <p>Merci de renseigner le feedback RH pour le(s) candidat(s) concerné(s).</p>
+
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#2563eb;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                    Accéder à la demande
+                </a>
+            </div>
+        </div>
+    </field>
+</record>
+
+
+<record id="mail_template_rec_feedback_rh_to_demandeur" model="mail.template">
+    <field name="name">Recrutement - Passage Feedback RH (Demandeur)</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Passage à l'étape Feedback RH</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+            <p>
+                Votre demande <b><t t-out="object.name"/></b> passe à l'étape
+                <b>Feedback RH</b>.
+            </p>
+
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#1481f4;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                    Voir la demande
+                </a>
+            </div>
+        </div>
+    </field>
+</record>
+
+
+
+
+<record id="mail_template_rec_to_md_feedback_md" model="mail.template">
+    <field name="name">Recrutement - Feedback MD à renseigner</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Feedback MD à compléter</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+            <p>
+                La demande de recrutement <b><t t-out="object.name"/></b> a atteint l'étape
+                <b>Feedback MD</b>.
+            </p>
+            <p>Merci de renseigner le feedback MD pour le(s) candidat(s) concerné(s).</p>
+
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#7c3aed;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                    Accéder à la demande
+                </a>
+            </div>
+        </div>
+    </field>
+</record>
+
+
+<record id="mail_template_rec_to_rh_en_cours_stage" model="mail.template">
+    <field name="name">Recrutement - En cours de stage à suivre</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Passage à l'étape En cours de stage</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+            <p>
+                La demande de recrutement <b><t t-out="object.name"/></b> a atteint l'étape
+                <b>En cours de stage</b>.
+            </p>
+            <p>Merci d’assurer le suivi de stage du/des candidat(s) concerné(s).</p>
+
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#2563eb;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                    Accéder à la demande
+                </a>
+            </div>
+        </div>
+    </field>
+</record>
+
+<record id="mail_template_rec_en_cours_stage_to_demandeur" model="mail.template">
+    <field name="name">Recrutement - Information demandeur En cours de stage</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Votre demande est en cours de stage</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+            <p>
+                Votre demande de recrutement <b><t t-out="object.name"/></b> est désormais à l'étape
+                <b>En cours de stage</b>.
+            </p>
+            <p>Le stage du/des candidat(s) retenu(s) est actuellement en cours de suivi.</p>
+
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#16a34a;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                    Consulter la demande
+                </a>
+            </div>
+        </div>
+    </field>
+</record>
+
+<record id="mail_template_rec_to_rh_archive_stage" model="mail.template">
+    <field name="name">Recrutement - Archive de stage</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Passage à l'étape Archive de stage</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+            <p>
+                La demande de recrutement <b><t t-out="object.name"/></b> a été transférée à l'étape
+                <b>Archive de stage</b>.
+            </p>
+            <p>Merci de procéder aux vérifications finales et à l’archivage du dossier de stage.</p>
+
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#7c3aed;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                    Accéder à la demande
+                </a>
+            </div>
+        </div>
+    </field>
+</record>
+
+
+<record id="mail_template_rec_archive_stage_to_demandeur" model="mail.template">
+    <field name="name">Recrutement - Information demandeur Archive de stage</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Votre demande est en archive de stage</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+            <p>
+                Votre demande de recrutement <b><t t-out="object.name"/></b> est désormais à l'étape
+                <b>Archive de stage</b>.
+            </p>
+            <p>Le dossier de stage a été transféré pour archivage.</p>
+
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#475569;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                    Consulter la demande
+                </a>
+            </div>
+        </div>
+    </field>
+</record>
+
+<record id="mail_template_rec_to_rh_deliberation" model="mail.template">
+    <field name="name">Recrutement - Délibération à renseigner (RH)</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Délibération à renseigner</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+            <p>La validation RH est terminée. Merci de renseigner la décision finale de délibération, puis Valider.</p>
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#0f766e;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                    Accéder à la demande
+                </a>
+            </div>
+        </div>
+    </field>
+</record>
+
+<record id="mail_template_rec_to_rh_offer_candidate" model="mail.template">
+    <field name="name">Recrutement - Offre du Candidat à préparer (RH)</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Offre du Candidat à préparer</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+            <p>La validation RH est terminée. Merci de renseigner le nom de l'offre et d'ajouter le fichier de l'offre.</p>
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#2563eb;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                    Accéder à la demande
+                </a>
+            </div>
+        </div>
+    </field>
+</record>
+
+<record id="mail_template_rec_to_rh_offer_in_progress" model="mail.template">
+    <field name="name">Recrutement - Offre en Cours décision RH</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Offre en Cours</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+            <p>L'offre du candidat est ajoutée. Merci de confirmer si l'offre est acceptée ou refusée.</p>
+            <p><b>Nom de l'offre :</b> <t t-out="object.offre_candidat_nom or ''"/></p>
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#7c3aed;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                    Accéder à la demande
+                </a>
+            </div>
+        </div>
+    </field>
+</record>
+
+<record id="mail_template_rec_offer_accepted_to_rh" model="mail.template">
+    <field name="name">Recrutement - Offre acceptée Date embauche (RH)</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Offre acceptée, date d'embauche à renseigner</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+            <p>L'offre a été acceptée. Merci de renseigner la date d'embauche pour continuer le flux.</p>
+            <p><b>Nom de l'offre :</b> <t t-out="object.offre_candidat_nom or ''"/></p>
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#16a34a;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                    Accéder à la demande
+                </a>
+            </div>
+        </div>
+    </field>
+</record>
+
+<record id="mail_template_rec_offer_refused_to_demandeur" model="mail.template">
+    <field name="name">Recrutement - Offre refusée retour CVthèques (Demandeur)</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Offre refusée, retour CVthèques</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+            <p>L'offre a été refusée. La demande retourne à l'étape CVthèques pour continuer le flux.</p>
+            <p><b>Nom de l'offre :</b> <t t-out="object.offre_candidat_nom or ''"/></p>
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#f59e0b;padding:8px 16px;text-decoration:none;color:#111;border-radius:5px;font-size:13px;">
+                    Accéder à la demande
+                </a>
+            </div>
+        </div>
+    </field>
+</record>
+
+  </data>
+</odoo>

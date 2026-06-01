@@ -1,0 +1,1280 @@
+<odoo>
+  <record id="view_ar_demande_recrutement_tree" model="ir.ui.view">
+    <field name="name">ar.demande.de.recrutement.tree</field>
+    <field name="model">ar.demande.de.recrutement</field>
+    <field name="arch" type="xml">
+      <list create="False" class="ar_recrutement_colored_list">
+        <field name="name" string="Référence"/>
+        <field name="state"
+               string="State"
+               widget="badge"
+               width="230px"
+               decoration-muted="state in ('demandeur', 'refuse', 'archive_stage')"
+               decoration-info="state in ('n1', 'rh', 'md', 'annonce', 'cv_tech', 'selection_candidats', 'entretien', 'candidat_retenu', 'validation_rh', 'deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'accepte')"
+               decoration-danger="state == 'rupture'"/>
+        <field name="demande_type" string="Type de demande"/>
+        <field name="demandeur_id" string="Demandeur"/>
+        <field name="manager_id" string="Manager"/>
+        <field name="department_id" string="Département"/>
+        <field name="date_embauche_souhaitee" string="Date"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_ar_demande_recrutement_kanban" model="ir.ui.view">
+    <field name="name">ar.demande.de.recrutement.kanban</field>
+    <field name="model">ar.demande.de.recrutement</field>
+    <field name="arch" type="xml">
+      <kanban class="ar_recrutement_kanban" default_group_by="state" quick_create="false">
+        <field name="name"/>
+        <field name="state"/>
+        <field name="demande_type"/>
+        <field name="demandeur_id"/>
+        <field name="manager_id"/>
+        <field name="department_id"/>
+        <field name="date_embauche_souhaitee"/>
+        <templates>
+          <t t-name="card">
+            <div t-attf-class="oe_kanban_global_click oe_kanban_card ar_request_card ar_state_#{record.state.raw_value}">
+              <div class="ar_card_topline"/>
+              <div class="ar_card_header">
+                <div>
+                  <span class="ar_card_ref"><field name="name"/></span>
+                  <strong class="ar_card_title">Demande de recrutement</strong>
+                </div>
+                <span class="ar_card_state"><field name="state"/></span>
+              </div>
+              <div class="ar_card_person">
+                <span class="ar_card_avatar"><i class="fa fa-user"/></span>
+                <div>
+                  <span class="ar_card_label">Collaborateur</span>
+                  <strong><field name="demandeur_id"/></strong>
+                </div>
+              </div>
+              <div class="ar_card_meta">
+                <span><i class="fa fa-sitemap"/> <field name="department_id"/></span>
+                <span><i class="fa fa-check-circle"/> <field name="manager_id"/></span>
+              </div>
+              <div class="ar_card_dates">
+                <span><i class="fa fa-tag"/> <field name="demande_type"/></span>
+                <span t-if="record.date_embauche_souhaitee.raw_value"><i class="fa fa-calendar-o"/> <field name="date_embauche_souhaitee"/></span>
+              </div>
+            </div>
+          </t>
+        </templates>
+      </kanban>
+    </field>
+  </record>
+
+  <record id="view_ar_demande_recrutement_form" model="ir.ui.view">
+    <field name="name">ar.demande.de.recrutement.form</field>
+    <field name="model">ar.demande.de.recrutement</field>
+    <field name="arch" type="xml">
+      <form string="Demande de Recrutement" class="ar_recrutement_modern">
+        <header>
+            <!-- Statusbar  -->
+<field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,offre_candidat,offre_en_cours,date_embauche,en_cours_stage,matricule_a_renseigner,dossier_candidat,visite_medicale,envoie_annonce,parcours_integration,feedback_rh,feedback_md,periode_essai_n1,periode_essai_rh,direction_generale,deliberation_finale,accepte,refuse,rupture,archive_stage"/>          
+        </header>
+
+        <header>
+          <button name="action_refresh_integration_lines"
+        type="object"
+        string="Rafraîchir intégration"
+        class="btn-secondary"
+        groups="ar_recrutement.group_ar_recrutement_rh"
+        invisible="state not in ('parcours_integration', 'feedback_rh', 'feedback_md')"/>
+          <button name="action_print_general_report"
+        type="object"
+        string="Rapport global"
+        class="btn-secondary"/>
+          <button name="action_open_modify_wizard"
+        type="object"
+        string="Modifier"
+        class="btn-primary"
+        invisible="state in ('rupture', 'accepte', 'refuse')"/>
+
+        <button name="action_envoyer_archive_stage"
+        type="object"
+        string="Envoyer à l'archive de stage"
+        class="btn-warning"
+        groups="ar_recrutement.group_ar_recrutement_rh"
+        invisible="((state != 'en_cours_stage' or demande_type != 'demande_stagiaire') or is_stage_archived == True)"/>
+
+          <!-- Demandeur -->
+          <button name="action_open_submit_wizard" type="object" string="Soumettre" class="btn-success" invisible="state not in ('demandeur', 'selection_candidats', 'candidat_retenu')"/>
+
+          <!-- N+1 -->
+          <button name="action_open_validate_n1_wizard"
+        type="object"
+        string="Valider"
+        class="btn-success"
+        groups="ar_recrutement.group_ar_recrutement_manager"
+        invisible="state != 'n1'"/>
+
+<button name="action_open_refuse_wizard"
+        type="object"
+        string="Refuser"
+        class="btn-danger"
+        groups="ar_recrutement.group_ar_recrutement_manager"
+        invisible="state != 'n1'"/>
+
+           <button name="action_archiver_rupture"
+        type="object"
+        string="Archiver"
+        class="btn-secondary"
+        invisible="(state != 'rupture' or is_rupture_archived == True)"/>
+
+        <button name="action_archiver_stage"
+        type="object"
+        string="Archiver"
+        class="btn-secondary"
+        groups="ar_recrutement.group_ar_recrutement_rh"
+        invisible="((state != 'archive_stage' or demande_type != 'demande_stagiaire') or is_stage_archived == True)"/>
+
+          <!-- RH -->
+          <button name="action_open_validate_rh_wizard" type="object" string="Valider" class="btn-success"
+    groups="ar_recrutement.group_ar_recrutement_rh"
+    invisible="state not in ('rh', 'annonce', 'cv_tech', 'entretien', 'validation_rh', 'deliberation', 'offre_candidat', 'date_embauche', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'periode_essai_rh')"/>
+<button name="action_send_announcement_mail" type="object" string="Envoie d'announcement" class="btn-primary"
+    groups="ar_recrutement.group_ar_recrutement_rh"
+    invisible="state != 'envoie_annonce'"/>
+<button name="action_open_offer_accept_wizard" type="object" string="Accepter" class="btn-success"
+    groups="ar_recrutement.group_ar_recrutement_rh"
+    invisible="state != 'offre_en_cours'"/>
+<button name="action_open_offer_refuse_wizard" type="object" string="Refuser" class="btn-danger"
+    groups="ar_recrutement.group_ar_recrutement_rh"
+    invisible="state != 'offre_en_cours'"/>
+<button name="action_open_refuse_wizard" type="object" string="Refuser" class="btn-danger" groups="ar_recrutement.group_ar_recrutement_rh" invisible="state not in ('rh', 'cv_tech', 'entretien', 'deliberation', 'date_embauche', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'deliberation_finale')"/>
+          <!-- MD -->
+          <button name="action_open_validate_md_wizard" type="object" string="Valider" class="btn-success"
+        groups="ar_recrutement.group_ar_recrutement_md"
+        invisible="state not in ('md', 'feedback_md')"/>
+
+<button name="action_open_validate_direction_generale_wizard" type="object" string="Valider" class="btn-success"
+        groups="ar_recrutement.group_ar_recrutement_md"
+        invisible="state != 'direction_generale'"/>
+<button name="action_open_validate_deliberation_finale_wizard" type="object" string="Valider" class="btn-success"
+        groups="ar_recrutement.group_ar_recrutement_rh"
+        invisible="state != 'deliberation_finale'"/>
+<button name="action_open_refuse_wizard" type="object" string="Refuser" class="btn-danger" groups="ar_recrutement.group_ar_recrutement_md" invisible="state not in ('md', 'feedback_md', 'direction_generale')"/>
+          
+          <button name="action_open_validate_periode_essai_n1_wizard"
+        type="object"
+        string="Valider"
+        class="btn-success"
+        groups="ar_recrutement.group_ar_recrutement_manager"
+        invisible="state != 'periode_essai_n1'"/>
+
+          <field name="step" invisible="1"/>
+          <field name="is_rupture_archived" invisible="1"/>
+          <field name="is_stage_archived" invisible="1"/>
+        </header>
+
+        <sheet class="ar_recrutement_sheet">
+          <div class="ar_sortie_caisse_title">
+            <div>
+              <span class="ar_sortie_caisse_label">Demande de recrutement</span>
+              <h1>
+                <field name="name" readonly="1" nolabel="1"/>
+              </h1>
+            </div>
+            <div class="ar_sortie_caisse_amount ar_request_status_box">
+              <span>Statut actuel</span>
+              <field name="state" readonly="1" widget="badge" nolabel="1"/>
+            </div>
+          </div>
+
+          <group class="ar_sortie_caisse_panel ar_sortie_caisse_identity">
+            <!-- Grisés -->
+            <field name="demandeur_id" readonly="1"/>
+            <field name="manager_id" readonly="1"/>
+            <field name="department_id" readonly="1"/>
+            <field name="demande_type" readonly="1" force_save="1"/>
+            <field name="step" invisible="1"/>
+
+            <field name="has_retenu_final" invisible="1"/>
+            <field name="current_user_is_rh" invisible="1"/>
+          </group>
+
+          <!-- ================== -->
+          <!-- Bloc "Remplacement" -->
+          <!-- ================== -->
+          <group string="Remplacement" class="ar_sortie_caisse_panel" invisible="demande_type != 'remplacement'">
+            <field name="personne_remplacee_id" options="{'no_create': True}" readonly="state != 'demandeur'"/>
+            <field name="raison_remplacement" readonly="state != 'demandeur'"/>
+          </group>
+
+          <!-- ===================== -->
+          <!-- Bloc "Renouvellement" -->
+          <!-- ===================== -->
+          <group string="Renouvellement" class="ar_sortie_caisse_panel" invisible="demande_type != 'renouvellement'">
+            <field name="renouvellement_type" readonly="state != 'demandeur'"/>
+            <field name="renouvellement_duree" readonly="state != 'demandeur'"/>
+          </group>
+
+          <!-- =========================== -->
+          <!-- Bloc "Changement de contrat" -->
+          <!-- =========================== -->
+          <group string="Changement de type de contrat" class="ar_sortie_caisse_panel" invisible="demande_type != 'changement_contrat'">
+            <field name="changement_contrat" readonly="state != 'demandeur'"/>
+          </group>
+
+<group string="Demande de stagiaire"
+       class="ar_sortie_caisse_panel ar_recrutement_compact_panel"
+       invisible="demande_type != 'demande_stagiaire'">
+    <field name="objet_recrutement"
+           required="1"
+           readonly="state != 'demandeur'"/>
+
+    <field name="stagiaire_nombre"
+           required="1"
+           readonly="state != 'demandeur'"/>
+
+    <field name="stagiaire_duree_mois"
+           required="1"
+           readonly="state != 'demandeur'"/>
+
+    <field name="stagiaire_sujet"
+           readonly="state != 'demandeur'" required="demande_type == 'demande_stagiaire'"/>
+
+    <field name="stagiaire_remuneration"
+           readonly="state != 'demandeur'" required="demande_type == 'demande_stagiaire'"/>
+
+    <field name="formation_base"
+           required="1"
+           readonly="state != 'demandeur'"/>
+
+    <field name="formation_base_autre"
+           invisible="formation_base != 'autre'" required="formation_base == 'autre'" readonly="state != 'demandeur'"/>
+</group>
+
+          
+<!-- ================== -->
+<!-- Bloc commun -->
+<!-- ================== -->
+<group class="ar_recrutement_common" invisible="(demande_type == False or demande_type == 'demande_stagiaire')" col="1">
+
+    <!-- Ligne 1 -->
+    <group class="ar_sortie_caisse_main_row" col="2">
+        <group string="INFORMATIONS DU POSTE" class="ar_sortie_caisse_panel ar_recrutement_panel_primary">
+            <label for="objet_recrutement" string="OBJET DE RECRUTEMENT"/>
+            <field name="objet_recrutement" nolabel="1"
+                   readonly="state != 'demandeur'"/>
+
+            <label for="categorie_prof" string="CATEGORIE PROFESSIONNELLE"/>
+            <field name="categorie_prof" widget="radio" nolabel="1"
+       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+
+            <label for="date_embauche_souhaitee" string="DATE D'EMBAUCHE SOUHAITEE"/>
+            <field name="date_embauche_souhaitee" nolabel="1"
+       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+
+            <label for="motif_demande" string="MOTIF DE LA DEMANDE"/>
+            <field name="motif_demande" nolabel="1"
+       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+        </group>
+
+        <group string="CONTRAT" class="ar_sortie_caisse_panel ar_recrutement_panel_secondary">
+            <field name="type_contrat"
+       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+
+            <field name="duree_contrat"
+                   invisible="type_contrat not in ('cdd', 'anapec')" readonly="state != 'demandeur'"/>
+
+            <label for="recrutement_budget" string="LE RECRUTEMENT EST-IL AU BUDGET ?"/>
+            <field name="recrutement_budget" widget="radio" nolabel="1"
+       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+
+            <label for="contenu_poste" string="CONTENU DU POSTE ET DESCRIPTIF DES TACHES PRINCIPALES"/>
+            <field name="contenu_poste" nolabel="1"
+       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+        </group>
+    </group>
+
+    <!-- Ligne 2 -->
+    <group class="ar_sortie_caisse_main_row" col="2">
+        <group string="NIVEAU HIERARCHIQUE ET QUALIFICATION" class="ar_sortie_caisse_panel ar_recrutement_panel_secondary">
+            <field name="profil_annexe"
+                   filename="profil_annexe_filename"
+                   readonly="state != 'demandeur'"/>
+
+            <field name="rattachement_hierarchique_id"
+       options="{'no_create': True}"
+       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+
+            <field name="nom_tuteur_id"
+       options="{'no_create': True}"
+       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+
+            <field name="remuneration_avantages"
+                   readonly="state != 'demandeur'"/>
+        </group>
+
+        <group string="PROFIL SOUHAITÉ" class="ar_sortie_caisse_panel ar_recrutement_panel_primary">
+            <field name="formation_base"
+       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+
+            <field name="formation_base_autre"
+                   invisible="formation_base != 'autre'" readonly="state != 'demandeur'"/>
+
+            <field name="experience_annees"
+                   readonly="state != 'demandeur'"/>
+
+            <field name="qualites_personnelles"
+       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+
+            <field name="formation_complementaire"
+                   readonly="state != 'demandeur'"/>
+
+            <field name="consequences_si_refus"
+                   readonly="state != 'demandeur'"/>
+        </group>
+    </group>
+
+</group>
+
+<group string="ANNONCE" class="ar_sortie_caisse_panel ar_sortie_caisse_lines" invisible="state not in ('annonce', 'cv_tech', 'selection_candidats', 'entretien', 'candidat_retenu', 'validation_rh', 'deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'periode_essai_n1', 'periode_essai_rh', 'rupture', 'accepte', 'refuse')">
+    <field name="annonce_ids" nolabel="1" colspan="2">
+        <list editable="bottom">
+            <field name="annonce_file"
+                   string="Fichier d'annonce"
+                   filename="annonce_filename"
+                   readonly="parent.state != 'annonce'" required="parent.state == 'annonce'"/>
+            <field name="annonce_filename" invisible="1" column_invisible="1"/>
+            <field name="annonce_link"
+                   string="Lien d'annonce"
+                   readonly="parent.state != 'annonce'"/>
+        </list>
+    </field>
+</group>
+
+          <!-- ================== -->
+          <!-- Tableau candidats  -->
+          <!-- ================== -->
+          <group string="Candidats" class="ar_sortie_caisse_panel ar_sortie_caisse_lines" invisible="state not in ('cv_tech', 'selection_candidats', 'entretien', 'candidat_retenu', 'validation_rh', 'deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'archive_stage', 'accepte')">
+
+    <field name="candidate_ids" nolabel="1" colspan="2">
+        <list editable="bottom" decoration-muted="is_refused_line">
+            <field name="fa_complete" invisible="1" column_invisible="1"/>
+            <field name="rhfa_complete" invisible="1" column_invisible="1"/>
+            <field name="epe_complete" invisible="1" column_invisible="1"/>
+            <field name="is_refused_line" invisible="1" column_invisible="1"/>
+            <field name="can_edit_stage_in_progress" invisible="1" column_invisible="1"/>
+
+            <field name="candidate_name"
+                   string="Nom du candidat"
+                   readonly="parent.step != 'rh_collect_candidates'" required="parent.step == 'rh_collect_candidates'"/>
+
+            <field name="cv_file"
+       filename="cv_filename"
+       readonly="parent.step != 'rh_collect_candidates'" required="parent.step == 'rh_collect_candidates'" column_invisible="parent.state in ('archive_stage',)"/>
+<field name="cv_filename" invisible="1" column_invisible="1"/>
+
+<field name="demandeur_decision"
+       string="Avis entretien"
+       readonly="parent.step != 'demandeur_choose'" column_invisible="parent.state in ('archive_stage',)"/>
+
+<field name="interview_datetime"
+       readonly="(parent.step != 'rh_schedule_interview' or is_refused_line == True)" column_invisible="parent.state in ('archive_stage',)"/>
+
+<field name="retenu_final"
+       string="Validation demandeur"
+       readonly="(parent.step != 'demandeur_final_choice' or is_refused_line == True)" column_invisible="parent.state in ('archive_stage',)"/>
+
+<button name="action_open_fa"
+        type="object"
+        string="FA"
+        class="btn-success"
+        invisible="is_refused_line == True" column_invisible="parent.state in ('archive_stage',)"/>
+
+<field name="rh_validation"
+       readonly="(parent.step != 'rh_validate_final' or is_refused_line == True)" column_invisible="parent.state in ('archive_stage',)"/>
+
+<button name="action_open_rh_fa"
+        type="object"
+        string="FA RH"
+        class="btn-success"
+        invisible="is_refused_line == True" column_invisible="parent.state in ('archive_stage',)"/>
+
+            <field name="stage_end_date"
+                   string="Fin de stage théorique"
+                   readonly="1"
+                   column_invisible="(parent.demande_type != 'demande_stagiaire' or parent.state not in ('en_cours_stage', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'archive_stage', 'accepte'))"/>
+
+            <field name="stage_in_progress"
+                   string="En cours de stage"
+                   readonly="can_edit_stage_in_progress == False" column_invisible="(parent.demande_type != 'demande_stagiaire' or parent.state not in ('en_cours_stage', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'archive_stage', 'accepte'))"/>
+        </list>
+    </field>
+</group>
+
+<group class="ar_sortie_caisse_main_row" col="2"
+       invisible="state not in ('deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'archive_stage', 'accepte')">
+<group string="Délibération"
+       class="ar_sortie_caisse_panel"
+       invisible="state not in ('deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'archive_stage', 'accepte')">
+    <field name="deliberation_decision_finale"
+           string="Décision finale"
+           widget="radio"
+           readonly="state != 'deliberation' or current_user_is_rh == False"/>
+    <field name="deliberation_commentaire"
+           string="Commentaire"
+           readonly="state != 'deliberation' or current_user_is_rh == False"/>
+</group>
+
+<group string="Offre du Candidat"
+       class="ar_sortie_caisse_panel"
+       groups="ar_recrutement.group_ar_recrutement_rh"
+       invisible="state not in ('offre_candidat', 'offre_en_cours', 'date_embauche', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'archive_stage', 'accepte')">
+    <field name="offre_candidat_nom"
+           readonly="state != 'offre_candidat'"
+           required="state == 'offre_candidat'"/>
+    <field name="offre_candidat_file"
+           filename="offre_candidat_filename"
+           readonly="state != 'offre_candidat'"
+           required="state == 'offre_candidat'"/>
+    <field name="offre_candidat_filename" invisible="1"/>
+</group>
+</group>
+
+<group string="Date d'embauche"
+       class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
+       invisible="state not in ('date_embauche', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'archive_stage', 'accepte')">
+    <field name="candidate_ids"
+           class="ar_hiring_date_table"
+           nolabel="1"
+           colspan="2"
+           domain="[('retenu_final', '=', 'oui'), ('rh_validation', '=', 'oui'), ('demandeur_decision', '!=', 'refuse')]">
+        <list editable="bottom" create="0" delete="0" decoration-muted="is_refused_line">
+            <field name="is_refused_line" invisible="1" column_invisible="1"/>
+            <field name="rh_validation" invisible="1" column_invisible="1"/>
+            <field name="candidate_name"
+                   class="ar_hiring_candidate_col"
+                   string="Candidats retenus"
+                   width="50%"
+                   readonly="1"/>
+            <field name="hiring_date"
+                   class="ar_hiring_date_col"
+                   string="Date d'embauche"
+                   width="50%"
+                   readonly="(parent.step != 'rh_hiring_date' or is_refused_line == True)"/>
+        </list>
+    </field>
+</group>
+
+<group string="Matricule à Renseigner"
+       class="ar_sortie_caisse_panel ar_recrutement_compact_panel"
+       groups="ar_recrutement.group_ar_recrutement_rh"
+       invisible="categorie_prof != 'non_cadre' or state not in ('matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'accepte')">
+    <field name="ancien_matricule"
+           readonly="state != 'matricule_a_renseigner'"
+           invisible="demande_type != 'changement_contrat' or changement_contrat not in ('anapec_to_cdd', 'anapec_to_cdi')"
+           required="state == 'matricule_a_renseigner' and demande_type == 'changement_contrat' and changement_contrat in ('anapec_to_cdd', 'anapec_to_cdi')"/>
+    <field name="nouvelle_affectation_matricule"
+           readonly="state != 'matricule_a_renseigner'"
+           required="state == 'matricule_a_renseigner'"/>
+</group>
+
+<group string="Dossier du Candidat"
+       class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
+       groups="ar_recrutement.group_ar_recrutement_rh"
+       invisible="categorie_prof != 'non_cadre' or state not in ('dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'accepte')">
+    <field name="dossier_candidat_line_ids" nolabel="1" colspan="2" invisible="state != 'dossier_candidat'">
+        <list editable="bottom" readonly="parent.state != 'dossier_candidat'">
+            <field name="demande_state" invisible="1" column_invisible="1"/>
+            <field name="document_type"
+                   string="Document"
+                   readonly="1"/>
+            <field name="document_file"
+                   string="Fichier"
+                   filename="document_filename"
+                   readonly="parent.state != 'dossier_candidat'"
+                   required="document_type == 'photos'"/>
+            <field name="document_filename" invisible="1" column_invisible="1"/>
+        </list>
+    </field>
+    <field name="dossier_candidat_line_ids" nolabel="1" colspan="2" readonly="1" invisible="state == 'dossier_candidat'">
+        <list create="0" edit="0" delete="0">
+            <field name="demande_state" invisible="1" column_invisible="1"/>
+            <field name="document_type"
+                   string="Document"
+                   readonly="1"/>
+            <field name="document_file"
+                   string="Fichier"
+                   filename="document_filename"
+                   readonly="1"/>
+            <field name="document_filename" invisible="1" column_invisible="1"/>
+        </list>
+    </field>
+</group>
+
+<group string="Visite médicale"
+       class="ar_sortie_caisse_panel ar_recrutement_compact_panel"
+       groups="ar_recrutement.group_ar_recrutement_rh"
+       invisible="categorie_prof != 'non_cadre' or state not in ('visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'accepte')">
+    <field name="visite_medicale_faite_radio"
+           widget="radio"
+           nolabel="1"
+           readonly="state != 'visite_medicale'"
+           required="state == 'visite_medicale'"/>
+</group>
+
+
+<group string="Announcement"
+       class="ar_sortie_caisse_panel"
+       groups="ar_recrutement.group_ar_recrutement_rh"
+       invisible="state != 'envoie_annonce'">
+    <field name="announcement_civility" required="state == 'envoie_annonce'"/>
+</group>
+
+
+<separator string="Documents"
+           invisible="(demande_type != 'demande_stagiaire' or stagiaire_duree_mois &lt;= 3)"/>
+
+<field name="stagiaire_line_ids"
+       nolabel="1"
+       invisible="((demande_type != 'demande_stagiaire' or stagiaire_duree_mois &lt;= 3) or state not in ('date_embauche', 'en_cours_stage', 'archive_stage'))">
+    <list editable="bottom"
+      readonly="parent.state != 'date_embauche'">
+    <field name="demande_state" invisible="1" column_invisible="1"/>
+    <field name="document_type" string="Type de document"/>
+    <field name="assurance_file"
+           filename="assurance_filename"
+           string="Document"/>
+    <field name="assurance_filename" invisible="1"/>
+</list>
+    <form string="Document">
+        <group>
+            <field name="demande_id" invisible="1"/>
+            <field name="demande_state" invisible="1"/>
+
+            <field name="document_type"
+                   readonly="demande_state != 'date_embauche'" required="demande_state == 'date_embauche'"/>
+
+            <field name="assurance_file"
+                   filename="assurance_filename"
+                   readonly="demande_state != 'date_embauche'" required="demande_state == 'date_embauche'"/>
+
+            <field name="assurance_filename" invisible="1"/>
+        </group>
+    </form>
+</field>
+          
+
+          <group string="Suivi collaborateur"
+   class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
+   invisible="(state not in ('parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte') or (demande_type == 'demande_stagiaire' and stagiaire_duree_mois &lt;= 3))">
+
+    <field name="integration_ids" nolabel="1" colspan="2">
+       <list create="0" delete="0" editable="bottom">
+            <field name="demande_state" invisible="1" column_invisible="1"/>
+            <field name="has_integration_form" invisible="1" column_invisible="1"/>
+            <field name="candidate_name" string="Nom des candidats" readonly="1"/>
+
+            <button name="action_open_integration"
+        type="object"
+        string="Intégration"
+        class="btn-primary"
+        invisible="(demande_state != 'parcours_integration' and has_integration_form == False)"/>
+
+            <field name="feedback_rh"
+                   string="Feedback RH"
+                   readonly="demande_state != 'feedback_rh'" invisible="demande_state not in ('feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
+
+            <field name="feedback_md"
+                   string="Feedback MD"
+                   readonly="demande_state != 'feedback_md'" invisible="demande_state not in ('feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
+
+        </list>
+    </field>
+</group>
+
+<group string="Validation période d'essai"
+   class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
+   invisible="(state != 'periode_essai_n1' or (demande_type == 'demande_stagiaire' and stagiaire_duree_mois &lt;= 3))">
+
+    <field name="validation_integration_ids" nolabel="1" colspan="2">
+       <list create="0" delete="0" editable="bottom">
+            <field name="demande_state" invisible="1" column_invisible="1"/>
+            <field name="is_trial_history" invisible="1" column_invisible="1"/>
+            <field name="candidate_name" string="Nom du candidat" readonly="1"/>
+
+            <field name="validation_n1_essai"
+                   string="Période d'essai N+1"
+                   readonly="is_trial_history == True"/>
+
+            <button name="action_open_epe"
+                    type="object"
+                    string="EPE"
+                    class="btn-success"
+                    invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'accepte')"/>
+
+            <field name="validation_rh_essai"
+                   string="Période d'essai RH"
+                   readonly="1"/>
+
+            <field name="validation_direction_generale"
+                   string="Direction générale"
+                   readonly="1"/>
+
+            <field name="validation_deliberation_finale"
+                   string="Délibération finale"
+                   readonly="1"/>
+        </list>
+    </field>
+</group>
+
+<group string="Validation période d'essai"
+   class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
+   invisible="(state != 'periode_essai_rh' or (demande_type == 'demande_stagiaire' and stagiaire_duree_mois &lt;= 3))">
+
+    <field name="validation_integration_ids" nolabel="1" colspan="2">
+       <list create="0" delete="0" editable="bottom">
+            <field name="demande_state" invisible="1" column_invisible="1"/>
+            <field name="is_trial_history" invisible="1" column_invisible="1"/>
+            <field name="candidate_name" string="Nom du candidat" readonly="1"/>
+
+            <field name="validation_n1_essai"
+                   string="Période d'essai N+1"
+                   readonly="1"/>
+
+            <button name="action_open_epe"
+                    type="object"
+                    string="EPE"
+                    class="btn-success"
+                    invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'accepte')"/>
+
+            <field name="validation_rh_essai"
+                   string="Période d'essai RH"
+                   readonly="is_trial_history == True"/>
+
+            <field name="validation_direction_generale"
+                   string="Direction générale"
+                   readonly="1"/>
+
+            <field name="validation_deliberation_finale"
+                   string="Délibération finale"
+                   readonly="1"/>
+        </list>
+    </field>
+</group>
+
+<group string="Validation période d'essai"
+   class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
+   invisible="(state != 'direction_generale' or (demande_type == 'demande_stagiaire' and stagiaire_duree_mois &lt;= 3))">
+
+    <field name="validation_integration_ids" nolabel="1" colspan="2">
+       <list create="0" delete="0" editable="bottom">
+            <field name="demande_state" invisible="1" column_invisible="1"/>
+            <field name="is_trial_history" invisible="1" column_invisible="1"/>
+            <field name="candidate_name" string="Nom du candidat" readonly="1"/>
+
+            <field name="validation_n1_essai"
+                   string="Période d'essai N+1"
+                   readonly="1"/>
+
+            <button name="action_open_epe"
+                    type="object"
+                    string="EPE"
+                    class="btn-success"
+                    invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'accepte')"/>
+
+            <field name="validation_rh_essai"
+                   string="Période d'essai RH"
+                   readonly="1"/>
+
+            <field name="validation_direction_generale"
+                   string="Direction générale"
+                   readonly="is_trial_history == True"/>
+
+            <field name="validation_deliberation_finale"
+                   string="Délibération finale"
+                   readonly="1"/>
+        </list>
+    </field>
+</group>
+
+<group string="Validation période d'essai"
+   class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
+   invisible="(state != 'deliberation_finale' or (demande_type == 'demande_stagiaire' and stagiaire_duree_mois &lt;= 3))">
+
+    <field name="validation_integration_ids" nolabel="1" colspan="2">
+       <list create="0" delete="0" editable="bottom">
+            <field name="demande_state" invisible="1" column_invisible="1"/>
+            <field name="is_trial_history" invisible="1" column_invisible="1"/>
+            <field name="candidate_name" string="Nom du candidat" readonly="1"/>
+
+            <field name="validation_n1_essai"
+                   string="Période d'essai N+1"
+                   readonly="1"/>
+
+            <button name="action_open_epe"
+                    type="object"
+                    string="EPE"
+                    class="btn-success"
+                    invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
+
+            <field name="validation_rh_essai"
+                   string="Période d'essai RH"
+                   readonly="1"/>
+
+            <field name="validation_direction_generale"
+                   string="Direction générale"
+                   readonly="1"/>
+
+            <field name="validation_deliberation_finale"
+                   string="Délibération finale"
+                   readonly="is_trial_history == True"/>
+        </list>
+    </field>
+</group>
+
+<group string="Validation période d'essai"
+   class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
+   invisible="(state not in ('rupture', 'accepte') or (demande_type == 'demande_stagiaire' and stagiaire_duree_mois &lt;= 3))">
+
+    <field name="validation_integration_ids" nolabel="1" colspan="2">
+       <list create="0" delete="0">
+            <field name="demande_state" invisible="1" column_invisible="1"/>
+            <field name="is_trial_history" invisible="1" column_invisible="1"/>
+            <field name="candidate_name" string="Nom du candidat" readonly="1"/>
+
+            <field name="validation_n1_essai"
+                   string="Période d'essai N+1"
+                   readonly="1"/>
+
+            <button name="action_open_epe"
+                    type="object"
+                    string="EPE"
+                    class="btn-success"
+                    invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'accepte')"/>
+
+            <field name="validation_rh_essai"
+                   string="Période d'essai RH"
+                   readonly="1"/>
+
+            <field name="validation_direction_generale"
+                   string="Direction générale"
+                   readonly="1"/>
+
+            <field name="validation_deliberation_finale"
+                   string="Délibération finale"
+                   readonly="1"/>
+        </list>
+    </field>
+</group>
+          
+        </sheet>
+	<chatter/>
+      </form>
+    </field>
+  </record>
+  <record id="view_ar_demande_recrutement_candidate_fa_form" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.candidate.fa.form</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="arch" type="xml">
+        <form string="Fiche d'appréciation" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="parent_state" invisible="1"/>
+                <field name="parent_step" invisible="1"/>
+                <field name="is_refused_line" invisible="1"/>
+
+                <div class="ar_eval_legend">
+                    <strong>Legende :</strong>
+                    <span>1 = Pas satisfait</span>
+                    <span>2 = &#192; ameliorer</span>
+                    <span>3 = Satisfait</span>
+                    <span>4 = Tr&#232;s satisfait</span>
+                </div>
+
+                <group>
+                    <field name="candidate_name" readonly="1"/>
+                    <field name="fa_interview_realisee_par" readonly="1"/>
+                    <field name="fa_date_entretien"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                    <field name="fa_presentation_generale"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                </group>
+
+                <group string="SAVOIR">
+                    <field name="fa_formation_initiale"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                    <field name="fa_formation_complementaire_eval"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                </group>
+
+                <group string="SAVOIR-FAIRE">
+                    <field name="fa_experiences_professionnelles"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                    <field name="fa_communication_orale"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                    <field name="fa_ecoute"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                    <field name="fa_negociation_persuasion"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                    <field name="fa_esprit_equipe_leadership"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                </group>
+
+                <group string="SAVOIR-ETRE">
+                    <field name="fa_autonomie"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                    <field name="fa_dynamisme"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                    <field name="fa_reactivite"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                    <field name="fa_engagement"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                    <field name="fa_rigueur"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                </group>
+
+                <group>
+                    <field name="fa_actuellement_en_poste"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+
+                    <field name="fa_fonction_actuelle"
+                           required="fa_actuellement_en_poste == 'oui'" invisible="fa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+
+                    <field name="fa_entreprise_actuelle"
+                           required="fa_actuellement_en_poste == 'oui'" invisible="fa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+
+                    <field name="fa_salaire_actuel"
+                           required="fa_actuellement_en_poste == 'oui'" invisible="fa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+
+                    <field name="fa_preavis"
+                           required="fa_actuellement_en_poste == 'oui'" invisible="fa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+
+                    <field name="demande_type" invisible="1"/>
+<field name="stagiaire_remuneration" invisible="1"/>
+
+<field name="fa_pretentions_salariales_num"
+       invisible="(demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'sans')" readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)" required="(demande_type != 'demande_stagiaire' or (demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'avec'))"/>
+
+                    <field name="fa_appreciations_generales"
+                           required="1"
+                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+
+                     <field name="fa_note_globale" readonly="1"/>
+                </group>
+            </sheet>
+                <footer>
+    <button string="Télécharger"
+            type="object"
+            name="action_download_fa"
+            class="btn-info"/>
+
+    <button string="Enregistrer"
+            type="object"
+            name="action_save_candidate_popup"
+            class="btn-primary"
+            invisible="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+
+    <button string="Fermer"
+            class="btn-secondary"
+            special="cancel"/>
+</footer>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_candidate_rhfa_form" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.candidate.rhfa.form</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="arch" type="xml">
+        <form string="Fiche d'appréciation RH" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="parent_state" invisible="1"/>
+                <field name="parent_step" invisible="1"/>
+                <field name="is_refused_line" invisible="1"/>
+
+                <div class="ar_eval_legend">
+                    <strong>Legende :</strong>
+                    <span>1 = Pas satisfait</span>
+                    <span>2 = &#192; ameliorer</span>
+                    <span>3 = Satisfait</span>
+                    <span>4 = Tr&#232;s satisfait</span>
+                </div>
+
+                <group>
+                    <field name="candidate_name" readonly="1"/>
+                    <field name="rhfa_interview_realisee_par" readonly="1"/>
+                    <field name="rhfa_date_entretien"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                    <field name="rhfa_presentation_generale"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                </group>
+
+                <group string="SAVOIR">
+                    <field name="rhfa_formation_initiale"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                    <field name="rhfa_formation_complementaire_eval"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                </group>
+
+                <group string="SAVOIR-FAIRE">
+                    <field name="rhfa_experiences_professionnelles"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                    <field name="rhfa_communication_orale"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                    <field name="rhfa_ecoute"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                    <field name="rhfa_negociation_persuasion"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                    <field name="rhfa_esprit_equipe_leadership"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                </group>
+
+                <group string="SAVOIR-ETRE">
+                    <field name="rhfa_autonomie"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                    <field name="rhfa_dynamisme"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                    <field name="rhfa_reactivite"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                    <field name="rhfa_engagement"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                    <field name="rhfa_rigueur"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                </group>
+
+                <group>
+                    <field name="rhfa_actuellement_en_poste"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+
+                    <field name="rhfa_fonction_actuelle"
+                           required="rhfa_actuellement_en_poste == 'oui'" invisible="rhfa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+
+                    <field name="rhfa_entreprise_actuelle"
+                           required="rhfa_actuellement_en_poste == 'oui'" invisible="rhfa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+
+                    <field name="rhfa_salaire_actuel"
+                           required="rhfa_actuellement_en_poste == 'oui'" invisible="rhfa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+
+                    <field name="rhfa_preavis"
+                           required="rhfa_actuellement_en_poste == 'oui'" invisible="rhfa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+
+                    <field name="demande_type" invisible="1"/>
+<field name="stagiaire_remuneration" invisible="1"/>
+
+<field name="rhfa_pretentions_salariales_num"
+       invisible="(demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'sans')" readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)" required="(demande_type != 'demande_stagiaire' or (demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'avec'))"/>
+
+                    <field name="rhfa_appreciations_generales"
+                           required="1"
+                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+
+                     <field name="rhfa_note_globale" readonly="1"/>
+                </group>
+            </sheet>
+            <footer>
+    <button string="Télécharger"
+            type="object"
+            name="action_download_rh_fa"
+            class="btn-info"/>
+
+    <button string="Enregistrer"
+            type="object"
+            name="action_save_candidate_popup"
+            class="btn-primary"
+            invisible="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+
+    <button string="Fermer"
+            class="btn-secondary"
+            special="cancel"/>
+</footer>
+        </form>
+    </field>
+</record>
+
+
+<record id="view_ar_demande_recrutement_candidate_epe_form" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.candidate.epe.form</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="arch" type="xml">
+        <form string="EPE" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="parent_state" invisible="1"/>
+                <field name="is_refused_line" invisible="1"/>
+
+                <div class="ar_eval_legend">
+                    <strong>Legende :</strong>
+                    <span>1 = Pas satisfait</span>
+                    <span>2 = &#192; ameliorer</span>
+                    <span>3 = Satisfait</span>
+                    <span>4 = Tr&#232;s satisfait</span>
+                </div>
+
+                <group string="Identification du salarié" col="2">
+                    <field name="epe_nom_prenom"
+                           required="1"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+
+                    <field name="epe_poste"
+                           required="1"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+
+                    <field name="epe_date_entree_fonction"
+                           required="1"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+
+                    <field name="epe_affectation_id"
+                           required="1"
+                           readonly="1"/>
+
+                    <field name="epe_evaluateur_id"
+                           required="1"
+                           readonly="1"/>
+
+                    <field name="epe_date_evaluation"
+                           required="1"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+                </group>
+
+                <group string="Points Forts / Points à améliorer" col="2">
+                    <field name="epe_points_forts"
+                           required="1"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+
+                    <field name="epe_points_ameliorer"
+                           required="1"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+                </group>
+
+                <group string="Principales missions et réalisations accomplies durant la période de probation">
+                    <field name="epe_missions_realisation"
+                           
+                           required="1"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+                </group>
+
+                <group string="Critère d'Appréciation" col="2">
+                    <field name="epe_atteinte_resultats"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+
+                    <field name="epe_potentiel_developpement"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+
+                    <field name="epe_maitrise_technique"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+
+                    <field name="epe_capacite_adaptation"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+
+                    <field name="epe_engagement_dynamisme"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+
+                    <field name="epe_autonomie_initiative"
+                           widget="radio"
+                           required="1"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+
+                    <field name="epe_commentaire"
+                           required="1"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+                </group>
+
+                <group>
+                    <field name="epe_autres_remarques"
+                           readonly="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+                </group>
+
+            </sheet>
+
+            <footer>
+                <button string="Télécharger"
+                        type="object"
+                        name="action_download_epe"
+                        class="btn-info"/>
+
+                <button string="Enregistrer"
+                        type="object"
+                        name="action_save_candidate_popup"
+                        class="btn-primary"
+                        invisible="(parent_state != 'periode_essai_n1' or is_refused_line == True)"/>
+
+                <button string="Fermer"
+                        class="btn-secondary"
+                        special="cancel"/>
+            </footer>
+        </form>
+    </field>
+</record>
+
+
+<record id="view_ar_demande_recrutement_stagiaire_line_form" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.stagiaire.line.form</field>
+    <field name="model">ar.demande.recrutement.stagiaire.line</field>
+    <field name="arch" type="xml">
+        <form string="Document" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <group>
+                    <field name="demande_id" invisible="1"/>
+                    <field name="demande_state" invisible="1" column_invisible="1"/>
+
+                    <field name="document_type"
+                           readonly="demande_state != 'date_embauche'" required="demande_state == 'date_embauche'"/>
+
+                    <field name="assurance_file"
+                           filename="assurance_filename"
+                           readonly="demande_state != 'date_embauche'" required="demande_state == 'date_embauche'"/>
+
+                    <field name="assurance_filename" invisible="1"/>
+                </group>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_action_wizard_form" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.action.wizard.form</field>
+    <field name="model">ar.demande.recrutement.action.wizard</field>
+    <field name="arch" type="xml">
+        <form string="Confirmation" class="ar_rec_decision_wizard">
+            <field name="demande_id" invisible="1"/>
+            <field name="action_type" invisible="1"/>
+
+            <div class="ar_rec_wizard_message" invisible="action_type not in ('submit', 'validate_n1', 'validate_rh', 'validate_md', 'validate_direction_generale', 'validate_deliberation_finale', 'validate_periode_essai_n1', 'offer_accept')">
+                <div class="ar_rec_wizard_icon ar_rec_wizard_icon_validate">OK</div>
+                <h2>Confirmer la validation</h2>
+                <p><field name="message" nolabel="1" readonly="1"/></p>
+            </div>
+
+            <div class="ar_rec_wizard_message" invisible="action_type not in ('refuse', 'offer_refuse')">
+                <div class="ar_rec_wizard_icon ar_rec_wizard_icon_refuse">!</div>
+                <h2>Confirmer le refus</h2>
+                <p><field name="message" nolabel="1" readonly="1"/></p>
+            </div>
+
+            <div class="ar_rec_wizard_message" invisible="action_type != 'modify'">
+                <div class="ar_rec_wizard_icon ar_rec_wizard_icon_modify">OK</div>
+                <h2>Confirmer la modification</h2>
+                <p><field name="message" nolabel="1" readonly="1"/></p>
+            </div>
+
+            <footer>
+                <button name="action_confirm"
+                        string="Confirmer"
+                        type="object"
+                        class="btn-primary"/>
+                <button
+                        string="Annuler"
+                        special="cancel"
+                        class="btn-secondary"/>
+            </footer>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_integration_form" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.integration.form</field>
+    <field name="model">ar.demande.recrutement.integration</field>
+    <field name="arch" type="xml">
+        <form string="Intégration" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <group col="2">
+                    <field name="candidate_name" readonly="1"/>
+                    <field name="integration_department_id" string="Département" required="1"/>
+                </group>
+
+                <separator string="Partie I"/>
+
+                <field name="integration_line_ids" nolabel="1">
+                    <list create="0" delete="0">
+                        <field name="service_accueillant" string="Département ou Service accueillant" readonly="1"/>
+                        <field name="rubrique" string="Rubrique" readonly="1"/>
+                        <field name="tuteur_id" string="Tuteur"/>
+                        <field name="date_integration" string="Date"/>
+                        <field name="commentaire" string="Commentaire"/>
+                    </list>
+                    <form string="Ligne d'intégration" class="ar_recrutement_modern ar_recrutement_popup">
+                        <group col="2">
+                            <field name="service_accueillant" string="Département ou Service accueillant" readonly="1"/>
+                            <field name="rubrique" string="Rubrique / Étape" readonly="1"/>
+                            <field name="tuteur_id" string="Tuteur" required="1"/>
+                            <field name="date_integration" string="Dates" required="1"/>
+                            <field name="commentaire" string="Commentaire" colspan="2"/>
+                        </group>
+                    </form>
+                </field>
+
+                <footer>
+                <button name="action_download_integration"
+        type="object"
+        string="Télécharger"
+        class="btn-info"/>
+                    <button string="Enregistrer" special="save" class="btn-primary"/>
+                    <button string="Annuler" special="cancel" class="btn-secondary"/>
+                </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+</odoo>

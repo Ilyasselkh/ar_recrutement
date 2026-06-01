@@ -1,0 +1,8 @@
+<odoo>
+    <record id="seq_ar_demande_de_recrutement" model="ir.sequence">
+        <field name="name">Demande Recrutement</field>
+        <field name="code">ar.demande.de.recrutement</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

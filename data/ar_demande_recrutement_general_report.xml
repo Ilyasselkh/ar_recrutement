@@ -1,0 +1,402 @@
+<odoo>
+
+    <record id="action_report_ar_demande_recrutement_general" model="ir.actions.report">
+        <field name="name">Rapport général demande recrutement</field>
+        <field name="model">ar.demande.de.recrutement</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ar_recrutement.report_ar_demande_recrutement_general_document</field>
+        <field name="report_file">ar_recrutement.report_ar_demande_recrutement_general_document</field>
+        <field name="paperformat_id" ref="ar_recrutement.paperformat_candidate_appreciation"/>
+        <field name="print_report_name">'Demande Recrutement - %s' % (object.name or 'Demande')</field>
+    </record>
+
+    <template id="report_ar_demande_recrutement_general_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="ar_recrutement.report_araymond_external_layout">
+                    <div class="page">
+
+                        <style>
+                            .gen-title {
+                                text-align: center;
+                                font-size: 18px;
+                                font-weight: bold;
+                                margin-bottom: 12px;
+                                border-bottom: 2px solid #444;
+                                padding-bottom: 6px;
+                            }
+                            .gen-subtitle {
+                                font-size: 13px;
+                                font-weight: bold;
+                                background: #e9ecef;
+                                padding: 6px 8px;
+                                margin-top: 12px;
+                                margin-bottom: 0;
+                                border: 1px solid #cfd4da;
+                            }
+                            .gen-table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin-bottom: 10px;
+                            }
+                            .gen-table td,
+                            .gen-table th {
+                                border: 1px solid #cfd4da;
+                                padding: 6px;
+                                vertical-align: top;
+                                font-size: 10px;
+                            }
+                            .gen-table th {
+                                background: #f1f3f5;
+                                font-weight: bold;
+                            }
+                            .gen-label {
+                                width: 34%;
+                                font-weight: bold;
+                                background: #f8f9fa;
+                            }
+                            .gen-value {
+                                width: 66%;
+                            }
+                            .gen-muted {
+                                color: #666;
+                            }
+                            .gen-two-col td {
+                                width: 50%;
+                            }
+                        </style>
+
+                        <div class="gen-title">RAPPORT GENERAL - DEMANDE DE RECRUTEMENT</div>
+
+                        <h3 class="gen-subtitle">Synthèse de la demande</h3>
+                        <table class="gen-table">
+                            <tbody>
+                                <tr>
+                                    <td class="gen-label">Référence</td>
+                                    <td class="gen-value"><span t-esc="o.name or ''"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="gen-label">Type de demande</td>
+                                    <td class="gen-value">
+                                        <span t-esc="dict(o._fields['demande_type'].selection).get(o.demande_type, '')"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="gen-label">Statut</td>
+                                    <td class="gen-value">
+                                        <span t-esc="dict(o._fields['state'].selection).get(o.state, '')"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="gen-label">Étape interne</td>
+                                    <td class="gen-value">
+                                        <span t-esc="dict(o._fields['step'].selection).get(o.step, '')"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="gen-label">Demandeur</td>
+                                    <td class="gen-value"><span t-esc="o.demandeur_id.name or ''"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="gen-label">Manager N+1</td>
+                                    <td class="gen-value"><span t-esc="o.manager_id.name or ''"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="gen-label">Département</td>
+                                    <td class="gen-value"><span t-esc="o.department_id.name or ''"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3 class="gen-subtitle">Expression du besoin</h3>
+                        <table class="gen-table">
+                            <tbody>
+                                <tr t-if="o.objet_recrutement">
+                                    <td class="gen-label">Objet de recrutement</td>
+                                    <td class="gen-value"><span t-esc="o.objet_recrutement"/></td>
+                                </tr>
+                                <tr t-if="o.motif_demande">
+                                    <td class="gen-label">Motif de la demande</td>
+                                    <td class="gen-value"><span t-esc="o.motif_demande"/></td>
+                                </tr>
+                                <tr t-if="o.consequences_si_refus">
+                                    <td class="gen-label">Conséquences si refus</td>
+                                    <td class="gen-value"><span t-esc="o.consequences_si_refus"/></td>
+                                </tr>
+                                <tr t-if="o.contenu_poste">
+                                    <td class="gen-label">Contenu du poste / tâches principales</td>
+                                    <td class="gen-value"><t t-raw="o.contenu_poste"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3 class="gen-subtitle">Poste et profil recherché</h3>
+                        <table class="gen-table">
+                            <tbody>
+                                <tr t-if="o.categorie_prof">
+                                    <td class="gen-label">Catégorie professionnelle</td>
+                                    <td class="gen-value">
+                                        <span t-esc="dict(o._fields['categorie_prof'].selection).get(o.categorie_prof, '')"/>
+                                    </td>
+                                </tr>
+                                <tr t-if="o.rattachement_hierarchique_id">
+                                    <td class="gen-label">Rattachement hiérarchique</td>
+                                    <td class="gen-value"><span t-esc="o.rattachement_hierarchique_id.name"/></td>
+                                </tr>
+                                <tr t-if="o.nom_tuteur_id">
+                                    <td class="gen-label">Tuteur d'accueil</td>
+                                    <td class="gen-value"><span t-esc="o.nom_tuteur_id.name"/></td>
+                                </tr>
+                                <tr t-if="o.formation_base">
+                                    <td class="gen-label">Formation de base</td>
+                                    <td class="gen-value">
+                                        <span t-esc="dict(o._fields['formation_base'].selection).get(o.formation_base, '')"/>
+                                        <span t-if="o.formation_base_autre"> - <span t-esc="o.formation_base_autre"/></span>
+                                    </td>
+                                </tr>
+                                <tr t-if="o.experience_annees">
+                                    <td class="gen-label">Expérience requise</td>
+                                    <td class="gen-value"><span t-esc="o.experience_annees"/> année(s)</td>
+                                </tr>
+                                <tr t-if="o.qualites_personnelles">
+                                    <td class="gen-label">Qualités personnelles</td>
+                                    <td class="gen-value"><span t-esc="o.qualites_personnelles"/></td>
+                                </tr>
+                                <tr t-if="o.formation_complementaire">
+                                    <td class="gen-label">Formation complémentaire</td>
+                                    <td class="gen-value"><span t-esc="o.formation_complementaire"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3 class="gen-subtitle">Contrat, budget et dates</h3>
+                        <table class="gen-table">
+                            <tbody>
+                                <tr t-if="o.type_contrat">
+                                    <td class="gen-label">Type de contrat</td>
+                                    <td class="gen-value">
+                                        <span t-esc="dict(o._fields['type_contrat'].selection).get(o.type_contrat, '')"/>
+                                    </td>
+                                </tr>
+                                <tr t-if="o.duree_contrat">
+                                    <td class="gen-label">Durée du contrat</td>
+                                    <td class="gen-value"><span t-esc="o.duree_contrat"/></td>
+                                </tr>
+                                <tr t-if="o.recrutement_budget">
+                                    <td class="gen-label">Recrutement au budget</td>
+                                    <td class="gen-value">
+                                        <span t-esc="dict(o._fields['recrutement_budget'].selection).get(o.recrutement_budget, '')"/>
+                                    </td>
+                                </tr>
+                                <tr t-if="o.remuneration_avantages">
+                                    <td class="gen-label">Rémunération / avantages</td>
+                                    <td class="gen-value"><span t-esc="o.remuneration_avantages"/></td>
+                                </tr>
+                                <tr t-if="o.date_embauche_souhaitee">
+                                    <td class="gen-label">Date d'embauche souhaitée</td>
+                                    <td class="gen-value"><span t-esc="o.date_embauche_souhaitee"/></td>
+                                </tr>
+                                <tr t-if="o.date_embauche_effective">
+                                    <td class="gen-label">Date d'embauche effective</td>
+                                    <td class="gen-value"><span t-esc="o.date_embauche_effective"/></td>
+                                </tr>
+                                <tr t-if="o.offre_candidat_filename">
+                                    <td class="gen-label">Offre candidat</td>
+                                    <td class="gen-value"><span t-esc="o.offre_candidat_filename"/></td>
+                                </tr>
+                                <tr t-if="o.visite_medicale_faite">
+                                    <td class="gen-label">Visite médicale</td>
+                                    <td class="gen-value">Faite</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3 class="gen-subtitle">Informations spécifiques</h3>
+                        <table class="gen-table">
+                            <tbody>
+                                <tr t-if="o.personne_remplacee_id">
+                                    <td class="gen-label">Personne remplacée</td>
+                                    <td class="gen-value"><span t-esc="o.personne_remplacee_id.name"/></td>
+                                </tr>
+                                <tr t-if="o.raison_remplacement">
+                                    <td class="gen-label">Raison du remplacement</td>
+                                    <td class="gen-value">
+                                        <span t-esc="dict(o._fields['raison_remplacement'].selection).get(o.raison_remplacement, '')"/>
+                                    </td>
+                                </tr>
+                                <tr t-if="o.renouvellement_type">
+                                    <td class="gen-label">Type de renouvellement</td>
+                                    <td class="gen-value">
+                                        <span t-esc="dict(o._fields['renouvellement_type'].selection).get(o.renouvellement_type, '')"/>
+                                    </td>
+                                </tr>
+                                <tr t-if="o.renouvellement_duree">
+                                    <td class="gen-label">Durée de renouvellement</td>
+                                    <td class="gen-value"><span t-esc="o.renouvellement_duree"/></td>
+                                </tr>
+                                <tr t-if="o.changement_contrat">
+                                    <td class="gen-label">Changement de contrat</td>
+                                    <td class="gen-value">
+                                        <span t-esc="dict(o._fields['changement_contrat'].selection).get(o.changement_contrat, '')"/>
+                                    </td>
+                                </tr>
+                                <tr t-if="o.ancien_matricule">
+                                    <td class="gen-label">Ancien matricule</td>
+                                    <td class="gen-value"><span t-esc="o.ancien_matricule"/></td>
+                                </tr>
+                                <tr t-if="o.nouvelle_affectation_matricule">
+                                    <td class="gen-label">Nouvelle affectation matricule</td>
+                                    <td class="gen-value"><span t-esc="o.nouvelle_affectation_matricule"/></td>
+                                </tr>
+                                <tr t-if="o.demande_type == 'demande_stagiaire'">
+                                    <td class="gen-label">Stage</td>
+                                    <td class="gen-value">
+                                        <span t-if="o.stagiaire_nombre"><span t-esc="o.stagiaire_nombre"/> stagiaire(s)</span>
+                                        <span t-if="o.stagiaire_duree_mois"> - <span t-esc="o.stagiaire_duree_mois"/> mois</span>
+                                        <span t-if="o.stagiaire_remuneration"> - <span t-esc="dict(o._fields['stagiaire_remuneration'].selection).get(o.stagiaire_remuneration, '')"/></span>
+                                    </td>
+                                </tr>
+                                <tr t-if="o.stagiaire_sujet">
+                                    <td class="gen-label">Sujet de stage</td>
+                                    <td class="gen-value"><span t-esc="o.stagiaire_sujet"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <t t-if="o.annonce_ids">
+                            <h3 class="gen-subtitle">Publication et annonces</h3>
+                            <table class="gen-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fichier</th>
+                                        <th>Lien</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="o.annonce_ids" t-as="ann">
+                                        <tr>
+                                            <td><span t-esc="ann.annonce_filename or 'Fichier joint'"/></td>
+                                            <td><span t-esc="ann.annonce_link or ''"/></td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <t t-if="o.candidate_ids">
+                            <h3 class="gen-subtitle">Candidats et décisions</h3>
+                            <table class="gen-table">
+                                <thead>
+                                    <tr>
+                                        <th>Candidat</th>
+                                        <th>CV</th>
+                                        <th>Entretien</th>
+                                        <th>Avis demandeur</th>
+                                        <th>Retenu final</th>
+                                        <th>Validation RH</th>
+                                        <th>Date embauche</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="o.candidate_ids" t-as="cand">
+                                        <tr>
+                                            <td><span t-esc="cand.candidate_name or ''"/></td>
+                                            <td><span t-esc="cand.cv_filename or ''"/></td>
+                                            <td><span t-esc="cand.interview_datetime or ''"/></td>
+                                            <td><span t-esc="dict(cand._fields['demandeur_decision'].selection).get(cand.demandeur_decision, '')"/></td>
+                                            <td><span t-esc="dict(cand._fields['retenu_final'].selection).get(cand.retenu_final, '')"/></td>
+                                            <td><span t-esc="dict(cand._fields['rh_validation'].selection).get(cand.rh_validation, '')"/></td>
+                                            <td><span t-esc="cand.hiring_date or ''"/></td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <t t-if="o.integration_ids">
+                            <h3 class="gen-subtitle">Intégration et période d'essai</h3>
+                            <table class="gen-table">
+                                <thead>
+                                    <tr>
+                                        <th>Candidat</th>
+                                        <th>Département</th>
+                                        <th>Feedback RH</th>
+                                        <th>Feedback manager</th>
+                                        <th>Essai N+1</th>
+                                        <th>Essai RH</th>
+                                        <th>Délibération</th>
+                                        <th>Direction générale</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="o.integration_ids" t-as="integ">
+                                        <tr>
+                                            <td><span t-esc="integ.candidate_name or ''"/></td>
+                                            <td><span t-esc="integ.integration_department_id.name or ''"/></td>
+                                            <td><span t-esc="integ.feedback_rh or ''"/></td>
+                                            <td><span t-esc="integ.feedback_md or ''"/></td>
+                                            <td><span t-esc="dict(integ._fields['validation_n1_essai'].selection).get(integ.validation_n1_essai, '')"/></td>
+                                            <td><span t-esc="dict(integ._fields['validation_rh_essai'].selection).get(integ.validation_rh_essai, '')"/></td>
+                                            <td><span t-esc="dict(integ._fields['validation_deliberation_finale'].selection).get(integ.validation_deliberation_finale, '')"/></td>
+                                            <td><span t-esc="dict(integ._fields['validation_direction_generale'].selection).get(integ.validation_direction_generale, '')"/></td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+
+                            <t t-foreach="o.integration_ids" t-as="integ">
+                                <t t-if="integ.integration_line_ids">
+                                    <h3 class="gen-subtitle">Parcours d'intégration - <span t-esc="integ.candidate_name or ''"/></h3>
+                                    <table class="gen-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Service accueillant</th>
+                                                <th>Rubrique / étape</th>
+                                                <th>Tuteur</th>
+                                                <th>Date</th>
+                                                <th>Commentaire</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="integ.integration_line_ids" t-as="line">
+                                                <tr>
+                                                    <td><span t-esc="dict(line._fields['service_accueillant'].selection).get(line.service_accueillant, '')"/></td>
+                                                    <td><span t-esc="line.rubrique or ''"/></td>
+                                                    <td><span t-esc="line.tuteur_id.name or ''"/></td>
+                                                    <td><span t-esc="line.date_integration or ''"/></td>
+                                                    <td><span t-esc="line.commentaire or ''"/></td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </t>
+                            </t>
+                        </t>
+
+                        <t t-if="o.stagiaire_line_ids">
+                            <h3 class="gen-subtitle">Documents stagiaire</h3>
+                            <table class="gen-table">
+                                <thead>
+                                    <tr>
+                                        <th>Type de document</th>
+                                        <th>Nom du fichier</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="o.stagiaire_line_ids" t-as="docline">
+                                        <tr>
+                                            <td><span t-esc="dict(docline._fields['document_type'].selection).get(docline.document_type, '')"/></td>
+                                            <td><span t-esc="docline.assurance_filename or ''"/></td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </t>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

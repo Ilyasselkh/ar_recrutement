@@ -1,0 +1,235 @@
+<odoo>
+    <!-- ===================================================== -->
+    <!-- Liste des demandes -->
+    <!-- ===================================================== -->
+    <record id="action_ar_demande_recrutement" model="ir.actions.act_window">
+        <field name="name">Demandes</field>
+        <field name="res_model">ar.demande.de.recrutement</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('state','not in',('en_cours_stage','archive_stage','accepte','refuse','rupture','periode_essai_n1','periode_essai_rh'))]</field>
+    </record>
+
+    <!-- ===================================================== -->
+    <!-- ACTIONS FORMULAIRES PAR TYPE -->
+    <!-- ===================================================== -->
+
+    <!-- Creation poste -->
+    <record id="action_ar_demande_recrutement_creation_poste" model="ir.actions.act_window">
+        <field name="name">Cr&#233;ation poste</field>
+        <field name="res_model">ar.demande.de.recrutement</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_ar_demande_recrutement_form"/>
+        <field name="target">current</field>
+        <field name="context">{'default_demande_type': 'creation_poste'}</field>
+    </record>
+
+    <!-- Remplacement -->
+    <record id="action_ar_demande_recrutement_remplacement" model="ir.actions.act_window">
+        <field name="name">Remplacement</field>
+        <field name="res_model">ar.demande.de.recrutement</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_ar_demande_recrutement_form"/>
+        <field name="target">current</field>
+        <field name="context">{'default_demande_type': 'remplacement'}</field>
+    </record>
+
+    <!-- Renouvellement -->
+    <record id="action_ar_demande_recrutement_renouvellement" model="ir.actions.act_window">
+        <field name="name">Renouvellement de contrat</field>
+        <field name="res_model">ar.demande.de.recrutement</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_ar_demande_recrutement_form"/>
+        <field name="target">current</field>
+        <field name="context">{'default_demande_type': 'renouvellement'}</field>
+    </record>
+
+    <!-- Changement de type de contrat -->
+    <record id="action_ar_demande_recrutement_changement_contrat" model="ir.actions.act_window">
+        <field name="name">Changement de type de contrat</field>
+        <field name="res_model">ar.demande.de.recrutement</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_ar_demande_recrutement_form"/>
+        <field name="target">current</field>
+        <field name="context">{'default_demande_type': 'changement_contrat'}</field>
+    </record>
+
+    <!-- Demande de stagiaire -->
+    <record id="action_ar_demande_recrutement_demande_stagiaire" model="ir.actions.act_window">
+        <field name="name">Demande de stagiaire</field>
+        <field name="res_model">ar.demande.de.recrutement</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_ar_demande_recrutement_form"/>
+        <field name="target">current</field>
+        <field name="context">{'default_demande_type': 'demande_stagiaire'}</field>
+    </record>
+
+    <!-- ===================================================== -->
+    <!-- ACTIONS ARCHIVES -->
+    <!-- ===================================================== -->
+    <record id="action_ar_demande_recrutement_accepte" model="ir.actions.act_window">
+        <field name="name">Archives - Accept&#233;es</field>
+        <field name="res_model">ar.demande.de.recrutement</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('state','=','accepte')]</field>
+    </record>
+
+    <record id="action_ar_demande_recrutement_refuse" model="ir.actions.act_window">
+        <field name="name">Archives - Refus&#233;es</field>
+        <field name="res_model">ar.demande.de.recrutement</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('state','=','refuse')]</field>
+    </record>
+
+    <record id="action_ar_demande_recrutement_rupture" model="ir.actions.act_window">
+        <field name="name">Archives - Rupture</field>
+        <field name="res_model">ar.demande.de.recrutement</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('state','=','rupture'),('is_rupture_archived','=',True)]</field>
+    </record>
+
+    <record id="action_ar_demande_recrutement_archive_stage" model="ir.actions.act_window">
+        <field name="name">Archive de stage</field>
+        <field name="res_model">ar.demande.de.recrutement</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('demande_type','=','demande_stagiaire'),('state','=','archive_stage')]</field>
+    </record>
+
+    <!-- ===================================================== -->
+    <!-- ACTIONS TRAITEMENT -->
+    <!-- ===================================================== -->
+    <record id="action_ar_recrutement_parcours_integration" model="ir.actions.act_window">
+        <field name="name">Parcours d'int&#233;gration</field>
+        <field name="res_model">ar.demande.de.recrutement</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('state','=','parcours_integration')]</field>
+    </record>
+
+    <record id="action_ar_recrutement_periode_essai" model="ir.actions.act_window">
+        <field name="name">P&#233;riode d'essai</field>
+        <field name="res_model">ar.demande.de.recrutement</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('state','in',('periode_essai_n1','periode_essai_rh'))]</field>
+    </record>
+
+    <record id="action_ar_demande_recrutement_en_cours_stage" model="ir.actions.act_window">
+        <field name="name">En cours de Stage</field>
+        <field name="res_model">ar.demande.de.recrutement</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('demande_type','=','demande_stagiaire'),('state','=','en_cours_stage')]</field>
+    </record>
+
+    <record id="action_ar_recrutement_rupture_traitement" model="ir.actions.act_window">
+        <field name="name">Rupture</field>
+        <field name="res_model">ar.demande.de.recrutement</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('state','=','rupture'),('is_rupture_archived','=',False)]</field>
+    </record>
+
+    <!-- ===================================================== -->
+    <!-- MENUS -->
+    <!-- ===================================================== -->
+    <menuitem id="menu_ar_recrutement_root"
+              name="AR Demande de Recrutement"
+              sequence="10"/>
+
+    <!-- Menu principal -->
+    <menuitem id="menu_ar_recrutement_demande"
+              name="Demandes"
+              parent="menu_ar_recrutement_root"
+              action="action_ar_demande_recrutement"
+              sequence="10"/>
+
+    <menuitem id="menu_ar_recrutement_creation_poste"
+              name="Cr&#233;ation poste"
+              parent="menu_ar_recrutement_demande"
+              action="action_ar_demande_recrutement_creation_poste"
+              sequence="11"/>
+
+    <menuitem id="menu_ar_recrutement_remplacement"
+              name="Remplacement"
+              parent="menu_ar_recrutement_demande"
+              action="action_ar_demande_recrutement_remplacement"
+              sequence="12"/>
+
+    <menuitem id="menu_ar_recrutement_demande_stagiaire"
+              name="Demande de stagiaire"
+              parent="menu_ar_recrutement_demande"
+              action="action_ar_demande_recrutement_demande_stagiaire"
+              sequence="15"/>
+
+    <menuitem id="menu_ar_recrutement_renouvellement"
+              name="Renouvellement de contrat"
+              parent="menu_ar_recrutement_demande"
+              action="action_ar_demande_recrutement_renouvellement"
+              sequence="13"/>
+
+    <menuitem id="menu_ar_recrutement_changement_contrat"
+              name="Changement de type de contrat"
+              parent="menu_ar_recrutement_demande"
+              action="action_ar_demande_recrutement_changement_contrat"
+              sequence="14"/>
+
+    <!-- ========================== -->
+    <!-- MENU TRAITEMENT -->
+    <!-- ========================== -->
+    <menuitem id="menu_ar_recrutement_traitement"
+              name="En Cours De Traitement"
+              parent="menu_ar_recrutement_root"
+              sequence="15"/>
+
+    <menuitem id="menu_ar_recrutement_parcours_integration"
+              name="Parcours d'int&#233;gration"
+              parent="menu_ar_recrutement_traitement"
+              action="action_ar_recrutement_parcours_integration"
+              sequence="10"/>
+
+    <menuitem id="menu_ar_recrutement_periode_essai"
+              name="P&#233;riode d'essai"
+              parent="menu_ar_recrutement_traitement"
+              action="action_ar_recrutement_periode_essai"
+              sequence="20"/>
+
+    <menuitem id="menu_ar_demande_recrutement_en_cours_stage"
+              name="En cours de Stage"
+              parent="menu_ar_recrutement_traitement"
+              action="action_ar_demande_recrutement_en_cours_stage"
+              sequence="30"/>
+
+    <menuitem id="menu_ar_recrutement_rupture_traitement"
+              name="Rupture"
+              parent="menu_ar_recrutement_traitement"
+              action="action_ar_recrutement_rupture_traitement"
+              sequence="40"/>
+
+    <!-- ========================== -->
+    <!-- MENU ARCHIVES -->
+    <!-- ========================== -->
+    <menuitem id="menu_ar_recrutement_archive"
+              name="Traiter"
+              parent="menu_ar_recrutement_root"
+              sequence="20"/>
+
+    <menuitem id="menu_ar_recrutement_archive_accepte"
+              name="Accept&#233;es"
+              parent="menu_ar_recrutement_archive"
+              action="action_ar_demande_recrutement_accepte"
+              sequence="10"/>
+
+    <menuitem id="menu_ar_recrutement_archive_refuse"
+              name="Refus&#233;es"
+              parent="menu_ar_recrutement_archive"
+              action="action_ar_demande_recrutement_refuse"
+              sequence="20"/>
+
+    <menuitem id="menu_ar_demande_recrutement_archive_stage"
+              name="Archive de stage"
+              parent="menu_ar_recrutement_archive"
+              action="action_ar_demande_recrutement_archive_stage"
+              sequence="30"/>
+
+    <menuitem id="menu_ar_recrutement_archive_rupture"
+              name="Rupture"
+              parent="menu_ar_recrutement_archive"
+              action="action_ar_demande_recrutement_rupture"
+              sequence="40"/>
+</odoo>

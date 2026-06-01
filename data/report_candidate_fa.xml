@@ -1,0 +1,761 @@
+<odoo>
+
+    <record id="paperformat_candidate_appreciation" model="report.paperformat">
+        <field name="name">ARaymond - Appreciation Reports</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">42</field>
+        <field name="margin_bottom">24</field>
+        <field name="margin_left">12</field>
+        <field name="margin_right">12</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">8</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <!-- ===================================================== -->
+    <!-- ACTION REPORT FA -->
+    <!-- ===================================================== -->
+    <record id="action_report_candidate_fa" model="ir.actions.report">
+        <field name="name">Fiche d'appréciation Technique</field>
+        <field name="model">ar.demande.recrutement.candidate</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ar_recrutement.report_candidate_fa_template</field>
+        <field name="report_file">ar_recrutement.report_candidate_fa_template</field>
+        <field name="paperformat_id" ref="ar_recrutement.paperformat_candidate_appreciation"/>
+        <field name="print_report_name">'FA - %s' % (object.candidate_name or 'Candidat')</field>
+    </record>
+
+    <!-- ===================================================== -->
+    <!-- ACTION REPORT FA RH -->
+    <!-- ===================================================== -->
+    <record id="action_report_candidate_rhfa" model="ir.actions.report">
+        <field name="name">Fiche d'appréciation RH</field>
+        <field name="model">ar.demande.recrutement.candidate</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ar_recrutement.report_candidate_rhfa_template</field>
+        <field name="report_file">ar_recrutement.report_candidate_rhfa_template</field>
+        <field name="paperformat_id" ref="ar_recrutement.paperformat_candidate_appreciation"/>
+        <field name="print_report_name">'FA RH - %s' % (object.candidate_name or 'Candidat')</field>
+    </record>
+
+    <!-- ===================================================== -->
+    <!-- ACTION REPORT EPE -->
+    <!-- ===================================================== -->
+    <record id="action_report_candidate_epe" model="ir.actions.report">
+    <field name="name">Evaluation de la péridode d'essai</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">ar_recrutement.report_candidate_epe_template</field>
+    <field name="report_file">ar_recrutement.report_candidate_epe_template</field>
+    <field name="paperformat_id" ref="ar_recrutement.paperformat_candidate_appreciation"/>
+    <field name="print_report_name">'EPE - %s' % (object.candidate_name or 'Candidat')</field>
+</record>
+
+    <!-- ===================================================== -->
+    <!-- ACTION REPORT Intégration -->
+    <!-- ===================================================== -->
+<record id="action_report_candidate_integration" model="ir.actions.report">
+    <field name="name">Formulaire d'intégration</field>
+    <field name="model">ar.demande.recrutement.integration</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">ar_recrutement.report_candidate_integration_template</field>
+    <field name="report_file">ar_recrutement.report_candidate_integration_template</field>
+    <field name="print_report_name">'Integration - %s' % (object.candidate_name or 'Candidat')</field>
+</record>
+
+    <!-- ===================================================== -->
+    <!-- TEMPLATE FA -->
+    <!-- ===================================================== -->
+    <template id="report_candidate_fa_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="ar_recrutement.report_araymond_external_layout">
+                    <div class="page">
+
+                        <style>
+                            .fa-title {
+                                text-align: center;
+                                font-size: 22px;
+                                font-weight: bold;
+                                margin-bottom: 18px;
+                                border-bottom: 2px solid #444;
+                                padding-bottom: 8px;
+                            }
+                            .fa-subtitle {
+                                font-size: 15px;
+                                font-weight: bold;
+                                background: #e9ecef;
+                                padding: 8px 10px;
+                                margin-top: 18px;
+                                margin-bottom: 0;
+                                border: 1px solid #cfd4da;
+                            }
+                            .fa-table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin-bottom: 14px;
+                            }
+                            .fa-table td {
+                                border: 1px solid #cfd4da;
+                                padding: 8px;
+                                vertical-align: top;
+                                font-size: 12px;
+                            }
+                            .fa-label {
+                                width: 42%;
+                                font-weight: bold;
+                                background: #f8f9fa;
+                            }
+                            .fa-value {
+                                width: 58%;
+                            }
+                            .fa-block {
+                                margin-bottom: 8px;
+                            }
+                        </style>
+
+                        <div class="fa-title">FICHE D'APPRECIATION TECHNIQUE</div>
+
+                        <h3 class="fa-subtitle">Informations générales</h3>
+                        <table class="fa-table">
+                            <tr>
+                                <td class="fa-label">Candidat</td>
+                                <td class="fa-value">
+                                    <span t-esc="o.candidate_name or ''"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Entretien réalisé par</td>
+                                <td class="fa-value">
+                                    <span t-esc="o.fa_interview_realisee_par.name or ''"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Date d’entretien</td>
+                                <td class="fa-value">
+                                    <span t-esc="o.fa_date_entretien or ''"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Présentation générale</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['fa_presentation_generale'].selection).get(o.fa_presentation_generale, '')"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <h3 class="fa-subtitle">SAVOIR</h3>
+                        <table class="fa-table">
+                            <tr>
+                                <td class="fa-label">Formation initiale</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['fa_formation_initiale'].selection).get(o.fa_formation_initiale, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Formation complémentaire</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['fa_formation_complementaire_eval'].selection).get(o.fa_formation_complementaire_eval, '')"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <h3 class="fa-subtitle">SAVOIR-FAIRE</h3>
+                        <table class="fa-table">
+                            <tr>
+                                <td class="fa-label">Expériences professionnelles / Compétences métiers</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['fa_experiences_professionnelles'].selection).get(o.fa_experiences_professionnelles, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Communication orale</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['fa_communication_orale'].selection).get(o.fa_communication_orale, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Ecoute</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['fa_ecoute'].selection).get(o.fa_ecoute, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Capacité de négociation et persuasion</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['fa_negociation_persuasion'].selection).get(o.fa_negociation_persuasion, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Esprit d’équipe / Esprit de leadership</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['fa_esprit_equipe_leadership'].selection).get(o.fa_esprit_equipe_leadership, '')"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <h3 class="fa-subtitle">SAVOIR-ETRE</h3>
+                        <table class="fa-table">
+                            <tr>
+                                <td class="fa-label">Autonomie</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['fa_autonomie'].selection).get(o.fa_autonomie, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Dynamisme</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['fa_dynamisme'].selection).get(o.fa_dynamisme, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Réactivité</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['fa_reactivite'].selection).get(o.fa_reactivite, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Engagement</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['fa_engagement'].selection).get(o.fa_engagement, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Rigueur</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['fa_rigueur'].selection).get(o.fa_rigueur, '')"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <h3 class="fa-subtitle">Situation professionnelle actuelle</h3>
+                        <table class="fa-table">
+                            <tr>
+                                <td class="fa-label">Actuellement en poste</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['fa_actuellement_en_poste'].selection).get(o.fa_actuellement_en_poste, '')"/>
+                                </td>
+                            </tr>
+
+                            <t t-if="o.fa_actuellement_en_poste == 'oui'">
+                                <tr>
+                                    <td class="fa-label">Fonction actuelle</td>
+                                    <td class="fa-value">
+                                        <span t-esc="o.fa_fonction_actuelle or ''"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fa-label">Entreprise actuelle</td>
+                                    <td class="fa-value">
+                                        <span t-esc="o.fa_entreprise_actuelle or ''"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fa-label">Salaire actuel</td>
+                                    <td class="fa-value">
+                                        <span t-esc="o.fa_salaire_actuel or ''"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fa-label">Préavis</td>
+                                    <td class="fa-value">
+                                        <span t-esc="o.fa_preavis or ''"/>
+                                    </td>
+                                </tr>
+                            </t>
+                        </table>
+
+                        <h3 class="fa-subtitle">Conclusion</h3>
+<table class="fa-table">
+    <tr>
+        <td class="fa-label">Prétentions salariales</td>
+        <td class="fa-value">
+            <span t-esc="o.fa_pretentions_salariales_num or ''"/>
+        </td>
+    </tr>
+    <tr>
+        <td class="fa-label">Appréciations et motivations générales</td>
+        <td class="fa-value">
+            <span t-esc="o.fa_appreciations_generales or ''"/>
+        </td>
+    </tr>
+    <tr>
+    <td class="fa-label">Note globale</td>
+    <td class="fa-value">
+        <span t-esc="'%.2f' % (o.fa_note_globale or 0.0)"/>
+    </td>
+</tr>
+</table>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ===================================================== -->
+    <!-- TEMPLATE FA RH -->
+    <!-- ===================================================== -->
+    <template id="report_candidate_rhfa_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="ar_recrutement.report_araymond_external_layout">
+                    <div class="page">
+
+                        <style>
+                            .fa-title {
+                                text-align: center;
+                                font-size: 22px;
+                                font-weight: bold;
+                                margin-bottom: 18px;
+                                border-bottom: 2px solid #444;
+                                padding-bottom: 8px;
+                            }
+                            .fa-subtitle {
+                                font-size: 15px;
+                                font-weight: bold;
+                                background: #e9ecef;
+                                padding: 8px 10px;
+                                margin-top: 18px;
+                                margin-bottom: 0;
+                                border: 1px solid #cfd4da;
+                            }
+                            .fa-table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin-bottom: 14px;
+                            }
+                            .fa-table td {
+                                border: 1px solid #cfd4da;
+                                padding: 8px;
+                                vertical-align: top;
+                                font-size: 12px;
+                            }
+                            .fa-label {
+                                width: 42%;
+                                font-weight: bold;
+                                background: #f8f9fa;
+                            }
+                            .fa-value {
+                                width: 58%;
+                            }
+                        </style>
+
+                        <div class="fa-title">FICHE D'APPRECIATION RH</div>
+
+                        <h3 class="fa-subtitle">Informations générales</h3>
+                        <table class="fa-table">
+                            <tr>
+                                <td class="fa-label">Candidat</td>
+                                <td class="fa-value">
+                                    <span t-esc="o.candidate_name or ''"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Entretien réalisé par</td>
+                                <td class="fa-value">
+                                    <span t-esc="o.rhfa_interview_realisee_par.name or ''"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Date d’entretien</td>
+                                <td class="fa-value">
+                                    <span t-esc="o.rhfa_date_entretien or ''"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Présentation générale</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['rhfa_presentation_generale'].selection).get(o.rhfa_presentation_generale, '')"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <h3 class="fa-subtitle">SAVOIR</h3>
+                        <table class="fa-table">
+                            <tr>
+                                <td class="fa-label">Formation initiale</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['rhfa_formation_initiale'].selection).get(o.rhfa_formation_initiale, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Formation complémentaire</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['rhfa_formation_complementaire_eval'].selection).get(o.rhfa_formation_complementaire_eval, '')"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <h3 class="fa-subtitle">SAVOIR-FAIRE</h3>
+                        <table class="fa-table">
+                            <tr>
+                                <td class="fa-label">Expériences professionnelles / Compétences métiers</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['rhfa_experiences_professionnelles'].selection).get(o.rhfa_experiences_professionnelles, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Communication orale</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['rhfa_communication_orale'].selection).get(o.rhfa_communication_orale, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Ecoute</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['rhfa_ecoute'].selection).get(o.rhfa_ecoute, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Capacité de négociation et persuasion</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['rhfa_negociation_persuasion'].selection).get(o.rhfa_negociation_persuasion, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Esprit d’équipe / Esprit de leadership</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['rhfa_esprit_equipe_leadership'].selection).get(o.rhfa_esprit_equipe_leadership, '')"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <h3 class="fa-subtitle">SAVOIR-ETRE</h3>
+                        <table class="fa-table">
+                            <tr>
+                                <td class="fa-label">Autonomie</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['rhfa_autonomie'].selection).get(o.rhfa_autonomie, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Dynamisme</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['rhfa_dynamisme'].selection).get(o.rhfa_dynamisme, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Réactivité</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['rhfa_reactivite'].selection).get(o.rhfa_reactivite, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Engagement</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['rhfa_engagement'].selection).get(o.rhfa_engagement, '')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fa-label">Rigueur</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['rhfa_rigueur'].selection).get(o.rhfa_rigueur, '')"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <h3 class="fa-subtitle">Situation professionnelle actuelle</h3>
+                        <table class="fa-table">
+                            <tr>
+                                <td class="fa-label">Actuellement en poste</td>
+                                <td class="fa-value">
+                                    <span t-esc="dict(o._fields['rhfa_actuellement_en_poste'].selection).get(o.rhfa_actuellement_en_poste, '')"/>
+                                </td>
+                            </tr>
+
+                            <t t-if="o.rhfa_actuellement_en_poste == 'oui'">
+                                <tr>
+                                    <td class="fa-label">Fonction actuelle</td>
+                                    <td class="fa-value">
+                                        <span t-esc="o.rhfa_fonction_actuelle or ''"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fa-label">Entreprise actuelle</td>
+                                    <td class="fa-value">
+                                        <span t-esc="o.rhfa_entreprise_actuelle or ''"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fa-label">Salaire actuel</td>
+                                    <td class="fa-value">
+                                        <span t-esc="o.rhfa_salaire_actuel or ''"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fa-label">Préavis</td>
+                                    <td class="fa-value">
+                                        <span t-esc="o.rhfa_preavis or ''"/>
+                                    </td>
+                                </tr>
+                            </t>
+                        </table>
+
+                        <h3 class="fa-subtitle">Conclusion</h3>
+<table class="fa-table">
+    <tr>
+        <td class="fa-label">Prétentions salariales</td>
+        <td class="fa-value">
+            <span t-esc="o.rhfa_pretentions_salariales_num or ''"/>
+        </td>
+    </tr>
+    <tr>
+        <td class="fa-label">Appréciations et motivations générales</td>
+        <td class="fa-value">
+            <span t-esc="o.rhfa_appreciations_generales or ''"/>
+        </td>
+    </tr>
+    <tr>
+    <td class="fa-label">Note globale</td>
+    <td class="fa-value">
+        <span t-esc="'%.2f' % (o.rhfa_note_globale or 0.0)"/>
+    </td>
+</tr>
+</table>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+
+    <template id="report_candidate_epe_template">
+    <t t-call="web.html_container">
+        <t t-foreach="docs" t-as="o">
+            <t t-call="ar_recrutement.report_araymond_external_layout">
+                <div class="page">
+
+                    <style>
+                        .fa-title {
+                            text-align: center;
+                            font-size: 22px;
+                            font-weight: bold;
+                            margin-bottom: 18px;
+                            border-bottom: 2px solid #444;
+                            padding-bottom: 8px;
+                        }
+                        .fa-subtitle {
+                            font-size: 15px;
+                            font-weight: bold;
+                            background: #e9ecef;
+                            padding: 8px 10px;
+                            margin-top: 18px;
+                            margin-bottom: 0;
+                            border: 1px solid #cfd4da;
+                        }
+                        .fa-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 14px;
+                        }
+                        .fa-table td, .fa-table th {
+                            border: 1px solid #cfd4da;
+                            padding: 8px;
+                            vertical-align: top;
+                            font-size: 12px;
+                        }
+                        .fa-label {
+                            width: 35%;
+                            font-weight: bold;
+                            background: #f8f9fa;
+                        }
+                        .fa-value {
+                            width: 65%;
+                        }
+                    </style>
+
+                    <div class="fa-title">EVALUATION DE LA PERIODE D'ESSAI</div>
+
+                    <h3 class="fa-subtitle">Identification du salarié</h3>
+                    <table class="fa-table">
+                        <tr>
+                            <td class="fa-label">Nom &amp; Prénom</td>
+                            <td class="fa-value"><span t-esc="o.epe_nom_prenom or ''"/></td>
+                        </tr>
+                        <tr>
+                            <td class="fa-label">Poste</td>
+                            <td class="fa-value"><span t-esc="o.epe_poste or ''"/></td>
+                        </tr>
+                        <tr>
+                            <td class="fa-label">Date d'entrée en fonction</td>
+                            <td class="fa-value"><span t-esc="o.epe_date_entree_fonction or ''"/></td>
+                        </tr>
+                        <tr>
+                            <td class="fa-label">Affectation</td>
+                            <td class="fa-value"><span t-esc="o.epe_affectation_id.name or ''"/></td>
+                        </tr>
+                        <tr>
+                            <td class="fa-label">Evaluateur</td>
+                            <td class="fa-value"><span t-esc="o.epe_evaluateur_id.name or ''"/></td>
+                        </tr>
+                        <tr>
+                            <td class="fa-label">Date d'évaluation</td>
+                            <td class="fa-value"><span t-esc="o.epe_date_evaluation or ''"/></td>
+                        </tr>
+                    </table>
+
+                    <h3 class="fa-subtitle">Points Forts / Points à améliorer</h3>
+                    <table class="fa-table">
+                        <tr>
+                            <th>Points Forts</th>
+                            <th>Points à améliorer</th>
+                        </tr>
+                        <tr>
+                            <td><span t-esc="o.epe_points_forts or ''"/></td>
+                            <td><span t-esc="o.epe_points_ameliorer or ''"/></td>
+                        </tr>
+                    </table>
+
+                    <h3 class="fa-subtitle">Principales missions et réalisations accomplies durant la période de probation</h3>
+                    <table class="fa-table">
+                        <tr>
+                            <td><span t-esc="o.epe_missions_realisation or ''"/></td>
+                        </tr>
+                    </table>
+
+                    <h3 class="fa-subtitle">Critère d'Appréciation</h3>
+                    <table class="fa-table">
+                        <tr>
+                            <th>Atteinte des résultats/objectifs</th>
+                            <th>Potentiel pour le développement</th>
+                            <th>Maitrise technique</th>
+                            <th>Capacité d'adaptation</th>
+                            <th>Engagement et dynamisme</th>
+                            <th>Autonomie et prise d'initiative</th>
+                            <th>Commentaire</th>
+                        </tr>
+                        <tr>
+                            <td><span t-esc="dict(o._fields['epe_atteinte_resultats'].selection).get(o.epe_atteinte_resultats, '')"/></td>
+                            <td><span t-esc="dict(o._fields['epe_potentiel_developpement'].selection).get(o.epe_potentiel_developpement, '')"/></td>
+                            <td><span t-esc="dict(o._fields['epe_maitrise_technique'].selection).get(o.epe_maitrise_technique, '')"/></td>
+                            <td><span t-esc="dict(o._fields['epe_capacite_adaptation'].selection).get(o.epe_capacite_adaptation, '')"/></td>
+                            <td><span t-esc="dict(o._fields['epe_engagement_dynamisme'].selection).get(o.epe_engagement_dynamisme, '')"/></td>
+                            <td><span t-esc="dict(o._fields['epe_autonomie_initiative'].selection).get(o.epe_autonomie_initiative, '')"/></td>
+                            <td><span t-esc="o.epe_commentaire or ''"/></td>
+                        </tr>
+                    </table>
+
+                    <h3 class="fa-subtitle">Autres Remarques</h3>
+                    <table class="fa-table">
+                        <tr>
+                            <td><span t-esc="o.epe_autres_remarques or ''"/></td>
+                        </tr>
+                    </table>
+
+                </div>
+            </t>
+        </t>
+    </t>
+</template>
+
+<template id="report_candidate_integration_template">
+    <t t-call="web.html_container">
+        <t t-foreach="docs" t-as="o">
+            <t t-call="ar_recrutement.report_araymond_external_layout">
+                <div class="page">
+
+                    <style>
+                        .int-title {
+                            text-align: center;
+                            font-size: 22px;
+                            font-weight: bold;
+                            margin-bottom: 18px;
+                            border-bottom: 2px solid #444;
+                            padding-bottom: 8px;
+                        }
+                        .int-subtitle {
+                            font-size: 15px;
+                            font-weight: bold;
+                            background: #e9ecef;
+                            padding: 8px 10px;
+                            margin-top: 18px;
+                            margin-bottom: 0;
+                            border: 1px solid #cfd4da;
+                        }
+                        .int-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 14px;
+                        }
+                        .int-table td, .int-table th {
+                            border: 1px solid #cfd4da;
+                            padding: 8px;
+                            vertical-align: top;
+                            font-size: 12px;
+                        }
+                        .int-label {
+                            width: 35%;
+                            font-weight: bold;
+                            background: #f8f9fa;
+                        }
+                        .int-value {
+                            width: 65%;
+                        }
+                        .text-center {
+                            text-align: center;
+                        }
+                    </style>
+
+                    <div class="int-title">FORMULAIRE D'INTEGRATION</div>
+
+                    <h3 class="int-subtitle">Informations générales</h3>
+                    <table class="int-table">
+                        <tr>
+                            <td class="int-label">Nom des candidats</td>
+                            <td class="int-value">
+                                <span t-esc="o.candidate_name or ''"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="int-label">Département</td>
+                            <td class="int-value">
+                                <span t-esc="o.integration_department_id.name or ''"/>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <h3 class="int-subtitle">Partie I</h3>
+                    <table class="int-table">
+                        <thead>
+                            <tr>
+                                <th>Département ou Service accueillant</th>
+                                <th>Rubrique / Étape</th>
+                                <th>Tuteur</th>
+                                <th>Dates</th>
+                                <th>Commentaire</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="o.integration_line_ids" t-as="line">
+                                <tr>
+                                    <td>
+                                        <span t-esc="dict(line._fields['service_accueillant'].selection).get(line.service_accueillant, '')"/>
+                                    </td>
+                                    <td>
+                                        <span t-esc="line.rubrique or ''"/>
+                                    </td>
+                                    <td>
+                                        <span t-esc="line.tuteur_id.name or ''"/>
+                                    </td>
+                                    <td>
+                                        <span t-esc="line.date_integration or ''"/>
+                                    </td>
+                                    <td>
+                                        <span t-esc="line.commentaire or ''"/>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+
+                </div>
+            </t>
+        </t>
+    </t>
+</template>
+
+</odoo>
