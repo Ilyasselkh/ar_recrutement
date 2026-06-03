@@ -929,6 +929,20 @@ class ARDemandeDeRecrutement(models.Model):
             )
             return
 
+    def _post_workflow_trace(self, old_state, old_step, new_state, new_step):
+        self.ensure_one()
+        state_labels = dict(self._fields["state"].selection)
+        step_labels = dict(self._fields["step"].selection)
+        self.message_post(
+            body=_("Changement d'etape effectue par %s : %s / %s -> %s / %s.") % (
+                self.env.user.name,
+                state_labels.get(old_state, old_state),
+                step_labels.get(old_step, old_step),
+                state_labels.get(new_state, new_state),
+                step_labels.get(new_step, new_step),
+            )
+        )
+
     # Type de demande
     demande_type = fields.Selection([
         ("creation_poste", "Création poste"),
@@ -1232,6 +1246,7 @@ class ARDemandeDeRecrutement(models.Model):
                 old_state, old_step = old.get(rec.id, (False, False))
                 new_state, new_step = rec.state, rec.step
                 if (old_state, old_step) != (new_state, new_step):
+                    rec._post_workflow_trace(old_state, old_step, new_state, new_step)
                     rec._send_on_state_step_change(old_state, old_step, new_state, new_step)
 
         return res
