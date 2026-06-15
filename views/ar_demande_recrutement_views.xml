@@ -1612,13 +1612,13 @@
     <field name="name">ar.demande.recrutement.candidate.popup.dossier</field>
     <field name="model">ar.demande.recrutement.candidate</field>
     <field name="arch" type="xml">
-        <form string="Dossier du Candidat" class="ar_recrutement_modern ar_recrutement_popup">
+        <form string="Dossier du Candidat" class="ar_recrutement_modern ar_recrutement_popup ar_dossier_popup ar_dossier_candidate_popup">
             <sheet>
                 <field name="parent_state" invisible="1"/>
                 <group>
                     <field name="candidate_name" readonly="1"/>
                 </group>
-                <field name="candidate_dossier_line_ids" nolabel="1">
+                <field name="candidate_dossier_line_ids" class="ar_dossier_table" nolabel="1">
                     <list editable="bottom" readonly="parent.parent_state != 'dossier_candidat'">
                         <field name="document_type" string="Document" readonly="1"/>
                         <field name="document_file" string="Fichier" filename="document_filename" readonly="parent.parent_state != 'dossier_candidat'" required="document_type == 'photos'"/>
@@ -1843,10 +1843,10 @@
     <field name="name">ar.demande.de.recrutement.popup.dossier.candidat</field>
     <field name="model">ar.demande.de.recrutement</field>
     <field name="arch" type="xml">
-        <form string="Dossier du Candidat" class="ar_recrutement_modern ar_recrutement_popup">
+        <form string="Dossier du Candidat" class="ar_recrutement_modern ar_recrutement_popup ar_dossier_popup ar_dossier_request_popup">
             <sheet>
                 <field name="state" invisible="1"/>
-                <field name="dossier_candidat_line_ids" nolabel="1" colspan="2">
+                <field name="dossier_candidat_line_ids" class="ar_dossier_table" nolabel="1" colspan="2">
                     <list editable="bottom" readonly="parent.state != 'dossier_candidat'">
                         <field name="candidate_name" string="Candidat" readonly="1"/>
                         <field name="document_type" string="Document" readonly="1"/>
