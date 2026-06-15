@@ -219,33 +219,12 @@ function animateForm(form) {
         sheet.classList.add("ar_sc_ready");
     }
 
-    installHeroScene(form);
+    form.querySelectorAll(".ar_sc_3d_stage").forEach((element) => element.remove());
 
-    form.querySelectorAll(".ar_sortie_caisse_title, .ar_sortie_caisse_panel").forEach((element) => {
+    form.querySelectorAll(".ar_sortie_caisse_panel").forEach((element) => {
         element.classList.add("ar_sc_reveal");
     });
 
-    const statusBox = form.querySelector(".ar_sortie_caisse_amount");
-    if (!statusBox) {
-        return;
-    }
-
-    let lastValue = statusBox.textContent.trim();
-    const observer = new MutationObserver(() => {
-        const value = statusBox.textContent.trim();
-        if (value === lastValue) {
-            return;
-        }
-        lastValue = value;
-        statusBox.classList.remove("ar_sc_amount_flash");
-        window.requestAnimationFrame(() => statusBox.classList.add("ar_sc_amount_flash"));
-    });
-
-    observer.observe(statusBox, {
-        childList: true,
-        subtree: true,
-        characterData: true,
-    });
 }
 
 function scan() {

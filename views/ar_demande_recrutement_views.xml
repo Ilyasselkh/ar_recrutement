@@ -73,7 +73,9 @@
       <form string="Demande de Recrutement" class="ar_recrutement_modern">
         <header>
             <!-- Statusbar  -->
-<field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,offre_candidat,offre_en_cours,date_embauche,en_cours_stage,matricule_a_renseigner,dossier_candidat,visite_medicale,envoie_annonce,parcours_integration,feedback_rh,feedback_md,periode_essai_n1,periode_essai_rh,direction_generale,deliberation_finale,accepte,refuse,rupture,archive_stage"/>          
+<field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,offre_candidat,offre_en_cours,date_embauche,en_cours_stage,matricule_a_renseigner,dossier_candidat,visite_medicale,envoie_annonce,parcours_integration,feedback_rh,feedback_md,periode_essai_n1,periode_essai_rh,direction_generale,deliberation_finale,accepte,refuse,rupture,archive_stage" invisible="demande_type == 'demande_stagiaire'"/>
+<field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,offre_candidat,offre_en_cours,date_embauche,en_cours_stage,refuse,rupture,archive_stage" invisible="demande_type != 'demande_stagiaire' or stagiaire_duree_mois &lt;= 3"/>
+<field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,offre_candidat,offre_en_cours,date_embauche,en_cours_stage,refuse,rupture,archive_stage" invisible="demande_type != 'demande_stagiaire' or stagiaire_duree_mois &gt; 3"/>
         </header>
 
         <header>
@@ -137,7 +139,7 @@
     invisible="state not in ('rh', 'annonce', 'cv_tech', 'entretien', 'validation_rh', 'deliberation', 'offre_candidat', 'date_embauche', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'periode_essai_rh')"/>
 <button name="action_send_announcement_mail" type="object" string="Envoie d'announcement" class="btn-primary"
     groups="ar_recrutement.group_ar_recrutement_rh"
-    invisible="state != 'envoie_annonce'"/>
+    invisible="1"/>
 <button name="action_open_offer_accept_wizard" type="object" string="Accepter" class="btn-success"
     groups="ar_recrutement.group_ar_recrutement_rh"
     invisible="state != 'offre_en_cours'"/>
@@ -220,32 +222,34 @@
           </group>
 
 <group string="Demande de stagiaire"
-       class="ar_sortie_caisse_panel ar_recrutement_compact_panel"
+       class="ar_sortie_caisse_panel ar_recrutement_compact_panel ar_stagiaire_request_panel"
        invisible="demande_type != 'demande_stagiaire'">
-    <field name="objet_recrutement"
-           required="1"
-           readonly="state != 'demandeur'"/>
+    <group class="ar_stagiaire_field_grid">
+        <field name="objet_recrutement"
+               required="1"
+               readonly="state != 'demandeur'"/>
 
-    <field name="stagiaire_nombre"
-           required="1"
-           readonly="state != 'demandeur'"/>
+        <field name="stagiaire_sujet"
+               readonly="state != 'demandeur'" required="demande_type == 'demande_stagiaire'"/>
 
-    <field name="stagiaire_duree_mois"
-           required="1"
-           readonly="state != 'demandeur'"/>
+        <field name="stagiaire_nombre"
+               required="1"
+               readonly="state != 'demandeur'"/>
 
-    <field name="stagiaire_sujet"
-           readonly="state != 'demandeur'" required="demande_type == 'demande_stagiaire'"/>
+        <field name="stagiaire_duree_mois"
+               required="1"
+               readonly="state != 'demandeur'"/>
 
-    <field name="stagiaire_remuneration"
-           readonly="state != 'demandeur'" required="demande_type == 'demande_stagiaire'"/>
+        <field name="stagiaire_remuneration"
+               readonly="state != 'demandeur'" required="demande_type == 'demande_stagiaire'"/>
 
-    <field name="formation_base"
-           required="1"
-           readonly="state != 'demandeur'"/>
+        <field name="formation_base"
+               required="1"
+               readonly="state != 'demandeur'"/>
 
-    <field name="formation_base_autre"
-           invisible="formation_base != 'autre'" required="formation_base == 'autre'" readonly="state != 'demandeur'"/>
+        <field name="formation_base_autre"
+               invisible="formation_base != 'autre'" required="formation_base == 'autre'" readonly="state != 'demandeur'"/>
+    </group>
 </group>
 
           
@@ -320,6 +324,9 @@
             <field name="experience_annees"
                    readonly="state != 'demandeur'"/>
 
+            <field name="nombre_personnes"
+                   readonly="state != 'demandeur'"/>
+
             <field name="qualites_personnelles"
        readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
 
@@ -348,10 +355,90 @@
     </field>
 </group>
 
+<group string="Suivi du recrutement"
+       class="ar_sortie_caisse_panel ar_sortie_caisse_lines ar_candidate_step_table"
+       invisible="state not in ('cv_tech', 'selection_candidats', 'entretien', 'candidat_retenu', 'validation_rh', 'deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'archive_stage', 'accepte', 'refuse')">
+    <field name="candidate_ids" nolabel="1" colspan="2">
+        <list editable="bottom" decoration-muted="is_refused_line">
+            <field name="is_refused_line" invisible="1" column_invisible="1"/>
+            <field name="candidate_name"
+                   string="Candidat"
+                   readonly="parent.step != 'rh_collect_candidates'"
+                   required="parent.step == 'rh_collect_candidates'"/>
+            <field name="cv_file"
+                   string="CV"
+                   filename="cv_filename"
+                   readonly="parent.step != 'rh_collect_candidates'"
+                   required="parent.step == 'rh_collect_candidates'"/>
+            <field name="cv_filename" invisible="1" column_invisible="1"/>
+            <button name="action_open_candidate_entretien_popup"
+                    type="object"
+                    string="Entretien"
+                    class="btn-primary"/>
+            <button name="action_open_candidate_deliberation_offre_popup"
+                    type="object"
+                    string="Offre"
+                    class="btn-primary"
+                    groups="ar_recrutement.group_ar_recrutement_rh"/>
+            <button name="action_open_candidate_date_matricule_popup"
+                    type="object"
+                    string="Date &amp; Matricule"
+                    class="btn-primary"
+                    invisible="parent.demande_type == 'demande_stagiaire'"/>
+            <button name="action_open_candidate_date_matricule_popup"
+                    type="object"
+                    string="Date d'embauche"
+                    class="btn-primary"
+                    invisible="parent.demande_type != 'demande_stagiaire'"/>
+            <button name="action_open_candidate_stagiaire_documents_popup"
+                    type="object"
+                    string="Documents"
+                    class="btn-primary"
+                    invisible="parent.demande_type != 'demande_stagiaire' or parent.state not in ('date_embauche', 'en_cours_stage', 'archive_stage')"/>
+            <button name="action_open_candidate_dossier_popup"
+                    type="object"
+                    string="Dossier candidat"
+                    class="btn-primary"
+                    groups="ar_recrutement.group_ar_recrutement_rh"
+                    invisible="parent.demande_type == 'demande_stagiaire'"/>
+            <button name="action_open_candidate_visite_medicale_popup"
+                    type="object"
+                    string="Visite m&#233;dicale"
+                    class="btn-primary"
+                    groups="ar_recrutement.group_ar_recrutement_rh"
+                    invisible="parent.demande_type == 'demande_stagiaire'"/>
+            <button name="action_open_candidate_announcement_popup"
+                    type="object"
+                    string="Announcement"
+                    class="btn-primary"
+                    groups="ar_recrutement.group_ar_recrutement_rh"
+                    invisible="parent.demande_type == 'demande_stagiaire'"/>
+            <button name="action_open_candidate_suivi_collaborateur_popup"
+                    type="object"
+                    string="Suivi collaborateur"
+                    class="btn-primary"
+                    invisible="parent.demande_type == 'demande_stagiaire'"/>
+        </list>
+    </field>
+    <div class="ar_step_button_table" invisible="1">
+        <table>
+            <tr>
+                <td><button name="action_open_entretien_popup" type="object" string="Entretien" class="btn-primary"/></td>
+                <td><button name="action_open_deliberation_offre_popup" type="object" string="Offre" class="btn-primary" groups="ar_recrutement.group_ar_recrutement_rh"/></td>
+                <td><button name="action_open_date_matricule_popup" type="object" string="Date &amp; Matricule" class="btn-primary"/></td>
+                <td><button name="action_open_dossier_candidat_popup" type="object" string="Dossier candidat" class="btn-primary" groups="ar_recrutement.group_ar_recrutement_rh"/></td>
+                <td><button name="action_open_visite_medicale_popup" type="object" string="Visite médicale" class="btn-primary" groups="ar_recrutement.group_ar_recrutement_rh"/></td>
+                <td><button name="action_open_announcement_popup" type="object" string="Announcement" class="btn-primary" groups="ar_recrutement.group_ar_recrutement_rh"/></td>
+                <td><button name="action_open_suivi_collaborateur_popup" type="object" string="Suivi collaborateur" class="btn-primary"/></td>
+            </tr>
+        </table>
+    </div>
+</group>
+
           <!-- ================== -->
           <!-- Tableau candidats  -->
           <!-- ================== -->
-          <group string="Candidats" class="ar_sortie_caisse_panel ar_sortie_caisse_lines" invisible="state not in ('cv_tech', 'selection_candidats', 'entretien', 'candidat_retenu', 'validation_rh', 'deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'archive_stage', 'accepte')">
+          <group string="Candidats" class="ar_sortie_caisse_panel ar_sortie_caisse_lines" invisible="1">
 
     <field name="candidate_ids" nolabel="1" colspan="2">
         <list editable="bottom" decoration-muted="is_refused_line">
@@ -408,80 +495,149 @@
     </field>
 </group>
 
-<group class="ar_sortie_caisse_main_row" col="2"
-       invisible="state not in ('deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'archive_stage', 'accepte')">
-<group string="Délibération"
-       class="ar_sortie_caisse_panel"
-       invisible="state not in ('deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'archive_stage', 'accepte')">
-    <field name="deliberation_decision_finale"
-           string="Décision finale"
-           widget="radio"
-           readonly="state != 'deliberation' or current_user_is_rh == False"/>
-    <field name="deliberation_commentaire"
-           string="Commentaire"
-           readonly="state != 'deliberation' or current_user_is_rh == False"/>
+<group string="Offre du Candidat"
+       class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
+       groups="ar_recrutement.group_ar_recrutement_rh"
+       invisible="1">
+    <field name="candidate_ids"
+           nolabel="1"
+           colspan="2"
+           domain="[('demandeur_decision', '=', 'approuve')]">
+        <list editable="bottom" create="0" delete="0">
+            <field name="candidate_name"
+                   string="Nom du candidat"
+                   readonly="1"/>
+            <field name="deliberation_decision" invisible="1" column_invisible="1"/>
+            <field name="offre_candidat_nom"
+                   string="Nom de l'Offre"
+                   readonly="parent.state != 'offre_candidat' or deliberation_decision != 'oui'"
+                   required="parent.state == 'offre_candidat' and deliberation_decision == 'oui'"/>
+            <field name="offre_candidat_file"
+                   string="Fichier de l'Offre"
+                   filename="offre_candidat_filename"
+                   readonly="parent.state != 'offre_candidat' or deliberation_decision != 'oui'"
+                   required="parent.state == 'offre_candidat' and deliberation_decision == 'oui'"/>
+            <field name="offre_candidat_filename" invisible="1" column_invisible="1"/>
+            <field name="offre_decision"
+                   string="Décision offre"
+                   readonly="parent.state != 'offre_en_cours' or deliberation_decision != 'oui'"/>
+        </list>
+    </field>
+</group>
+
+<group string="Candidats"
+       class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
+       invisible="1">
+    <field name="candidate_display_ids" nolabel="1" colspan="2" readonly="1">
+        <list create="0" edit="0" delete="0" decoration-muted="is_refused_line">
+            <field name="is_refused_line" invisible="1" column_invisible="1"/>
+            <field name="candidate_name" string="Nom du candidat"/>
+            <field name="demandeur_decision" string="Avis entretien"/>
+            <field name="interview_datetime"/>
+            <field name="retenu_final" string="Validation demandeur"/>
+            <field name="rh_validation"/>
+        </list>
+    </field>
 </group>
 
 <group string="Offre du Candidat"
-       class="ar_sortie_caisse_panel"
+       class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
        groups="ar_recrutement.group_ar_recrutement_rh"
-       invisible="state not in ('offre_candidat', 'offre_en_cours', 'date_embauche', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'archive_stage', 'accepte')">
-    <field name="offre_candidat_nom"
-           readonly="state != 'offre_candidat'"
-           required="state == 'offre_candidat'"/>
-    <field name="offre_candidat_file"
-           filename="offre_candidat_filename"
-           readonly="state != 'offre_candidat'"
-           required="state == 'offre_candidat'"/>
-    <field name="offre_candidat_filename" invisible="1"/>
-</group>
+       invisible="1">
+    <field name="offer_display_candidate_ids" nolabel="1" colspan="2" readonly="1">
+        <list create="0" edit="0" delete="0">
+            <field name="candidate_name" string="Nom du candidat"/>
+            <field name="deliberation_decision" invisible="1" column_invisible="1"/>
+            <field name="offre_candidat_nom" string="Nom de l'Offre"/>
+            <field name="offre_candidat_file" string="Fichier de l'Offre" filename="offre_candidat_filename"/>
+            <field name="offre_candidat_filename" invisible="1" column_invisible="1"/>
+            <field name="offre_decision" string="Décision offre"/>
+        </list>
+    </field>
 </group>
 
-<group string="Date d'embauche"
+<group string="Date d'embauche &amp; Matricule"
        class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
-       invisible="state not in ('date_embauche', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'archive_stage', 'accepte')">
+       invisible="1">
     <field name="candidate_ids"
            class="ar_hiring_date_table"
            nolabel="1"
            colspan="2"
-           domain="[('retenu_final', '=', 'oui'), ('rh_validation', '=', 'oui'), ('demandeur_decision', '!=', 'refuse')]">
-        <list editable="bottom" create="0" delete="0" decoration-muted="is_refused_line">
+           domain="[('offre_decision', '=', 'accepte')]">
+        <list editable="bottom" edit="1" create="0" delete="0" decoration-muted="is_refused_line">
             <field name="is_refused_line" invisible="1" column_invisible="1"/>
             <field name="rh_validation" invisible="1" column_invisible="1"/>
             <field name="candidate_name"
                    class="ar_hiring_candidate_col"
                    string="Candidats retenus"
-                   width="50%"
+                   width="30%"
                    readonly="1"/>
             <field name="hiring_date"
                    class="ar_hiring_date_col"
                    string="Date d'embauche"
-                   width="50%"
+                   width="22%"
                    readonly="(parent.step != 'rh_hiring_date' or is_refused_line == True)"/>
+            <field name="ancien_matricule"
+                   class="ar_hiring_old_matricule_col"
+                   string="Ancien matricule"
+                   groups="ar_recrutement.group_ar_recrutement_rh"
+                   width="24%"
+                  column_invisible="parent.demande_type == 'demande_stagiaire' or parent.demande_type != 'changement_contrat' or parent.type_contrat != 'anapec'"/>
+            <field name="nouvelle_affectation_matricule"
+                   class="ar_hiring_matricule_col"
+                  string="Matricule à renseigner"
+                  groups="ar_recrutement.group_ar_recrutement_rh"
+                  readonly="parent.state != 'matricule_a_renseigner'"
+                  width="24%"
+                  column_invisible="parent.demande_type == 'demande_stagiaire'"/>
         </list>
     </field>
 </group>
 
-<group string="Matricule à Renseigner"
-       class="ar_sortie_caisse_panel ar_recrutement_compact_panel"
-       groups="ar_recrutement.group_ar_recrutement_rh"
-       invisible="categorie_prof != 'non_cadre' or state not in ('matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'accepte')">
-    <field name="ancien_matricule"
-           readonly="state != 'matricule_a_renseigner'"
-           invisible="demande_type != 'changement_contrat' or changement_contrat not in ('anapec_to_cdd', 'anapec_to_cdi')"
-           required="state == 'matricule_a_renseigner' and demande_type == 'changement_contrat' and changement_contrat in ('anapec_to_cdd', 'anapec_to_cdi')"/>
-    <field name="nouvelle_affectation_matricule"
-           readonly="state != 'matricule_a_renseigner'"
-           required="state == 'matricule_a_renseigner'"/>
+<group string="Date d'embauche &amp; Matricule"
+       class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
+       invisible="1">
+    <field name="hiring_display_candidate_ids"
+           class="ar_hiring_date_table"
+           nolabel="1"
+           colspan="2"
+           readonly="1">
+        <list create="0" edit="0" delete="0" decoration-muted="is_refused_line">
+            <field name="is_refused_line" invisible="1" column_invisible="1"/>
+            <field name="candidate_name"
+                   class="ar_hiring_candidate_col"
+                   string="Candidats retenus"
+                   width="30%"/>
+            <field name="hiring_date"
+                   class="ar_hiring_date_col"
+                   string="Date d'embauche"
+                   width="22%"/>
+            <field name="ancien_matricule"
+                   class="ar_hiring_old_matricule_col"
+                   string="Ancien matricule"
+                   groups="ar_recrutement.group_ar_recrutement_rh"
+                   width="24%"
+                  column_invisible="parent.demande_type == 'demande_stagiaire' or parent.demande_type != 'changement_contrat' or parent.type_contrat != 'anapec'"/>
+            <field name="nouvelle_affectation_matricule"
+                   class="ar_hiring_matricule_col"
+                  string="Matricule à renseigner"
+                  groups="ar_recrutement.group_ar_recrutement_rh"
+                  width="24%"
+                  column_invisible="parent.demande_type == 'demande_stagiaire'"/>
+        </list>
+    </field>
 </group>
 
 <group string="Dossier du Candidat"
        class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
        groups="ar_recrutement.group_ar_recrutement_rh"
-       invisible="categorie_prof != 'non_cadre' or state not in ('dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'accepte')">
+       invisible="1">
     <field name="dossier_candidat_line_ids" nolabel="1" colspan="2" invisible="state != 'dossier_candidat'">
         <list editable="bottom" readonly="parent.state != 'dossier_candidat'">
             <field name="demande_state" invisible="1" column_invisible="1"/>
+            <field name="candidate_name"
+                   string="Candidat"
+                   readonly="1"/>
             <field name="document_type"
                    string="Document"
                    readonly="1"/>
@@ -496,6 +652,9 @@
     <field name="dossier_candidat_line_ids" nolabel="1" colspan="2" readonly="1" invisible="state == 'dossier_candidat'">
         <list create="0" edit="0" delete="0">
             <field name="demande_state" invisible="1" column_invisible="1"/>
+            <field name="candidate_name"
+                   string="Candidat"
+                   readonly="1"/>
             <field name="document_type"
                    string="Document"
                    readonly="1"/>
@@ -509,39 +668,103 @@
 </group>
 
 <group string="Visite médicale"
-       class="ar_sortie_caisse_panel ar_recrutement_compact_panel"
+       class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
        groups="ar_recrutement.group_ar_recrutement_rh"
-       invisible="categorie_prof != 'non_cadre' or state not in ('visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'accepte')">
-    <field name="visite_medicale_faite_radio"
-           widget="radio"
+       invisible="1">
+    <field name="candidate_ids"
+           class="ar_equal_three_table"
            nolabel="1"
-           readonly="state != 'visite_medicale'"
-           required="state == 'visite_medicale'"/>
+           colspan="2"
+           domain="[('offre_decision', '=', 'accepte'), ('hiring_date', '!=', False)]">
+        <list editable="bottom" edit="1" create="0" delete="0" decoration-muted="is_refused_line">
+            <field name="is_refused_line" invisible="1" column_invisible="1"/>
+            <field name="candidate_name"
+                   string="Candidat"
+                   readonly="1"/>
+            <field name="medical_visit_done"
+                   string="Visite médicale faite"
+                   readonly="parent.state != 'visite_medicale'"
+                   required="parent.state == 'visite_medicale'"/>
+            <field name="medical_visit_date"
+                   string="Date visite médicale"
+                   readonly="parent.state != 'visite_medicale'"/>
+        </list>
+    </field>
+</group>
+
+<group string="Visite médicale"
+       class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
+       groups="ar_recrutement.group_ar_recrutement_rh"
+       invisible="1">
+    <field name="medical_display_candidate_ids"
+           class="ar_equal_three_table"
+           nolabel="1"
+           colspan="2"
+           readonly="1">
+        <list create="0" edit="0" delete="0" decoration-muted="is_refused_line">
+            <field name="is_refused_line" invisible="1" column_invisible="1"/>
+            <field name="candidate_name"
+                   string="Candidat"/>
+            <field name="medical_visit_done"
+                   string="Visite médicale faite"/>
+            <field name="medical_visit_date"
+                   string="Date visite médicale"/>
+        </list>
+    </field>
 </group>
 
 
 <group string="Announcement"
-       class="ar_sortie_caisse_panel"
+       class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
        groups="ar_recrutement.group_ar_recrutement_rh"
-       invisible="state != 'envoie_annonce'">
-    <field name="announcement_civility" required="state == 'envoie_annonce'"/>
+       invisible="1">
+    <field name="candidate_ids"
+           class="ar_equal_three_table"
+           nolabel="1"
+           colspan="2"
+           domain="[('offre_decision', '=', 'accepte'), ('hiring_date', '!=', False)]">
+        <list editable="bottom" edit="1" create="0" delete="0" decoration-muted="is_refused_line">
+            <field name="is_refused_line" invisible="1" column_invisible="1"/>
+            <field name="candidate_name"
+                   string="Candidat"
+                   readonly="1"/>
+            <field name="announcement_civility"
+                   string="Civilité"
+                   required="parent.state == 'envoie_annonce'"/>
+            <field name="announcement_photo_ok"
+                   string="Photo"
+                   readonly="1"
+                   widget="boolean_toggle"
+                   column_invisible="1"/>
+            <field name="announcement_sent"
+                   string="Announcement envoyé"
+                   readonly="1"
+                   widget="boolean_toggle"
+                   column_invisible="1"/>
+            <field name="announcement_sent_date"
+                   string="Date d'envoi"
+                   readonly="1"/>
+        </list>
+    </field>
 </group>
 
 
 <separator string="Documents"
-           invisible="(demande_type != 'demande_stagiaire' or stagiaire_duree_mois &lt;= 3)"/>
+           invisible="1"/>
 
 <field name="stagiaire_line_ids"
        nolabel="1"
-       invisible="((demande_type != 'demande_stagiaire' or stagiaire_duree_mois &lt;= 3) or state not in ('date_embauche', 'en_cours_stage', 'archive_stage'))">
+       invisible="1"
+       readonly="state != 'date_embauche'">
     <list editable="bottom"
       readonly="parent.state != 'date_embauche'">
     <field name="demande_state" invisible="1" column_invisible="1"/>
-    <field name="document_type" string="Type de document"/>
+    <field name="document_type" string="Type de document" readonly="parent.state != 'date_embauche'"/>
     <field name="assurance_file"
            filename="assurance_filename"
-           string="Document"/>
-    <field name="assurance_filename" invisible="1"/>
+           string="Document"
+           readonly="parent.state != 'date_embauche'"/>
+    <field name="assurance_filename" invisible="1" column_invisible="1"/>
 </list>
     <form string="Document">
         <group>
@@ -563,7 +786,7 @@
 
           <group string="Suivi collaborateur"
    class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
-   invisible="(state not in ('parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte') or (demande_type == 'demande_stagiaire' and stagiaire_duree_mois &lt;= 3))">
+   invisible="1">
 
     <field name="integration_ids" nolabel="1" colspan="2">
        <list create="0" delete="0" editable="bottom">
@@ -591,7 +814,7 @@
 
 <group string="Validation période d'essai"
    class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
-   invisible="(state != 'periode_essai_n1' or (demande_type == 'demande_stagiaire' and stagiaire_duree_mois &lt;= 3))">
+   invisible="1">
 
     <field name="validation_integration_ids" nolabel="1" colspan="2">
        <list create="0" delete="0" editable="bottom">
@@ -626,7 +849,7 @@
 
 <group string="Validation période d'essai"
    class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
-   invisible="(state != 'periode_essai_rh' or (demande_type == 'demande_stagiaire' and stagiaire_duree_mois &lt;= 3))">
+   invisible="1">
 
     <field name="validation_integration_ids" nolabel="1" colspan="2">
        <list create="0" delete="0" editable="bottom">
@@ -661,7 +884,7 @@
 
 <group string="Validation période d'essai"
    class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
-   invisible="(state != 'direction_generale' or (demande_type == 'demande_stagiaire' and stagiaire_duree_mois &lt;= 3))">
+   invisible="1">
 
     <field name="validation_integration_ids" nolabel="1" colspan="2">
        <list create="0" delete="0" editable="bottom">
@@ -696,7 +919,7 @@
 
 <group string="Validation période d'essai"
    class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
-   invisible="(state != 'deliberation_finale' or (demande_type == 'demande_stagiaire' and stagiaire_duree_mois &lt;= 3))">
+   invisible="1">
 
     <field name="validation_integration_ids" nolabel="1" colspan="2">
        <list create="0" delete="0" editable="bottom">
@@ -731,7 +954,7 @@
 
 <group string="Validation période d'essai"
    class="ar_sortie_caisse_panel ar_sortie_caisse_lines"
-   invisible="(state not in ('rupture', 'accepte') or (demande_type == 'demande_stagiaire' and stagiaire_duree_mois &lt;= 3))">
+   invisible="1">
 
     <field name="validation_integration_ids" nolabel="1" colspan="2">
        <list create="0" delete="0">
@@ -1272,6 +1495,450 @@
                     <button string="Enregistrer" special="save" class="btn-primary"/>
                     <button string="Annuler" special="cancel" class="btn-secondary"/>
                 </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_candidate_popup_entretien" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.candidate.popup.entretien</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="arch" type="xml">
+        <form string="Entretien" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="parent_state" invisible="1"/>
+                <field name="parent_step" invisible="1"/>
+                <field name="is_refused_line" invisible="1"/>
+                <group>
+                    <field name="candidate_name" readonly="parent_step != 'rh_collect_candidates'" required="parent_step == 'rh_collect_candidates'"/>
+                    <field name="cv_file" filename="cv_filename" readonly="parent_step != 'rh_collect_candidates'" required="parent_step == 'rh_collect_candidates'"/>
+                    <field name="cv_filename" invisible="1"/>
+                    <field name="demandeur_decision" string="Avis entretien" readonly="parent_step != 'demandeur_choose'"/>
+                    <field name="interview_datetime" readonly="(parent_step != 'rh_schedule_interview' or is_refused_line == True)"/>
+                    <field name="retenu_final" string="Validation demandeur" readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                    <field name="rh_validation" readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                    <field name="deliberation_decision" string="D&#233;lib&#233;ration" groups="ar_recrutement.group_ar_recrutement_rh" readonly="parent_state != 'deliberation' or is_refused_line == True" required="parent_state == 'deliberation'"/>
+                </group>
+                <footer>
+                    <button name="action_open_fa" type="object" string="FA" class="btn-success" invisible="is_refused_line == True"/>
+                    <button name="action_open_rh_fa" type="object" string="FA RH" class="btn-success" invisible="is_refused_line == True"/>
+                    <button string="Enregistrer" special="save" class="btn-primary"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_candidate_popup_deliberation_offre" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.candidate.popup.deliberation.offre</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="arch" type="xml">
+        <form string="Offre du Candidat" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="parent_state" invisible="1"/>
+                <group>
+                    <field name="candidate_name" readonly="1"/>
+                    <field name="deliberation_decision" invisible="1"/>
+                    <field name="offre_candidat_nom" string="Nom de l'Offre" readonly="parent_state != 'offre_candidat' or deliberation_decision != 'oui'" required="parent_state == 'offre_candidat' and deliberation_decision == 'oui'"/>
+                    <field name="offre_candidat_file" string="Fichier de l'Offre" filename="offre_candidat_filename" readonly="parent_state != 'offre_candidat' or deliberation_decision != 'oui'" required="parent_state == 'offre_candidat' and deliberation_decision == 'oui'"/>
+                    <field name="offre_candidat_filename" invisible="1"/>
+                    <field name="offre_decision" string="D&#233;cision offre" readonly="parent_state != 'offre_en_cours' or deliberation_decision != 'oui'"/>
+                </group>
+                <footer>
+                    <button string="Enregistrer" special="save" class="btn-primary"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_candidate_popup_date_embauche" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.candidate.popup.date.embauche</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="arch" type="xml">
+        <form string="Date d'embauche" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="parent_step" invisible="1"/>
+                <group>
+                    <field name="candidate_name" readonly="1"/>
+                    <field name="hiring_date" string="Date d'embauche" readonly="parent_step != 'rh_hiring_date'"/>
+                </group>
+                <footer>
+                    <button string="Enregistrer" special="save" class="btn-primary"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_candidate_popup_date_matricule" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.candidate.popup.date.matricule</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="arch" type="xml">
+        <form string="Date d'embauche &amp; Matricule" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="parent_state" invisible="1"/>
+                <field name="parent_step" invisible="1"/>
+                <field name="demande_type" invisible="1"/>
+                <field name="type_contrat" invisible="1"/>
+                <group>
+                    <field name="candidate_name" readonly="1"/>
+                    <field name="hiring_date" string="Date d'embauche" readonly="parent_step != 'rh_hiring_date'"/>
+                    <field name="ancien_matricule"
+                           string="Ancien matricule"
+                           groups="ar_recrutement.group_ar_recrutement_rh"
+                           invisible="demande_type == 'demande_stagiaire' or demande_type != 'changement_contrat' or type_contrat != 'anapec'"
+                           readonly="parent_state != 'matricule_a_renseigner'"
+                           required="demande_type != 'demande_stagiaire' and demande_type == 'changement_contrat' and type_contrat == 'anapec'"/>
+                    <field name="nouvelle_affectation_matricule"
+                           string="Matricule &#224; renseigner"
+                           groups="ar_recrutement.group_ar_recrutement_rh"
+                           invisible="demande_type == 'demande_stagiaire'"
+                           readonly="parent_state != 'matricule_a_renseigner'"/>
+                </group>
+                <footer>
+                    <button string="Enregistrer" special="save" class="btn-primary"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_candidate_popup_dossier" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.candidate.popup.dossier</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="arch" type="xml">
+        <form string="Dossier du Candidat" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="parent_state" invisible="1"/>
+                <group>
+                    <field name="candidate_name" readonly="1"/>
+                </group>
+                <field name="candidate_dossier_line_ids" nolabel="1">
+                    <list editable="bottom" readonly="parent.parent_state != 'dossier_candidat'">
+                        <field name="document_type" string="Document" readonly="1"/>
+                        <field name="document_file" string="Fichier" filename="document_filename" readonly="parent.parent_state != 'dossier_candidat'" required="document_type == 'photos'"/>
+                        <field name="document_filename" invisible="1" column_invisible="1"/>
+                    </list>
+                </field>
+                <footer>
+                    <button string="Enregistrer" special="save" class="btn-primary"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_candidate_popup_visite_medicale" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.candidate.popup.visite.medicale</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="arch" type="xml">
+        <form string="Visite m&#233;dicale" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="parent_state" invisible="1"/>
+                <group>
+                    <field name="candidate_name" readonly="1"/>
+                    <field name="medical_visit_done" string="Visite m&#233;dicale faite" readonly="parent_state != 'visite_medicale'" required="parent_state == 'visite_medicale'"/>
+                    <field name="medical_visit_date" string="Date visite m&#233;dicale" readonly="parent_state != 'visite_medicale'"/>
+                </group>
+                <footer>
+                    <button string="Enregistrer" special="save" class="btn-primary"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_candidate_popup_announcement" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.candidate.popup.announcement</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="arch" type="xml">
+        <form string="Announcement" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="parent_state" invisible="1"/>
+                <group>
+                    <field name="candidate_name" readonly="1"/>
+                    <field name="announcement_civility" string="Civilit&#233;" required="parent_state == 'envoie_annonce'" readonly="parent_state != 'envoie_annonce'"/>
+                    <field name="announcement_sent_date" string="Date d'envoi" readonly="1"/>
+                </group>
+                <footer>
+                    <button name="action_send_candidate_announcement_mail" type="object" string="Envoyer announcement" class="btn-primary" groups="ar_recrutement.group_ar_recrutement_rh" invisible="parent_state != 'envoie_annonce'"/>
+                    <button string="Enregistrer" special="save" class="btn-secondary"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_candidate_popup_suivi_collaborateur" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.candidate.popup.suivi.collaborateur</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="arch" type="xml">
+        <form string="Suivi collaborateur" class="ar_recrutement_modern ar_recrutement_popup ar_followup_popup ar_followup_candidate_popup">
+            <sheet>
+                <field name="demande_id" invisible="1"/>
+                <group>
+                    <field name="candidate_name" readonly="1"/>
+                </group>
+                <group string="Int&#233;gration et feedback" class="ar_sortie_caisse_lines">
+                    <field name="candidate_integration_ids" class="ar_followup_feedback_table" nolabel="1" colspan="2" domain="[('demande_id', '=', demande_id)]">
+                        <list create="0" delete="0" editable="bottom">
+                            <field name="demande_state" invisible="1" column_invisible="1"/>
+                            <field name="has_integration_form" invisible="1" column_invisible="1"/>
+                            <button name="action_open_integration" type="object" string="Int&#233;gration" class="btn-primary" invisible="(demande_state != 'parcours_integration' and has_integration_form == False)"/>
+                            <field name="feedback_rh" string="Feedback RH" readonly="demande_state != 'feedback_rh'"/>
+                            <field name="feedback_md" string="Feedback MD" readonly="demande_state != 'feedback_md'"/>
+                        </list>
+                    </field>
+                </group>
+                <group string="P&#233;riode d'essai" class="ar_sortie_caisse_lines">
+                    <field name="candidate_validation_integration_ids" class="ar_followup_trial_table" nolabel="1" colspan="2" domain="[('validation_demande_id', '=', demande_id)]">
+                        <list create="0" delete="0" editable="bottom">
+                            <field name="demande_state" invisible="1" column_invisible="1"/>
+                            <field name="is_trial_history" invisible="1" column_invisible="1"/>
+                            <field name="validation_n1_essai" string="P&#233;riode d'essai N+1" readonly="(demande_state != 'periode_essai_n1' or is_trial_history == True)"/>
+                            <button name="action_open_epe" type="object" string="EPE" class="btn-success" invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
+                            <field name="validation_rh_essai" string="P&#233;riode d'essai RH" readonly="(demande_state != 'periode_essai_rh' or is_trial_history == True)"/>
+                            <field name="validation_direction_generale" string="Direction g&#233;n&#233;rale" readonly="(demande_state != 'direction_generale' or is_trial_history == True)"/>
+                            <field name="validation_deliberation_finale" string="D&#233;lib&#233;ration finale" readonly="(demande_state != 'deliberation_finale' or is_trial_history == True)"/>
+                        </list>
+                    </field>
+                </group>
+                <footer>
+                    <button string="Enregistrer" special="save" class="btn-primary"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_popup_stagiaire_documents" model="ir.ui.view">
+    <field name="name">ar.demande.de.recrutement.popup.stagiaire.documents</field>
+    <field name="model">ar.demande.de.recrutement</field>
+    <field name="arch" type="xml">
+        <form string="Documents stagiaire" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="state" invisible="1"/>
+                <field name="demande_type" invisible="1"/>
+                <field name="stagiaire_duree_mois" invisible="1"/>
+                <field name="stagiaire_line_ids" nolabel="1" colspan="2" readonly="state != 'date_embauche'">
+                    <list editable="bottom" readonly="parent.state != 'date_embauche'">
+                        <field name="demande_state" invisible="1" column_invisible="1"/>
+                        <field name="document_type" string="Type de document" readonly="parent.state != 'date_embauche'"/>
+                        <field name="assurance_file" filename="assurance_filename" string="Document" readonly="parent.state != 'date_embauche'"/>
+                        <field name="assurance_filename" invisible="1" column_invisible="1"/>
+                    </list>
+                    <form string="Document">
+                        <group>
+                            <field name="demande_id" invisible="1"/>
+                            <field name="demande_state" invisible="1"/>
+                            <field name="document_type" readonly="demande_state != 'date_embauche'" required="demande_state == 'date_embauche'"/>
+                            <field name="assurance_file" filename="assurance_filename" readonly="demande_state != 'date_embauche'" required="demande_state == 'date_embauche'"/>
+                            <field name="assurance_filename" invisible="1"/>
+                        </group>
+                    </form>
+                </field>
+                <footer>
+                    <button string="Enregistrer" special="save" class="btn-primary"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_popup_entretien" model="ir.ui.view">
+    <field name="name">ar.demande.de.recrutement.popup.entretien</field>
+    <field name="model">ar.demande.de.recrutement</field>
+    <field name="arch" type="xml">
+        <form string="Entretien" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="state" invisible="1"/>
+                <field name="step" invisible="1"/>
+                <field name="candidate_ids" nolabel="1" colspan="2">
+                    <list editable="bottom" decoration-muted="is_refused_line">
+                        <field name="fa_complete" invisible="1" column_invisible="1"/>
+                        <field name="rhfa_complete" invisible="1" column_invisible="1"/>
+                        <field name="is_refused_line" invisible="1" column_invisible="1"/>
+                        <field name="candidate_name" string="Nom du candidat" readonly="parent.step != 'rh_collect_candidates'" required="parent.step == 'rh_collect_candidates'"/>
+                        <field name="cv_file" filename="cv_filename" readonly="parent.step != 'rh_collect_candidates'" required="parent.step == 'rh_collect_candidates'"/>
+                        <field name="cv_filename" invisible="1" column_invisible="1"/>
+                        <field name="demandeur_decision" string="Avis entretien" readonly="parent.step != 'demandeur_choose'"/>
+                        <field name="interview_datetime" readonly="(parent.step != 'rh_schedule_interview' or is_refused_line == True)"/>
+                        <field name="retenu_final" string="Validation demandeur" readonly="(parent.step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                        <button name="action_open_fa" type="object" string="FA" class="btn-success" invisible="is_refused_line == True"/>
+                        <field name="rh_validation" readonly="(parent.step != 'rh_validate_final' or is_refused_line == True)"/>
+                        <field name="deliberation_decision" string="Délibération" groups="ar_recrutement.group_ar_recrutement_rh" readonly="parent.state != 'deliberation' or is_refused_line == True" required="parent.state == 'deliberation'"/>
+                        <button name="action_open_rh_fa" type="object" string="FA RH" class="btn-success" invisible="is_refused_line == True"/>
+                    </list>
+                </field>
+                <footer>
+                    <button string="Enregistrer" special="save" class="btn-primary"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_popup_deliberation_offre" model="ir.ui.view">
+    <field name="name">ar.demande.de.recrutement.popup.deliberation.offre</field>
+    <field name="model">ar.demande.de.recrutement</field>
+    <field name="arch" type="xml">
+        <form string="Offre du Candidat" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="state" invisible="1"/>
+                <field name="current_user_is_rh" invisible="1"/>
+                <field name="candidate_ids" nolabel="1" colspan="2" domain="[('demandeur_decision', '=', 'approuve')]">
+                    <list editable="bottom" create="0" delete="0">
+                        <field name="candidate_name" string="Nom du candidat" readonly="1"/>
+                        <field name="deliberation_decision" invisible="1" column_invisible="1"/>
+                        <field name="offre_candidat_nom" string="Nom de l'Offre" readonly="parent.state != 'offre_candidat' or deliberation_decision != 'oui'" required="parent.state == 'offre_candidat' and deliberation_decision == 'oui'"/>
+                        <field name="offre_candidat_file" string="Fichier de l'Offre" filename="offre_candidat_filename" readonly="parent.state != 'offre_candidat' or deliberation_decision != 'oui'" required="parent.state == 'offre_candidat' and deliberation_decision == 'oui'"/>
+                        <field name="offre_candidat_filename" invisible="1" column_invisible="1"/>
+                        <field name="offre_decision" string="Décision offre" readonly="parent.state != 'offre_en_cours' or deliberation_decision != 'oui'"/>
+                    </list>
+                </field>
+                <footer><button string="Enregistrer" special="save" class="btn-primary"/><button string="Fermer" special="cancel" class="btn-secondary"/></footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_popup_date_matricule" model="ir.ui.view">
+    <field name="name">ar.demande.de.recrutement.popup.date.matricule</field>
+    <field name="model">ar.demande.de.recrutement</field>
+    <field name="arch" type="xml">
+        <form string="Date d'embauche &amp; Matricule" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="state" invisible="1"/>
+                <field name="step" invisible="1"/>
+                <field name="demande_type" invisible="1"/>
+                <field name="type_contrat" invisible="1"/>
+                <field name="changement_contrat" invisible="1"/>
+                <field name="candidate_ids" class="ar_hiring_date_table" nolabel="1" colspan="2" domain="[('offre_decision', '=', 'accepte')]">
+                    <list editable="bottom" edit="1" create="0" delete="0" decoration-muted="is_refused_line">
+                        <field name="is_refused_line" invisible="1" column_invisible="1"/>
+                        <field name="candidate_name" class="ar_hiring_candidate_col" string="Candidats retenus" readonly="1"/>
+                        <field name="hiring_date" class="ar_hiring_date_col" string="Date d'embauche" readonly="(parent.step != 'rh_hiring_date' or is_refused_line == True)"/>
+                        <field name="ancien_matricule" class="ar_hiring_old_matricule_col" string="Ancien matricule" groups="ar_recrutement.group_ar_recrutement_rh" column_invisible="parent.demande_type == 'demande_stagiaire' or parent.demande_type != 'changement_contrat' or parent.type_contrat != 'anapec'"/>
+                        <field name="nouvelle_affectation_matricule" class="ar_hiring_matricule_col" string="Matricule à renseigner" groups="ar_recrutement.group_ar_recrutement_rh" column_invisible="parent.demande_type == 'demande_stagiaire'"/>
+                    </list>
+                </field>
+                <footer><button string="Enregistrer" special="save" class="btn-primary"/><button string="Fermer" special="cancel" class="btn-secondary"/></footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_popup_dossier_candidat" model="ir.ui.view">
+    <field name="name">ar.demande.de.recrutement.popup.dossier.candidat</field>
+    <field name="model">ar.demande.de.recrutement</field>
+    <field name="arch" type="xml">
+        <form string="Dossier du Candidat" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="state" invisible="1"/>
+                <field name="dossier_candidat_line_ids" nolabel="1" colspan="2">
+                    <list editable="bottom" readonly="parent.state != 'dossier_candidat'">
+                        <field name="candidate_name" string="Candidat" readonly="1"/>
+                        <field name="document_type" string="Document" readonly="1"/>
+                        <field name="document_file" string="Fichier" filename="document_filename" readonly="parent.state != 'dossier_candidat'" required="document_type == 'photos'"/>
+                        <field name="document_filename" invisible="1" column_invisible="1"/>
+                    </list>
+                </field>
+                <footer><button string="Enregistrer" special="save" class="btn-primary"/><button string="Fermer" special="cancel" class="btn-secondary"/></footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_popup_visite_medicale" model="ir.ui.view">
+    <field name="name">ar.demande.de.recrutement.popup.visite.medicale</field>
+    <field name="model">ar.demande.de.recrutement</field>
+    <field name="arch" type="xml">
+        <form string="Visite médicale" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="state" invisible="1"/>
+                <field name="candidate_ids" class="ar_equal_three_table" nolabel="1" colspan="2" domain="[('offre_decision', '=', 'accepte'), ('hiring_date', '!=', False)]">
+                    <list editable="bottom" edit="1" create="0" delete="0" decoration-muted="is_refused_line">
+                        <field name="is_refused_line" invisible="1" column_invisible="1"/>
+                        <field name="candidate_name" string="Candidat" readonly="1"/>
+                        <field name="medical_visit_done" string="Visite médicale faite" readonly="parent.state != 'visite_medicale'" required="parent.state == 'visite_medicale'"/>
+                        <field name="medical_visit_date" string="Date visite médicale" readonly="parent.state != 'visite_medicale'"/>
+                    </list>
+                </field>
+                <footer><button string="Enregistrer" special="save" class="btn-primary"/><button string="Fermer" special="cancel" class="btn-secondary"/></footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_popup_announcement" model="ir.ui.view">
+    <field name="name">ar.demande.de.recrutement.popup.announcement</field>
+    <field name="model">ar.demande.de.recrutement</field>
+    <field name="arch" type="xml">
+        <form string="Announcement" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="state" invisible="1"/>
+                <field name="candidate_ids" class="ar_equal_three_table" nolabel="1" colspan="2" domain="[('offre_decision', '=', 'accepte'), ('hiring_date', '!=', False)]">
+                    <list editable="bottom" edit="1" create="0" delete="0" decoration-muted="is_refused_line">
+                        <field name="is_refused_line" invisible="1" column_invisible="1"/>
+                        <field name="candidate_name" string="Candidat" readonly="1"/>
+                        <field name="announcement_civility" string="Civilité" required="parent.state == 'envoie_annonce'"/>
+                        <field name="announcement_sent_date" string="Date d'envoi" readonly="1"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_send_announcement_mail" type="object" string="Envoyer announcement" class="btn-primary" groups="ar_recrutement.group_ar_recrutement_rh" invisible="state != 'envoie_annonce'"/>
+                    <button string="Enregistrer" special="save" class="btn-secondary"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_popup_suivi_collaborateur" model="ir.ui.view">
+    <field name="name">ar.demande.de.recrutement.popup.suivi.collaborateur</field>
+    <field name="model">ar.demande.de.recrutement</field>
+    <field name="arch" type="xml">
+        <form string="Suivi collaborateur" class="ar_recrutement_modern ar_recrutement_popup ar_followup_popup ar_followup_request_popup">
+            <sheet>
+                <group string="Intégration et feedback" class="ar_sortie_caisse_lines">
+                    <field name="integration_ids" class="ar_followup_feedback_table" nolabel="1" colspan="2">
+                        <list create="0" delete="0" editable="bottom">
+                            <field name="demande_state" invisible="1" column_invisible="1"/>
+                            <field name="has_integration_form" invisible="1" column_invisible="1"/>
+                            <field name="candidate_name" string="Nom des candidats" readonly="1"/>
+                            <button name="action_open_integration" type="object" string="Intégration" class="btn-primary" invisible="(demande_state != 'parcours_integration' and has_integration_form == False)"/>
+                            <field name="feedback_rh" string="Feedback RH" readonly="demande_state != 'feedback_rh'"/>
+                            <field name="feedback_md" string="Feedback MD" readonly="demande_state != 'feedback_md'"/>
+                        </list>
+                    </field>
+                </group>
+                <group string="Période d'essai" class="ar_sortie_caisse_lines">
+                    <field name="validation_integration_ids" class="ar_followup_trial_table" nolabel="1" colspan="2">
+                        <list create="0" delete="0" editable="bottom">
+                            <field name="demande_state" invisible="1" column_invisible="1"/>
+                            <field name="is_trial_history" invisible="1" column_invisible="1"/>
+                            <field name="candidate_name" string="Nom du candidat" readonly="1"/>
+                            <field name="validation_n1_essai" string="Période d'essai N+1" readonly="(demande_state != 'periode_essai_n1' or is_trial_history == True)"/>
+                            <button name="action_open_epe" type="object" string="EPE" class="btn-success" invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
+                            <field name="validation_rh_essai" string="Période d'essai RH" readonly="(demande_state != 'periode_essai_rh' or is_trial_history == True)"/>
+                            <field name="validation_direction_generale" string="Direction générale" readonly="(demande_state != 'direction_generale' or is_trial_history == True)"/>
+                            <field name="validation_deliberation_finale" string="Délibération finale" readonly="(demande_state != 'deliberation_finale' or is_trial_history == True)"/>
+                        </list>
+                    </field>
+                </group>
+                <footer><button string="Enregistrer" special="save" class="btn-primary"/><button string="Fermer" special="cancel" class="btn-secondary"/></footer>
             </sheet>
         </form>
     </field>

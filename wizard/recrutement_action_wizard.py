@@ -73,7 +73,7 @@ class ARDemandeRecrutementActionWizard(models.TransientModel):
                 "Merci de confirmer l'acceptation de l'offre. Le flux continuera vers l'etape Date d'embauche."
             ),
             "offer_refuse": _(
-                "Merci de confirmer le refus de l'offre. Le flux retournera à l'étape CVthèques."
+                "Merci de confirmer le refus de l'offre. La demande passera à l'état Refusée."
             ),
             "refuse": _(
                 "Merci de confirmer le refus de cette demande."

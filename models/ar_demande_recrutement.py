@@ -2,6 +2,7 @@ from dateutil.relativedelta import relativedelta
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError, AccessError
 from markupsafe import Markup
+import html as html_lib
 import mimetypes
 import re
 
@@ -110,6 +111,13 @@ class ARDemandeDeRecrutement(models.Model):
         tracking=True
     )
 
+    date_validation_n1 = fields.Datetime(string="Date validation N+1", readonly=True, tracking=True)
+    date_validation_rh = fields.Datetime(string="Date validation RH", readonly=True, tracking=True)
+    date_validation_md = fields.Datetime(string="Date validation MD", readonly=True, tracking=True)
+    validateur_n1_id = fields.Many2one("res.users", string="Valide par N+1", readonly=True, tracking=True)
+    validateur_rh_id = fields.Many2one("res.users", string="Valide par RH", readonly=True, tracking=True)
+    validateur_md_id = fields.Many2one("res.users", string="Valide par MD", readonly=True, tracking=True)
+
     integration_ids = fields.One2many(
         "ar.demande.recrutement.integration", "demande_id",
         string="Parcours d'intégration"
@@ -207,6 +215,62 @@ class ARDemandeDeRecrutement(models.Model):
     def action_print_general_report(self):
         self.ensure_one()
         return self.env.ref("ar_recrutement.action_report_ar_demande_recrutement_general").report_action(self)
+
+    def get_report_validation_history(self):
+        self.ensure_one()
+        entries = []
+
+        def format_dt(dt_value):
+            if not dt_value:
+                return ""
+            local_dt = fields.Datetime.context_timestamp(self, dt_value)
+            return local_dt.strftime("%d/%m/%Y %H:%M:%S")
+
+        entries.append({
+            "label": _("Creation"),
+            "value": "%s - %s" % (
+                self.create_uid.name if self.create_uid else "-",
+                format_dt(self.create_date),
+            ),
+            "detail": _("Creation de la demande"),
+        })
+
+        workflow_messages = self.message_ids.filtered(
+            lambda message: message.body and "Changement d'etape effectue par" in message.body
+        ).sorted("date")
+
+        for message in workflow_messages:
+            body = html_lib.unescape(re.sub(r"<[^>]+>", "", message.body or "")).strip()
+            match = re.search(
+                r"Changement d'etape effectue par (.*?) : (.*?) / (.*?) -> (.*?) / (.*?)\.",
+                body,
+            )
+            if match:
+                user_name, old_state, old_step, new_state, new_step = match.groups()
+                entries.append({
+                    "label": new_state,
+                    "value": "%s - %s" % (user_name, format_dt(message.date)),
+                    "detail": "%s / %s -> %s / %s" % (old_state, old_step, new_state, new_step),
+                })
+            else:
+                entries.append({
+                    "label": _("Workflow"),
+                    "value": "%s - %s" % (
+                        message.author_id.name if message.author_id else "-",
+                        format_dt(message.date),
+                    ),
+                    "detail": body,
+                })
+
+        return entries
+
+    def get_report_accepted_candidates(self):
+        self.ensure_one()
+        return self.candidate_ids.filtered(lambda candidate: candidate.offre_decision == "accepte")
+
+    def get_report_candidate_integration(self, candidate):
+        self.ensure_one()
+        return self.integration_ids.filtered(lambda line: line.candidate_id == candidate)[:1]
 
     def has_general_report_content(self):
         """Optionnel : utile si tu veux conditionner certains blocs globaux."""
@@ -369,18 +433,19 @@ class ARDemandeDeRecrutement(models.Model):
     def _get_announcement_candidates(self):
         self.ensure_one()
         candidates = self.candidate_ids.filtered(
-            lambda c: c.retenu_final == "oui"
-            and c.rh_validation == "oui"
+            lambda c: c.offre_decision == "accepte"
+            and c.hiring_date
             and not c.is_refused_line
         )
-        if not candidates:
-            candidates = self.candidate_ids.filtered(
-                lambda c: c.retenu_final == "oui" and not c.is_refused_line
-            )
         return candidates
 
     def _get_announcement_candidate(self):
         self.ensure_one()
+        candidate_id = self.env.context.get("announcement_candidate_id")
+        if candidate_id:
+            candidate = self.candidate_ids.filtered(lambda c: c.id == candidate_id)[:1]
+            if candidate:
+                return candidate
         return self._get_announcement_candidates()[:1]
 
     def _compute_announcement_civility(self):
@@ -403,8 +468,11 @@ class ARDemandeDeRecrutement(models.Model):
 
     def _get_announcement_photo_line(self):
         self.ensure_one()
+        candidate = self._get_announcement_candidate()
         return self.dossier_candidat_line_ids.filtered(
-            lambda l: l.document_type == "photos" and l.document_file
+            lambda l: l.document_type == "photos"
+            and l.document_file
+            and (not candidate or l.candidate_id == candidate)
         )[:1]
 
     def _get_announcement_photo_data_uri(self):
@@ -474,21 +542,45 @@ class ARDemandeDeRecrutement(models.Model):
             candidates = rec._get_announcement_candidates()
             if not candidates:
                 raise ValidationError(_("Aucun candidat recruté trouvé pour générer l'announcement."))
-            if not rec.announcement_civility:
-                raise ValidationError(_("Veuillez renseigner la civilité du candidat avant d'envoyer l'announcement."))
-            if not rec._get_announcement_photo_line():
-                raise ValidationError(_("Veuillez charger la photo du candidat dans le Dossier du Candidat avant d'envoyer l'announcement."))
+
+            missing = []
+            for candidate in candidates:
+                if not candidate.announcement_civility:
+                    missing.append(_("Announcement : Civilité (%s)") % candidate.candidate_name)
+                photo_line = rec.with_context(announcement_candidate_id=candidate.id)._get_announcement_photo_line()
+                if not photo_line:
+                    missing.append(_("Announcement : Photo (%s)") % candidate.candidate_name)
+            rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
 
             recipients = rec._get_employee_emails()
             if not recipients:
                 raise ValidationError(_("Aucun email employé trouvé pour envoyer l'announcement."))
 
-            rec._send_template(
-                "ar_recrutement.mail_template_rec_announcement_to_employees",
-                recipients,
-            )
+            template = rec.env.ref("ar_recrutement.mail_template_rec_announcement_to_employees", raise_if_not_found=False)
+            if not template:
+                raise ValidationError(_("Template email announcement introuvable."))
+
+            clean_recipients = [rec._clean_header(email) for email in recipients]
+            clean_recipients = [email for email in clean_recipients if email]
+            pending_candidates = candidates.filtered(lambda candidate: not candidate.announcement_sent)
+            if not pending_candidates:
+                raise ValidationError(_("Tous les announcements ont déjà été envoyés."))
+
+            for candidate in pending_candidates:
+                template.with_context(announcement_candidate_id=candidate.id).send_mail(
+                    rec.id,
+                    force_send=True,
+                    email_values={
+                        "email_to": rec._clean_header(",".join(clean_recipients)),
+                        "reply_to": rec._clean_header(rec.env.user.partner_id.email or rec.env.user.email or ""),
+                    },
+                )
+                candidate.write({
+                    "announcement_sent": True,
+                    "announcement_sent_date": fields.Date.context_today(rec),
+                })
             rec.message_post(
-                body=_("L'email d'announcement a été envoyé à %s employé(s).") % len(recipients)
+                body=_("L'email d'announcement a été envoyé pour %s candidat(s) à %s employé(s).") % (len(pending_candidates), len(clean_recipients))
             )
 
     def _send_on_state_step_change(self, old_state, old_step, new_state, new_step):
@@ -524,6 +616,13 @@ class ARDemandeDeRecrutement(models.Model):
             self._send_template(
                 "ar_recrutement.mail_template_rec_to_md_processing",
                 self._get_group_emails(MD_GRP),
+            )
+            return
+
+        if old_state == "rh" and old_step == "wait_validation" and new_state == "annonce" and new_step == "wait_validation":
+            self._send_template(
+                "ar_recrutement.mail_template_rec_to_rh_annonce",
+                self._get_group_emails(RH_GRP),
             )
             return
 
@@ -1026,6 +1125,7 @@ class ARDemandeDeRecrutement(models.Model):
     formation_base_autre = fields.Char(string="Préciser (Autre formation)", tracking=True)  
 
     experience_annees = fields.Integer(string="Expérience (années)", tracking=True)
+    nombre_personnes = fields.Integer(string="Nombre de personnes", tracking=True)
 
     qualites_personnelles = fields.Text(string="Qualités personnelles", tracking=True)
 
@@ -1077,11 +1177,58 @@ class ARDemandeDeRecrutement(models.Model):
         "ar.demande.recrutement.candidate", "demande_id",
         string="Candidats"
     )
+    candidate_display_ids = fields.Many2many(
+        "ar.demande.recrutement.candidate",
+        "ar_demande_candidate_display_rel",
+        "demande_id",
+        "candidate_id",
+        compute="_compute_candidate_display_ids",
+        string="Candidats",
+    )
+    offer_display_candidate_ids = fields.Many2many(
+        "ar.demande.recrutement.candidate",
+        "ar_demande_offer_display_rel",
+        "demande_id",
+        "candidate_id",
+        compute="_compute_candidate_display_ids",
+        string="Offre du Candidat",
+    )
+    hiring_display_candidate_ids = fields.Many2many(
+        "ar.demande.recrutement.candidate",
+        "ar_demande_hiring_display_rel",
+        "demande_id",
+        "candidate_id",
+        compute="_compute_candidate_display_ids",
+        string="Date d'embauche & Matricule",
+    )
+    medical_display_candidate_ids = fields.Many2many(
+        "ar.demande.recrutement.candidate",
+        "ar_demande_medical_display_rel",
+        "demande_id",
+        "candidate_id",
+        compute="_compute_candidate_display_ids",
+        string="Visite médicale",
+    )
 
     objet_recrutement = fields.Char(
         string="Objet de recrutement",
         tracking=True
     )
+
+    @api.depends("candidate_ids", "candidate_ids.demandeur_decision")
+    def _compute_candidate_display_ids(self):
+        for rec in self:
+            rec.candidate_display_ids = rec.candidate_ids
+            rec.offer_display_candidate_ids = rec.candidate_ids.filtered(
+                lambda candidate: candidate.demandeur_decision == "approuve"
+            )
+            rec.hiring_display_candidate_ids = rec.candidate_ids.filtered(
+                lambda candidate: candidate.offre_decision == "accepte"
+            )
+            rec.medical_display_candidate_ids = rec.candidate_ids.filtered(
+                lambda candidate: candidate.offre_decision == "accepte"
+                and candidate.hiring_date
+            )
 
     def _get_demande_prefix(self, demande_type):
         prefixes = {
@@ -1119,6 +1266,60 @@ class ARDemandeDeRecrutement(models.Model):
     def action_open_modify_wizard(self):
         self.ensure_one()
         return self._open_action_wizard("modify")
+
+    def _open_recruitment_popup(self, xmlid, title):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": title,
+            "res_model": "ar.demande.de.recrutement",
+            "view_mode": "form",
+            "view_id": self.env.ref(xmlid).id,
+            "res_id": self.id,
+            "target": "new",
+        }
+
+    def action_open_entretien_popup(self):
+        return self._open_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_popup_entretien",
+            _("Entretien"),
+        )
+
+    def action_open_deliberation_offre_popup(self):
+        return self._open_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_popup_deliberation_offre",
+            _("Offre du Candidat"),
+        )
+
+    def action_open_date_matricule_popup(self):
+        return self._open_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_popup_date_matricule",
+            _("Date d'embauche & Matricule"),
+        )
+
+    def action_open_dossier_candidat_popup(self):
+        return self._open_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_popup_dossier_candidat",
+            _("Dossier du Candidat"),
+        )
+
+    def action_open_visite_medicale_popup(self):
+        return self._open_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_popup_visite_medicale",
+            _("Visite médicale"),
+        )
+
+    def action_open_announcement_popup(self):
+        return self._open_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_popup_announcement",
+            _("Announcement"),
+        )
+
+    def action_open_suivi_collaborateur_popup(self):
+        return self._open_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_popup_suivi_collaborateur",
+            _("Suivi collaborateur"),
+        )
 
     def action_open_validate_n1_wizard(self):
         self.ensure_one()
@@ -1184,6 +1385,12 @@ class ARDemandeDeRecrutement(models.Model):
                 "step": "draft",
                 "is_rupture_archived": False,
                 "is_stage_archived": False,
+                "validateur_n1_id": False,
+                "validateur_rh_id": False,
+                "validateur_md_id": False,
+                "date_validation_n1": False,
+                "date_validation_rh": False,
+                "date_validation_md": False,
             })
 
             rec.message_post(
@@ -1316,8 +1523,7 @@ class ARDemandeDeRecrutement(models.Model):
 
         for rec in self:
             candidats_cibles = rec.candidate_ids.filtered(
-                lambda c: c.retenu_final == "oui"
-                and c.rh_validation == "oui"
+                lambda c: c.offre_decision == "accepte"
                 and c.hiring_date
                 and not c.is_refused_line
             )
@@ -1404,14 +1610,42 @@ class ARDemandeDeRecrutement(models.Model):
     def _ensure_dossier_candidat_lines(self):
         DossierLine = self.env["ar.demande.recrutement.dossier.candidat.line"]
         for rec in self:
-            existing_types = set(rec.dossier_candidat_line_ids.mapped("document_type"))
-            for document_type in rec._get_default_dossier_candidat_documents():
-                if document_type not in existing_types:
+            candidates = rec.candidate_ids.filtered(
+                lambda c: c.offre_decision == "accepte"
+                and c.hiring_date
+                and not c.is_refused_line
+            )
+            if len(candidates) == 1:
+                rec.dossier_candidat_line_ids.filtered(lambda line: not line.candidate_id).write({
+                    "candidate_id": candidates.id,
+                })
+
+            existing_keys = {
+                (line.candidate_id.id, line.document_type)
+                for line in rec.dossier_candidat_line_ids
+                if line.candidate_id and line.document_type
+            }
+            candidate_ids_to_keep = []
+            for candidate in candidates:
+                candidate_ids_to_keep.append(candidate.id)
+                for document_type in rec._get_default_dossier_candidat_documents():
+                    key = (candidate.id, document_type)
+                    if key in existing_keys:
+                        continue
                     DossierLine.create({
                         "demande_id": rec.id,
+                        "candidate_id": candidate.id,
                         "document_type": document_type,
                     })
-                    existing_types.add(document_type)
+                    existing_keys.add(key)
+
+            rec.dossier_candidat_line_ids.filtered(
+                lambda line: not line.document_file
+                and (
+                    not line.candidate_id
+                    or line.candidate_id.id not in candidate_ids_to_keep
+                )
+            ).unlink()
 
     def _raise_missing_fields(self, title, missing_items):
         if missing_items:
@@ -1479,6 +1713,20 @@ class ARDemandeDeRecrutement(models.Model):
                     if not c.retenu_final
                 ]
                 rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
+
+                retenus = rec.candidate_ids.filtered(
+                    lambda c: c.retenu_final == "oui" and not c.is_refused_line
+                )
+                candidats_sans_fa = retenus.filtered(lambda c: not c.fa_complete)
+                if candidats_sans_fa:
+                    rec._raise_missing_fields(
+                        _("Veuillez complÃ©ter les champs obligatoires suivants :"),
+                        [
+                            _("FA (%s)") % c.candidate_name
+                            for c in candidats_sans_fa
+                        ]
+                    )
+
                 rec.write({"state": "validation_rh", "step": "rh_validate_final"})
                 continue
         
@@ -1509,14 +1757,11 @@ class ARDemandeDeRecrutement(models.Model):
             if rec.demande_type != "demande_stagiaire":
                 continue
 
-            if not rec.stagiaire_duree_mois or rec.stagiaire_duree_mois <= 3:
-                continue
-
             # Ne contrôler le tableau Documents que lorsqu'on demande
             # explicitement les vérifications de type/fichier
             if check_document_type or check_document_file:
                 if not rec.stagiaire_line_ids:
-                    raise ValidationError(_("Merci d'ajouter au moins une ligne dans le tableau Documents pour les stages de plus de 3 mois."))
+                    raise ValidationError(_("Merci d'ajouter au moins une ligne dans le tableau Documents stagiaire."))
 
             if check_document_type:
                 lignes_sans_type = rec.stagiaire_line_ids.filtered(lambda l: not l.document_type)
@@ -1546,7 +1791,12 @@ class ARDemandeDeRecrutement(models.Model):
             if rec.state != "n1":
                 raise AccessError(_("Validation N+1 uniquement à l'état Manager N+1."))
             rec._check_is_real_manager()
-            rec.write({"state": "rh", "step": "wait_validation"})
+            rec.write({
+                "state": "rh",
+                "step": "wait_validation",
+                "validateur_n1_id": self.env.user.id,
+                "date_validation_n1": fields.Datetime.now(),
+            })
 
     def action_valider_periode_essai_n1(self):
         for rec in self:
@@ -1579,9 +1829,18 @@ class ARDemandeDeRecrutement(models.Model):
             if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
                 raise AccessError(_("Vous n'êtes pas autorisé à valider en tant que RH."))
 
-            # 1) Validation RH initiale -> MD
+            # 1) Validation RH initiale
             if rec.state == "rh" and rec.step == "wait_validation":
-                rec.write({"state": "md", "step": "wait_validation"})
+                next_state = "md"
+                if rec.demande_type == "demande_stagiaire" and rec.stagiaire_duree_mois <= 3:
+                    next_state = "annonce"
+
+                rec.write({
+                    "state": next_state,
+                    "step": "wait_validation",
+                    "validateur_rh_id": self.env.user.id,
+                    "date_validation_rh": fields.Datetime.now(),
+                })
                 continue
 
             # 2) ANNONCE -> CVthèques
@@ -1661,24 +1920,41 @@ class ARDemandeDeRecrutement(models.Model):
 
             # 6) Délibération -> Offre du candidat
             if rec.state == "deliberation" and rec.step == "rh_deliberation":
-                if not rec.deliberation_decision_finale:
+                deliberation_lines = rec.candidate_ids.filtered(
+                    lambda c: c.demandeur_decision == "approuve"
+                )
+                if not deliberation_lines:
+                    raise ValidationError(_("Aucun candidat approuvé dans Avis entretien."))
+
+                missing_deliberation = deliberation_lines.filtered(lambda c: not c.deliberation_decision)
+                if missing_deliberation:
                     rec._raise_missing_fields(
                         _("Veuillez renseigner les champs obligatoires suivants :"),
-                        [_("Délibération : Décision finale")]
+                        [_("Délibération")]
                     )
-                if rec.deliberation_decision_finale == "non":
+
+                if not any(c.deliberation_decision == "oui" for c in deliberation_lines):
                     rec.write({"state": "cv_tech", "step": "rh_collect_candidates"})
                     continue
+
                 rec.write({"state": "offre_candidat", "step": "rh_offer_candidate"})
                 continue
 
             # 7) Offre du candidat -> Offre en cours
             if rec.state == "offre_candidat" and rec.step == "rh_offer_candidate":
                 missing = []
-                if not rec.offre_candidat_nom:
-                    missing.append(_("Offre du Candidat : Nom de l'Offre"))
-                if not rec.offre_candidat_file:
-                    missing.append(_("Offre du Candidat : Fichier de l'Offre"))
+                offer_lines = rec.candidate_ids.filtered(
+                    lambda c: c.demandeur_decision == "approuve"
+                    and c.deliberation_decision == "oui"
+                )
+                if not offer_lines:
+                    raise ValidationError(_("Aucun candidat avec Délibération = Oui."))
+
+                for line in offer_lines:
+                    if not line.offre_candidat_nom:
+                        missing.append(_("Offre du Candidat : Nom de l'Offre"))
+                    if not line.offre_candidat_file:
+                        missing.append(_("Offre du Candidat : Fichier de l'Offre"))
                 rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
                 rec.write({"state": "offre_en_cours", "step": "rh_offer_in_progress"})
                 continue
@@ -1686,8 +1962,7 @@ class ARDemandeDeRecrutement(models.Model):
             # 8) Date d'embauche
             if rec.state == "date_embauche" and rec.step == "rh_hiring_date":
                 retenus_rh = rec.candidate_ids.filtered(
-                    lambda c: c.retenu_final == "oui"
-                    and c.rh_validation == "oui"
+                    lambda c: c.offre_decision == "accepte"
                     and not c.is_refused_line
                 )
 
@@ -1699,10 +1974,10 @@ class ARDemandeDeRecrutement(models.Model):
                     ]
                     rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
                     raise ValidationError(_(
-                        "Veuillez renseigner la date d'embauche uniquement pour le(s) candidat(s) avec Validation RH = Oui."
+                        "Veuillez renseigner la date d'embauche uniquement pour le(s) candidat(s) ayant accepté l'offre."
                     ))
 
-                # Contrôle Assurance pour les stages > 3 mois
+                # Contrôle des documents stagiaire
                 rec._check_stagiaire_lines(check_document_type=True, check_document_file=True)
 
                 # Workflow stagiaire
@@ -1735,15 +2010,17 @@ class ARDemandeDeRecrutement(models.Model):
                 if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "non_cadre":
                     raise AccessError(_("Cette étape est réservée aux demandes MOI hors stagiaire."))
 
+                accepted_lines = rec.candidate_ids.filtered(
+                    lambda c: c.offre_decision == "accepte"
+                    and c.hiring_date
+                    and not c.is_refused_line
+                )
                 missing = []
-                if (
-                    rec.demande_type == "changement_contrat"
-                    and rec.changement_contrat in ("anapec_to_cdd", "anapec_to_cdi")
-                    and not rec.ancien_matricule
-                ):
-                    missing.append(_("Matricule à Renseigner : Ancien Matricule"))
-                if not rec.nouvelle_affectation_matricule:
-                    missing.append(_("Matricule à Renseigner : Nouvelle Affectation de matricule"))
+                if rec.demande_type == "changement_contrat" and rec.type_contrat == "anapec":
+                    for candidate in accepted_lines.filtered(lambda c: not c.ancien_matricule):
+                        missing.append(_("Date d'embauche & Matricule : Ancien matricule (%s)") % candidate.candidate_name)
+                for candidate in accepted_lines.filtered(lambda c: not c.nouvelle_affectation_matricule):
+                    missing.append(_("Date d'embauche & Matricule : Matricule à renseigner (%s)") % candidate.candidate_name)
                 rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
 
                 rec.write({"state": "dossier_candidat", "step": "wait_validation"})
@@ -1754,14 +2031,21 @@ class ARDemandeDeRecrutement(models.Model):
                 if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "non_cadre":
                     raise AccessError(_("Cette étape est réservée aux demandes MOI hors stagiaire."))
 
-                photos_line = rec.dossier_candidat_line_ids.filtered(
-                    lambda l: l.document_type == "photos"
-                )[:1]
-                if not photos_line or not photos_line.document_file:
-                    rec._raise_missing_fields(
-                        _("Veuillez renseigner les champs obligatoires suivants :"),
-                        [_("Dossier du Candidat : Photos")]
-                    )
+                rec._ensure_dossier_candidat_lines()
+                missing = []
+                candidates = rec.candidate_ids.filtered(
+                    lambda c: c.offre_decision == "accepte"
+                    and c.hiring_date
+                    and not c.is_refused_line
+                )
+                for candidate in candidates:
+                    photos_line = rec.dossier_candidat_line_ids.filtered(
+                        lambda l: l.candidate_id == candidate
+                        and l.document_type == "photos"
+                    )[:1]
+                    if not photos_line or not photos_line.document_file:
+                        missing.append(_("Dossier du Candidat : Photos (%s)") % candidate.candidate_name)
+                rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
 
                 rec.write({"state": "visite_medicale", "step": "wait_validation"})
                 continue
@@ -1770,11 +2054,16 @@ class ARDemandeDeRecrutement(models.Model):
                 if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "non_cadre":
                     raise AccessError(_("Cette étape est réservée aux demandes MOI hors stagiaire."))
 
-                if not rec.visite_medicale_faite:
-                    rec._raise_missing_fields(
-                        _("Veuillez renseigner les champs obligatoires suivants :"),
-                        [_("Visite médicale faite")]
-                    )
+                candidates = rec._get_announcement_candidates()
+                if not candidates:
+                    raise ValidationError(_("Aucun candidat recruté trouvé pour valider la visite médicale."))
+                missing = []
+                for candidate in candidates:
+                    if not candidate.medical_visit_done:
+                        missing.append(_("Visite médicale faite (%s)") % candidate.candidate_name)
+                    elif candidate.medical_visit_done != "oui":
+                        missing.append(_("Visite médicale faite = Oui (%s)") % candidate.candidate_name)
+                rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
 
                 rec.write({"state": "envoie_annonce", "step": "wait_validation"})
                 continue
@@ -1782,6 +2071,15 @@ class ARDemandeDeRecrutement(models.Model):
             if rec.state == "envoie_annonce" and rec.step == "wait_validation":
                 if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "non_cadre":
                     raise AccessError(_("Cette étape est réservée aux demandes MOI hors stagiaire."))
+
+                candidates = rec._get_announcement_candidates()
+                if not candidates:
+                    raise ValidationError(_("Aucun candidat recruté trouvé pour valider l'announcement."))
+                missing = []
+                for candidate in candidates:
+                    if not candidate.announcement_sent:
+                        missing.append(_("Announcement envoyé (%s)") % candidate.candidate_name)
+                rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
 
                 rec._sync_integration_lines()
                 rec.write({"state": "parcours_integration", "step": "wait_validation"})
@@ -1883,6 +2181,23 @@ class ARDemandeDeRecrutement(models.Model):
                 raise AccessError(_("Vous n'êtes pas autorisé à valider l'offre en tant que RH."))
             if rec.state != "offre_en_cours" or rec.step != "rh_offer_in_progress":
                 raise AccessError(_("Cette action est autorisée uniquement à l'état Offre en Cours."))
+
+            offer_lines = rec.candidate_ids.filtered(
+                lambda c: c.demandeur_decision == "approuve"
+                and c.deliberation_decision == "oui"
+            )
+            if not offer_lines:
+                raise ValidationError(_("Aucun candidat avec Délibération = Oui."))
+            if offer_lines.filtered(lambda c: not c.offre_decision):
+                rec._raise_missing_fields(
+                    _("Veuillez renseigner les champs obligatoires suivants :"),
+                    [_("Décision offre")]
+                )
+
+            if not any(c.offre_decision == "accepte" for c in offer_lines):
+                rec.write({"state": "cv_tech", "step": "rh_collect_candidates"})
+                continue
+
             rec.write({"state": "date_embauche", "step": "rh_hiring_date"})
 
     def action_offre_refusee(self):
@@ -1891,7 +2206,7 @@ class ARDemandeDeRecrutement(models.Model):
                 raise AccessError(_("Vous n'êtes pas autorisé à refuser l'offre en tant que RH."))
             if rec.state != "offre_en_cours" or rec.step != "rh_offer_in_progress":
                 raise AccessError(_("Cette action est autorisée uniquement à l'état Offre en Cours."))
-            rec.write({"state": "cv_tech", "step": "rh_collect_candidates"})
+            rec.write({"state": "refuse", "step": "done"})
 
     def action_valider_md(self):
         for rec in self:
@@ -1900,7 +2215,12 @@ class ARDemandeDeRecrutement(models.Model):
 
             # MD -> Annonce pour tous les types, y compris stagiaire
             if rec.state == "md":
-                rec.write({"state": "annonce", "step": "wait_validation"})
+                rec.write({
+                    "state": "annonce",
+                    "step": "wait_validation",
+                    "validateur_md_id": self.env.user.id,
+                    "date_validation_md": fields.Datetime.now(),
+                })
                 continue
 
             # Feedback MD -> Période d'essai N+1 (uniquement hors stagiaire)
@@ -2037,6 +2357,8 @@ class ARDemandeRecrutementStagiaireLine(models.Model):
         ("assurance", "Assurance"),
         ("convention_stage", "Convention de stage"),
         ("cin", "CIN"),
+        ("photo", "Photo"),
+        ("autre", "Autre"),
     ], string="Type de document", tracking=True)
 
     assurance_file = fields.Binary(
@@ -2075,9 +2397,6 @@ class ARDemandeRecrutementStagiaireLine(models.Model):
     def _check_document_required_date_embauche(self):
         for rec in self:
             if rec.demande_type != "demande_stagiaire":
-                continue
-
-            if rec.stagiaire_duree_mois <= 3:
                 continue
 
             if rec.demande_state == "date_embauche":
@@ -2120,6 +2439,15 @@ class ARDemandeRecrutementCandidate(models.Model):
              WHERE validation_direction_generale IN ('oui', 'non')
         """)
 
+    @api.depends("demande_id.dossier_candidat_line_ids.candidate_id", "demande_id.dossier_candidat_line_ids.document_type", "demande_id.dossier_candidat_line_ids.document_file")
+    def _compute_announcement_photo_ok(self):
+        for rec in self:
+            rec.announcement_photo_ok = bool(rec.demande_id.dossier_candidat_line_ids.filtered(
+                lambda line: line.candidate_id == rec
+                and line.document_type == "photos"
+                and line.document_file
+            ))
+
     demande_id = fields.Many2one("ar.demande.de.recrutement", required=True, ondelete="cascade")
 
     candidate_name = fields.Char(string="Nom du candidat", required=True, Tracking=True)
@@ -2131,6 +2459,19 @@ class ARDemandeRecrutementCandidate(models.Model):
         string="Civilité",
         tracking=True,
     )
+    announcement_photo_ok = fields.Boolean(
+        string="Photo",
+        compute="_compute_announcement_photo_ok",
+        store=False,
+    )
+    announcement_sent = fields.Boolean(string="Announcement envoyé", tracking=True)
+    announcement_sent_date = fields.Date(string="Date d'envoi announcement", tracking=True)
+    medical_visit_done = fields.Selection(
+        [("oui", "Oui"), ("non", "Non")],
+        string="Visite médicale faite",
+        tracking=True,
+    )
+    medical_visit_date = fields.Date(string="Date visite médicale", tracking=True)
     cv_file = fields.Binary(string="CV", attachment=True, Tracking=True)
     cv_filename = fields.Char(string="Nom du CV", Tracking=True)
 
@@ -2169,6 +2510,8 @@ class ARDemandeRecrutementCandidate(models.Model):
     )
 
     hiring_date = fields.Date(string="Date d'embauche", Tracking=True)
+    ancien_matricule = fields.Char(string="Ancien Matricule", tracking=True)
+    nouvelle_affectation_matricule = fields.Char(string="Matricule à renseigner", tracking=True)
 
     is_refused_line = fields.Boolean(
         string="Ligne refusée (UI)",
@@ -2182,6 +2525,38 @@ class ARDemandeRecrutementCandidate(models.Model):
         string="Validation RH",
         default="non",
         tracking=True,
+    )
+
+    deliberation_decision = fields.Selection(
+        [("oui", "Oui"), ("non", "Non")],
+        string="Délibération",
+        tracking=True,
+    )
+    offre_candidat_nom = fields.Char(string="Nom de l'Offre", tracking=True)
+    offre_candidat_file = fields.Binary(string="Fichier de l'Offre", attachment=True)
+    offre_candidat_filename = fields.Char(string="Nom du fichier de l'Offre")
+    offre_decision = fields.Selection(
+        [("accepte", "Acceptée"), ("refuse", "Refusée")],
+        string="Décision offre",
+        tracking=True,
+    )
+
+    candidate_dossier_line_ids = fields.One2many(
+        "ar.demande.recrutement.dossier.candidat.line",
+        "candidate_id",
+        string="Dossier du Candidat",
+    )
+
+    candidate_integration_ids = fields.One2many(
+        "ar.demande.recrutement.integration",
+        "candidate_id",
+        string="Suivi collaborateur",
+    )
+
+    candidate_validation_integration_ids = fields.One2many(
+        "ar.demande.recrutement.integration",
+        "candidate_id",
+        string="Validation periode d'essai",
     )
 
     PERIODE_ESSAI_DECISION = [
@@ -2424,6 +2799,13 @@ class ARDemandeRecrutementCandidate(models.Model):
     demande_type = fields.Selection(
         related="demande_id.demande_type",
         string="Type de demande",
+        store=False,
+        readonly=True
+    )
+
+    type_contrat = fields.Selection(
+        related="demande_id.type_contrat",
+        string="Type de contrat",
         store=False,
         readonly=True
     )
@@ -3011,6 +3393,137 @@ class ARDemandeRecrutementCandidate(models.Model):
             },
         }
     
+    def _open_candidate_recruitment_popup(self, xmlid, title):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": title,
+            "res_model": "ar.demande.recrutement.candidate",
+            "view_mode": "form",
+            "view_id": self.env.ref(xmlid).id,
+            "res_id": self.id,
+            "target": "new",
+        }
+
+    def action_open_candidate_entretien_popup(self):
+        return self._open_candidate_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_candidate_popup_entretien",
+            _("Entretien"),
+        )
+
+    def action_open_candidate_deliberation_offre_popup(self):
+        return self._open_candidate_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_candidate_popup_deliberation_offre",
+            _("Offre du Candidat"),
+        )
+
+    def action_open_candidate_date_matricule_popup(self):
+        if self.demande_type == "demande_stagiaire":
+            return self._open_candidate_recruitment_popup(
+                "ar_recrutement.view_ar_demande_recrutement_candidate_popup_date_embauche",
+                _("Date d'embauche"),
+            )
+        return self._open_candidate_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_candidate_popup_date_matricule",
+            _("Date d'embauche & Matricule"),
+        )
+
+    def action_open_candidate_stagiaire_documents_popup(self):
+        self.ensure_one()
+        if not self.demande_id:
+            raise ValidationError(_("Aucune demande liee a ce candidat."))
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Documents stagiaire"),
+            "res_model": "ar.demande.de.recrutement",
+            "view_mode": "form",
+            "view_id": self.env.ref("ar_recrutement.view_ar_demande_recrutement_popup_stagiaire_documents").id,
+            "res_id": self.demande_id.id,
+            "target": "new",
+        }
+
+    def action_open_candidate_dossier_popup(self):
+        self.ensure_one()
+        if self.demande_id:
+            self.demande_id._ensure_dossier_candidat_lines()
+        return self._open_candidate_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_candidate_popup_dossier",
+            _("Dossier du Candidat"),
+        )
+
+    def action_open_candidate_visite_medicale_popup(self):
+        return self._open_candidate_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_candidate_popup_visite_medicale",
+            _("Visite medicale"),
+        )
+
+    def action_open_candidate_announcement_popup(self):
+        self.ensure_one()
+        if self.demande_id:
+            self.demande_id._ensure_dossier_candidat_lines()
+        return self._open_candidate_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_candidate_popup_announcement",
+            _("Announcement"),
+        )
+
+    def action_open_candidate_suivi_collaborateur_popup(self):
+        self.ensure_one()
+        if self.demande_id:
+            self.demande_id._sync_integration_lines()
+        return self._open_candidate_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_candidate_popup_suivi_collaborateur",
+            _("Suivi collaborateur"),
+        )
+
+    def action_send_candidate_announcement_mail(self):
+        self.ensure_one()
+        rec = self.demande_id
+        if not rec:
+            raise ValidationError(_("Aucune demande liee a ce candidat."))
+        if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
+            raise AccessError(_("Seul le groupe RH peut envoyer l'announcement."))
+        if rec.state != "envoie_annonce":
+            raise AccessError(_("L'envoi de l'announcement est autorise uniquement a l'etat Announcement."))
+        if self.offre_decision != "accepte" or not self.hiring_date:
+            raise ValidationError(_("Ce candidat n'est pas encore pret pour l'announcement."))
+        if self.announcement_sent:
+            raise ValidationError(_("L'announcement de ce candidat a deja ete envoye."))
+
+        missing = []
+        if not self.announcement_civility:
+            missing.append(_("Announcement : Civilite (%s)") % self.candidate_name)
+        photo_line = rec.with_context(announcement_candidate_id=self.id)._get_announcement_photo_line()
+        if not photo_line:
+            missing.append(_("Announcement : Photo (%s)") % self.candidate_name)
+        rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
+
+        recipients = rec._get_employee_emails()
+        if not recipients:
+            raise ValidationError(_("Aucun email employe trouve pour envoyer l'announcement."))
+
+        template = rec.env.ref("ar_recrutement.mail_template_rec_announcement_to_employees", raise_if_not_found=False)
+        if not template:
+            raise ValidationError(_("Template email announcement introuvable."))
+
+        clean_recipients = [rec._clean_header(email) for email in recipients]
+        clean_recipients = [email for email in clean_recipients if email]
+        template.with_context(announcement_candidate_id=self.id).send_mail(
+            rec.id,
+            force_send=True,
+            email_values={
+                "email_to": rec._clean_header(",".join(clean_recipients)),
+                "reply_to": rec._clean_header(rec.env.user.partner_id.email or rec.env.user.email or ""),
+            },
+        )
+        self.write({
+            "announcement_sent": True,
+            "announcement_sent_date": fields.Date.context_today(rec),
+        })
+        rec.message_post(
+            body=_("L'email d'announcement a ete envoye pour le candidat %s a %s employe(s).") % (self.candidate_name, len(clean_recipients))
+        )
+        return {"type": "ir.actions.act_window_close"}
+
     def action_download_fa(self):
         self.ensure_one()
         return self.env.ref("ar_recrutement.action_report_candidate_fa").report_action(self)
@@ -3150,7 +3663,7 @@ class ARDemandeRecrutementAnnonce(models.Model):
 class ARDemandeRecrutementDossierCandidatLine(models.Model):
     _name = "ar.demande.recrutement.dossier.candidat.line"
     _description = "Dossier du Candidat - Demande de Recrutement"
-    _order = "id asc"
+    _order = "candidate_id, id asc"
 
     demande_id = fields.Many2one(
         "ar.demande.de.recrutement",
@@ -3166,6 +3679,32 @@ class ARDemandeRecrutementDossierCandidatLine(models.Model):
         store=True,
         readonly=True
     )
+
+    candidate_id = fields.Many2one(
+        "ar.demande.recrutement.candidate",
+        string="Candidat",
+        ondelete="cascade",
+        tracking=True,
+    )
+    candidate_name = fields.Char(
+        string="Candidat",
+        compute="_compute_candidate_name",
+        store=False,
+    )
+
+    @api.depends("candidate_id", "candidate_id.candidate_name", "demande_id.candidate_ids.offre_decision", "demande_id.candidate_ids.hiring_date")
+    def _compute_candidate_name(self):
+        for rec in self:
+            if rec.candidate_id:
+                rec.candidate_name = rec.candidate_id.candidate_name
+                continue
+
+            candidates = rec.demande_id.candidate_ids.filtered(
+                lambda c: c.offre_decision == "accepte"
+                and c.hiring_date
+                and not c.is_refused_line
+            )
+            rec.candidate_name = candidates.candidate_name if len(candidates) == 1 else ""
 
     document_type = fields.Selection([
         ("cin", "CIN"),
