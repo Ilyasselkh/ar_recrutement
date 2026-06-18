@@ -103,7 +103,7 @@
         invisible="((state != 'en_cours_stage' or demande_type != 'demande_stagiaire') or is_stage_archived == True)"/>
 
           <!-- Demandeur -->
-          <button name="action_open_submit_wizard" type="object" string="Soumettre" class="btn-success" invisible="state not in ('demandeur', 'selection_candidats', 'candidat_retenu')"/>
+          <button name="action_open_submit_wizard" type="object" string="Soumettre" class="btn-success" invisible="state not in ('demandeur', 'selection_candidats', 'candidat_retenu') or (state in ('demandeur', 'selection_candidats', 'candidat_retenu') and current_user_can_act_as_demandeur == False)"/>
 
           <!-- N+1 -->
           <button name="action_open_validate_n1_wizard"
@@ -196,29 +196,30 @@
 
             <field name="has_retenu_final" invisible="1"/>
             <field name="current_user_is_rh" invisible="1"/>
+            <field name="current_user_can_act_as_demandeur" invisible="1"/>
           </group>
 
           <!-- ================== -->
           <!-- Bloc "Remplacement" -->
           <!-- ================== -->
           <group string="Remplacement" class="ar_sortie_caisse_panel" invisible="demande_type != 'remplacement'">
-            <field name="personne_remplacee_id" options="{'no_create': True}" readonly="state != 'demandeur'"/>
-            <field name="raison_remplacement" readonly="state != 'demandeur'"/>
+            <field name="personne_remplacee_id" options="{'no_create': True}" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
+            <field name="raison_remplacement" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
           </group>
 
           <!-- ===================== -->
           <!-- Bloc "Renouvellement" -->
           <!-- ===================== -->
           <group string="Renouvellement" class="ar_sortie_caisse_panel" invisible="demande_type != 'renouvellement'">
-            <field name="renouvellement_type" readonly="state != 'demandeur'"/>
-            <field name="renouvellement_duree" readonly="state != 'demandeur'"/>
+            <field name="renouvellement_type" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
+            <field name="renouvellement_duree" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
           </group>
 
           <!-- =========================== -->
           <!-- Bloc "Changement de contrat" -->
           <!-- =========================== -->
           <group string="Changement de type de contrat" class="ar_sortie_caisse_panel" invisible="demande_type != 'changement_contrat'">
-            <field name="changement_contrat" readonly="state != 'demandeur'"/>
+            <field name="changement_contrat" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
           </group>
 
 <group string="Demande de stagiaire"
@@ -227,28 +228,28 @@
     <group class="ar_stagiaire_field_grid">
         <field name="objet_recrutement"
                required="1"
-               readonly="state != 'demandeur'"/>
+               readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
         <field name="stagiaire_sujet"
-               readonly="state != 'demandeur'" required="demande_type == 'demande_stagiaire'"/>
+               readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'demande_stagiaire'"/>
 
         <field name="stagiaire_nombre"
                required="1"
-               readonly="state != 'demandeur'"/>
+               readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
         <field name="stagiaire_duree_mois"
                required="1"
-               readonly="state != 'demandeur'"/>
+               readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
         <field name="stagiaire_remuneration"
-               readonly="state != 'demandeur'" required="demande_type == 'demande_stagiaire'"/>
+               readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'demande_stagiaire'"/>
 
         <field name="formation_base"
                required="1"
-               readonly="state != 'demandeur'"/>
+               readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
         <field name="formation_base_autre"
-               invisible="formation_base != 'autre'" required="formation_base == 'autre'" readonly="state != 'demandeur'"/>
+               invisible="formation_base != 'autre'" required="formation_base == 'autre'" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
     </group>
 </group>
 
@@ -263,35 +264,35 @@
         <group string="INFORMATIONS DU POSTE" class="ar_sortie_caisse_panel ar_recrutement_panel_primary">
             <label for="objet_recrutement" string="OBJET DE RECRUTEMENT"/>
             <field name="objet_recrutement" nolabel="1"
-                   readonly="state != 'demandeur'"/>
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <label for="categorie_prof" string="CATEGORIE PROFESSIONNELLE"/>
             <field name="categorie_prof" widget="radio" nolabel="1"
-       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
 
             <label for="date_embauche_souhaitee" string="DATE D'EMBAUCHE SOUHAITEE"/>
             <field name="date_embauche_souhaitee" nolabel="1"
-       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
 
             <label for="motif_demande" string="MOTIF DE LA DEMANDE"/>
             <field name="motif_demande" nolabel="1"
-       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
         </group>
 
         <group string="CONTRAT" class="ar_sortie_caisse_panel ar_recrutement_panel_secondary">
             <field name="type_contrat"
-       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
 
             <field name="duree_contrat"
-                   invisible="type_contrat not in ('cdd', 'anapec')" readonly="state != 'demandeur'"/>
+                   invisible="type_contrat not in ('cdd', 'anapec')" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <label for="recrutement_budget" string="LE RECRUTEMENT EST-IL AU BUDGET ?"/>
             <field name="recrutement_budget" widget="radio" nolabel="1"
-       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
 
             <label for="contenu_poste" string="CONTENU DU POSTE ET DESCRIPTIF DES TACHES PRINCIPALES"/>
             <field name="contenu_poste" nolabel="1"
-       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
         </group>
     </group>
 
@@ -300,41 +301,41 @@
         <group string="NIVEAU HIERARCHIQUE ET QUALIFICATION" class="ar_sortie_caisse_panel ar_recrutement_panel_secondary">
             <field name="profil_annexe"
                    filename="profil_annexe_filename"
-                   readonly="state != 'demandeur'"/>
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <field name="rattachement_hierarchique_id"
        options="{'no_create': True}"
-       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
 
             <field name="nom_tuteur_id"
        options="{'no_create': True}"
-       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
 
             <field name="remuneration_avantages"
-                   readonly="state != 'demandeur'"/>
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
         </group>
 
         <group string="PROFIL SOUHAITÉ" class="ar_sortie_caisse_panel ar_recrutement_panel_primary">
             <field name="formation_base"
-       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
 
             <field name="formation_base_autre"
-                   invisible="formation_base != 'autre'" readonly="state != 'demandeur'"/>
+                   invisible="formation_base != 'autre'" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <field name="experience_annees"
-                   readonly="state != 'demandeur'"/>
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <field name="nombre_personnes"
-                   readonly="state != 'demandeur'"/>
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <field name="qualites_personnelles"
-       readonly="state != 'demandeur'" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
 
             <field name="formation_complementaire"
-                   readonly="state != 'demandeur'"/>
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <field name="consequences_si_refus"
-                   readonly="state != 'demandeur'"/>
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
         </group>
     </group>
 
@@ -346,11 +347,11 @@
             <field name="annonce_file"
                    string="Fichier d'annonce"
                    filename="annonce_filename"
-                   readonly="parent.state != 'annonce'" required="parent.state == 'annonce'"/>
+                   readonly="parent.state != 'annonce' or parent.current_user_is_rh == False" required="parent.state == 'annonce'"/>
             <field name="annonce_filename" invisible="1" column_invisible="1"/>
             <field name="annonce_link"
                    string="Lien d'annonce"
-                   readonly="parent.state != 'annonce'"/>
+                   readonly="parent.state != 'annonce' or parent.current_user_is_rh == False"/>
         </list>
     </field>
 </group>
@@ -450,23 +451,23 @@
 
             <field name="candidate_name"
                    string="Nom du candidat"
-                   readonly="parent.step != 'rh_collect_candidates'" required="parent.step == 'rh_collect_candidates'"/>
+                   readonly="parent.step != 'rh_collect_candidates' or parent.current_user_is_rh == False" required="parent.step == 'rh_collect_candidates'"/>
 
             <field name="cv_file"
        filename="cv_filename"
-       readonly="parent.step != 'rh_collect_candidates'" required="parent.step == 'rh_collect_candidates'" column_invisible="parent.state in ('archive_stage',)"/>
+       readonly="parent.step != 'rh_collect_candidates' or parent.current_user_is_rh == False" required="parent.step == 'rh_collect_candidates'" column_invisible="parent.state in ('archive_stage',)"/>
 <field name="cv_filename" invisible="1" column_invisible="1"/>
 
 <field name="demandeur_decision"
        string="Avis entretien"
-       readonly="parent.step != 'demandeur_choose'" column_invisible="parent.state in ('archive_stage',)"/>
+       readonly="parent.step != 'demandeur_choose' or parent.current_user_can_act_as_demandeur == False" column_invisible="parent.state in ('archive_stage',)"/>
 
 <field name="interview_datetime"
-       readonly="(parent.step != 'rh_schedule_interview' or is_refused_line == True)" column_invisible="parent.state in ('archive_stage',)"/>
+       readonly="(parent.step != 'rh_schedule_interview' or parent.current_user_is_rh == False or is_refused_line == True)" column_invisible="parent.state in ('archive_stage',)"/>
 
 <field name="retenu_final"
        string="Validation demandeur"
-       readonly="(parent.step != 'demandeur_final_choice' or is_refused_line == True)" column_invisible="parent.state in ('archive_stage',)"/>
+       readonly="(parent.step != 'demandeur_final_choice' or parent.current_user_can_act_as_demandeur == False or is_refused_line == True)" column_invisible="parent.state in ('archive_stage',)"/>
 
 <button name="action_open_fa"
         type="object"
@@ -475,7 +476,7 @@
         invisible="is_refused_line == True" column_invisible="parent.state in ('archive_stage',)"/>
 
 <field name="rh_validation"
-       readonly="(parent.step != 'rh_validate_final' or is_refused_line == True)" column_invisible="parent.state in ('archive_stage',)"/>
+       readonly="(parent.step != 'rh_validate_final' or parent.current_user_is_rh == False or is_refused_line == True)" column_invisible="parent.state in ('archive_stage',)"/>
 
 <button name="action_open_rh_fa"
         type="object"
@@ -490,7 +491,7 @@
 
             <field name="stage_in_progress"
                    string="En cours de stage"
-                   readonly="can_edit_stage_in_progress == False" column_invisible="(parent.demande_type != 'demande_stagiaire' or parent.state not in ('en_cours_stage', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'archive_stage', 'accepte'))"/>
+                   readonly="can_edit_stage_in_progress == False or parent.current_user_is_rh == False" column_invisible="(parent.demande_type != 'demande_stagiaire' or parent.state not in ('en_cours_stage', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'archive_stage', 'accepte'))"/>
         </list>
     </field>
 </group>
@@ -755,28 +756,30 @@
 <field name="stagiaire_line_ids"
        nolabel="1"
        invisible="1"
-       readonly="state != 'date_embauche'">
+       readonly="state != 'date_embauche' or current_user_is_rh == False">
     <list editable="bottom"
-      readonly="parent.state != 'date_embauche'">
+      readonly="parent.state != 'date_embauche' or parent.current_user_is_rh == False">
     <field name="demande_state" invisible="1" column_invisible="1"/>
-    <field name="document_type" string="Type de document" readonly="parent.state != 'date_embauche'"/>
+    <field name="current_user_is_rh" invisible="1" column_invisible="1"/>
+    <field name="document_type" string="Type de document" readonly="parent.state != 'date_embauche' or parent.current_user_is_rh == False"/>
     <field name="assurance_file"
            filename="assurance_filename"
            string="Document"
-           readonly="parent.state != 'date_embauche'"/>
+           readonly="parent.state != 'date_embauche' or parent.current_user_is_rh == False"/>
     <field name="assurance_filename" invisible="1" column_invisible="1"/>
 </list>
     <form string="Document">
         <group>
             <field name="demande_id" invisible="1"/>
             <field name="demande_state" invisible="1"/>
+            <field name="current_user_is_rh" invisible="1"/>
 
             <field name="document_type"
-                   readonly="demande_state != 'date_embauche'" required="demande_state == 'date_embauche'"/>
+                   readonly="demande_state != 'date_embauche' or current_user_is_rh == False" required="demande_state == 'date_embauche'"/>
 
             <field name="assurance_file"
                    filename="assurance_filename"
-                   readonly="demande_state != 'date_embauche'" required="demande_state == 'date_embauche'"/>
+                   readonly="demande_state != 'date_embauche' or current_user_is_rh == False" required="demande_state == 'date_embauche'"/>
 
             <field name="assurance_filename" invisible="1"/>
         </group>
@@ -1000,6 +1003,7 @@
             <sheet>
                 <field name="parent_state" invisible="1"/>
                 <field name="parent_step" invisible="1"/>
+                <field name="parent_user_can_act_as_demandeur" invisible="1"/>
                 <field name="is_refused_line" invisible="1"/>
 
                 <div class="ar_eval_legend">
@@ -1015,96 +1019,96 @@
                     <field name="fa_interview_realisee_par" readonly="1"/>
                     <field name="fa_date_entretien"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                     <field name="fa_presentation_generale"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                 </group>
 
                 <group string="SAVOIR">
                     <field name="fa_formation_initiale"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                     <field name="fa_formation_complementaire_eval"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                 </group>
 
                 <group string="SAVOIR-FAIRE">
                     <field name="fa_experiences_professionnelles"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                     <field name="fa_communication_orale"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                     <field name="fa_ecoute"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                     <field name="fa_negociation_persuasion"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                     <field name="fa_esprit_equipe_leadership"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                 </group>
 
                 <group string="SAVOIR-ETRE">
                     <field name="fa_autonomie"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                     <field name="fa_dynamisme"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                     <field name="fa_reactivite"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                     <field name="fa_engagement"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                     <field name="fa_rigueur"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                 </group>
 
                 <group>
                     <field name="fa_actuellement_en_poste"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
 
                     <field name="fa_fonction_actuelle"
-                           required="fa_actuellement_en_poste == 'oui'" invisible="fa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           required="fa_actuellement_en_poste == 'oui'" invisible="fa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
 
                     <field name="fa_entreprise_actuelle"
-                           required="fa_actuellement_en_poste == 'oui'" invisible="fa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           required="fa_actuellement_en_poste == 'oui'" invisible="fa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
 
                     <field name="fa_salaire_actuel"
-                           required="fa_actuellement_en_poste == 'oui'" invisible="fa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           required="fa_actuellement_en_poste == 'oui'" invisible="fa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
 
                     <field name="fa_preavis"
-                           required="fa_actuellement_en_poste == 'oui'" invisible="fa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           required="fa_actuellement_en_poste == 'oui'" invisible="fa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
 
                     <field name="demande_type" invisible="1"/>
 <field name="stagiaire_remuneration" invisible="1"/>
 
 <field name="fa_pretentions_salariales_num"
-       invisible="(demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'sans')" readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)" required="(demande_type != 'demande_stagiaire' or (demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'avec'))"/>
+       invisible="(demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'sans')" readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)" required="(demande_type != 'demande_stagiaire' or (demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'avec'))"/>
 
                     <field name="fa_appreciations_generales"
                            required="1"
-                           readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
 
                      <field name="fa_note_globale" readonly="1"/>
                 </group>
@@ -1119,7 +1123,7 @@
             type="object"
             name="action_save_candidate_popup"
             class="btn-primary"
-            invisible="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
+            invisible="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
 
     <button string="Fermer"
             class="btn-secondary"
@@ -1137,6 +1141,7 @@
             <sheet>
                 <field name="parent_state" invisible="1"/>
                 <field name="parent_step" invisible="1"/>
+                <field name="parent_user_is_rh" invisible="1"/>
                 <field name="is_refused_line" invisible="1"/>
 
                 <div class="ar_eval_legend">
@@ -1152,96 +1157,96 @@
                     <field name="rhfa_interview_realisee_par" readonly="1"/>
                     <field name="rhfa_date_entretien"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                     <field name="rhfa_presentation_generale"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                 </group>
 
                 <group string="SAVOIR">
                     <field name="rhfa_formation_initiale"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                     <field name="rhfa_formation_complementaire_eval"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                 </group>
 
                 <group string="SAVOIR-FAIRE">
                     <field name="rhfa_experiences_professionnelles"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                     <field name="rhfa_communication_orale"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                     <field name="rhfa_ecoute"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                     <field name="rhfa_negociation_persuasion"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                     <field name="rhfa_esprit_equipe_leadership"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                 </group>
 
                 <group string="SAVOIR-ETRE">
                     <field name="rhfa_autonomie"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                     <field name="rhfa_dynamisme"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                     <field name="rhfa_reactivite"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                     <field name="rhfa_engagement"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                     <field name="rhfa_rigueur"
                            widget="radio"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                 </group>
 
                 <group>
                     <field name="rhfa_actuellement_en_poste"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
 
                     <field name="rhfa_fonction_actuelle"
-                           required="rhfa_actuellement_en_poste == 'oui'" invisible="rhfa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           required="rhfa_actuellement_en_poste == 'oui'" invisible="rhfa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
 
                     <field name="rhfa_entreprise_actuelle"
-                           required="rhfa_actuellement_en_poste == 'oui'" invisible="rhfa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           required="rhfa_actuellement_en_poste == 'oui'" invisible="rhfa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
 
                     <field name="rhfa_salaire_actuel"
-                           required="rhfa_actuellement_en_poste == 'oui'" invisible="rhfa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           required="rhfa_actuellement_en_poste == 'oui'" invisible="rhfa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
 
                     <field name="rhfa_preavis"
-                           required="rhfa_actuellement_en_poste == 'oui'" invisible="rhfa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           required="rhfa_actuellement_en_poste == 'oui'" invisible="rhfa_actuellement_en_poste != 'oui'" readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
 
                     <field name="demande_type" invisible="1"/>
 <field name="stagiaire_remuneration" invisible="1"/>
 
 <field name="rhfa_pretentions_salariales_num"
-       invisible="(demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'sans')" readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)" required="(demande_type != 'demande_stagiaire' or (demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'avec'))"/>
+       invisible="(demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'sans')" readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)" required="(demande_type != 'demande_stagiaire' or (demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'avec'))"/>
 
                     <field name="rhfa_appreciations_generales"
                            required="1"
-                           readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                           readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
 
                      <field name="rhfa_note_globale" readonly="1"/>
                 </group>
@@ -1256,7 +1261,7 @@
             type="object"
             name="action_save_candidate_popup"
             class="btn-primary"
-            invisible="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+            invisible="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
 
     <button string="Fermer"
             class="btn-secondary"
@@ -1508,15 +1513,17 @@
             <sheet>
                 <field name="parent_state" invisible="1"/>
                 <field name="parent_step" invisible="1"/>
+                <field name="parent_user_can_act_as_demandeur" invisible="1"/>
+                <field name="parent_user_is_rh" invisible="1"/>
                 <field name="is_refused_line" invisible="1"/>
                 <group>
-                    <field name="candidate_name" readonly="parent_step != 'rh_collect_candidates'" required="parent_step == 'rh_collect_candidates'"/>
-                    <field name="cv_file" filename="cv_filename" readonly="parent_step != 'rh_collect_candidates'" required="parent_step == 'rh_collect_candidates'"/>
+                    <field name="candidate_name" readonly="parent_step != 'rh_collect_candidates' or parent_user_is_rh == False" required="parent_step == 'rh_collect_candidates'"/>
+                    <field name="cv_file" filename="cv_filename" readonly="parent_step != 'rh_collect_candidates' or parent_user_is_rh == False" required="parent_step == 'rh_collect_candidates'"/>
                     <field name="cv_filename" invisible="1"/>
-                    <field name="demandeur_decision" string="Avis entretien" readonly="parent_step != 'demandeur_choose'"/>
-                    <field name="interview_datetime" readonly="(parent_step != 'rh_schedule_interview' or is_refused_line == True)"/>
-                    <field name="retenu_final" string="Validation demandeur" readonly="(parent_step != 'demandeur_final_choice' or is_refused_line == True)"/>
-                    <field name="rh_validation" readonly="(parent_step != 'rh_validate_final' or is_refused_line == True)"/>
+                    <field name="demandeur_decision" string="Avis entretien" readonly="parent_step != 'demandeur_choose' or parent_user_can_act_as_demandeur == False"/>
+                    <field name="interview_datetime" readonly="(parent_step != 'rh_schedule_interview' or parent_user_is_rh == False or is_refused_line == True)"/>
+                    <field name="retenu_final" string="Validation demandeur" readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)"/>
+                    <field name="rh_validation" readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)"/>
                     <field name="deliberation_decision" string="D&#233;lib&#233;ration" groups="ar_recrutement.group_ar_recrutement_rh" readonly="parent_state != 'deliberation' or is_refused_line == True" required="parent_state == 'deliberation'"/>
                 </group>
                 <footer>
@@ -1537,13 +1544,14 @@
         <form string="Offre du Candidat" class="ar_recrutement_modern ar_recrutement_popup">
             <sheet>
                 <field name="parent_state" invisible="1"/>
+                <field name="parent_user_is_rh" invisible="1"/>
                 <group>
                     <field name="candidate_name" readonly="1"/>
                     <field name="deliberation_decision" invisible="1"/>
-                    <field name="offre_candidat_nom" string="Nom de l'Offre" readonly="parent_state != 'offre_candidat' or deliberation_decision != 'oui'" required="parent_state == 'offre_candidat' and deliberation_decision == 'oui'"/>
-                    <field name="offre_candidat_file" string="Fichier de l'Offre" filename="offre_candidat_filename" readonly="parent_state != 'offre_candidat' or deliberation_decision != 'oui'" required="parent_state == 'offre_candidat' and deliberation_decision == 'oui'"/>
+                    <field name="offre_candidat_nom" string="Nom de l'Offre" readonly="parent_state != 'offre_candidat' or parent_user_is_rh == False or deliberation_decision != 'oui'" required="parent_state == 'offre_candidat' and deliberation_decision == 'oui'"/>
+                    <field name="offre_candidat_file" string="Fichier de l'Offre" filename="offre_candidat_filename" readonly="parent_state != 'offre_candidat' or parent_user_is_rh == False or deliberation_decision != 'oui'" required="parent_state == 'offre_candidat' and deliberation_decision == 'oui'"/>
                     <field name="offre_candidat_filename" invisible="1"/>
-                    <field name="offre_decision" string="D&#233;cision offre" readonly="parent_state != 'offre_en_cours' or deliberation_decision != 'oui'"/>
+                    <field name="offre_decision" string="D&#233;cision offre" readonly="parent_state != 'offre_en_cours' or parent_user_is_rh == False or deliberation_decision != 'oui'"/>
                 </group>
                 <footer>
                     <button string="Enregistrer" special="save" class="btn-primary"/>
@@ -1561,9 +1569,10 @@
         <form string="Date d'embauche" class="ar_recrutement_modern ar_recrutement_popup">
             <sheet>
                 <field name="parent_step" invisible="1"/>
+                <field name="parent_user_is_rh" invisible="1"/>
                 <group>
                     <field name="candidate_name" readonly="1"/>
-                    <field name="hiring_date" string="Date d'embauche" readonly="parent_step != 'rh_hiring_date'"/>
+                    <field name="hiring_date" string="Date d'embauche" readonly="parent_step != 'rh_hiring_date' or parent_user_is_rh == False"/>
                 </group>
                 <footer>
                     <button string="Enregistrer" special="save" class="btn-primary"/>
@@ -1582,11 +1591,12 @@
             <sheet>
                 <field name="parent_state" invisible="1"/>
                 <field name="parent_step" invisible="1"/>
+                <field name="parent_user_is_rh" invisible="1"/>
                 <field name="demande_type" invisible="1"/>
                 <field name="type_contrat" invisible="1"/>
                 <group>
                     <field name="candidate_name" readonly="1"/>
-                    <field name="hiring_date" string="Date d'embauche" readonly="parent_step != 'rh_hiring_date'"/>
+                    <field name="hiring_date" string="Date d'embauche" readonly="parent_step != 'rh_hiring_date' or parent_user_is_rh == False"/>
                     <field name="ancien_matricule"
                            string="Ancien matricule"
                            groups="ar_recrutement.group_ar_recrutement_rh"
@@ -1641,10 +1651,11 @@
         <form string="Visite m&#233;dicale" class="ar_recrutement_modern ar_recrutement_popup">
             <sheet>
                 <field name="parent_state" invisible="1"/>
+                <field name="parent_user_is_rh" invisible="1"/>
                 <group>
                     <field name="candidate_name" readonly="1"/>
-                    <field name="medical_visit_done" string="Visite m&#233;dicale faite" readonly="parent_state != 'visite_medicale'" required="parent_state == 'visite_medicale'"/>
-                    <field name="medical_visit_date" string="Date visite m&#233;dicale" readonly="parent_state != 'visite_medicale'"/>
+                    <field name="medical_visit_done" string="Visite m&#233;dicale faite" readonly="parent_state != 'visite_medicale' or parent_user_is_rh == False" required="parent_state == 'visite_medicale'"/>
+                    <field name="medical_visit_date" string="Date visite m&#233;dicale" readonly="parent_state != 'visite_medicale' or parent_user_is_rh == False"/>
                 </group>
                 <footer>
                     <button string="Enregistrer" special="save" class="btn-primary"/>
@@ -1662,9 +1673,10 @@
         <form string="Announcement" class="ar_recrutement_modern ar_recrutement_popup">
             <sheet>
                 <field name="parent_state" invisible="1"/>
+                <field name="parent_user_is_rh" invisible="1"/>
                 <group>
                     <field name="candidate_name" readonly="1"/>
-                    <field name="announcement_civility" string="Civilit&#233;" required="parent_state == 'envoie_annonce'" readonly="parent_state != 'envoie_annonce'"/>
+                    <field name="announcement_civility" string="Civilit&#233;" required="parent_state == 'envoie_annonce'" readonly="parent_state != 'envoie_annonce' or parent_user_is_rh == False"/>
                     <field name="announcement_sent_date" string="Date d'envoi" readonly="1"/>
                 </group>
                 <footer>
@@ -1691,10 +1703,12 @@
                     <field name="candidate_integration_ids" class="ar_followup_feedback_table" nolabel="1" colspan="2" domain="[('demande_id', '=', demande_id)]">
                         <list create="0" delete="0" editable="bottom">
                             <field name="demande_state" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_rh" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_md" invisible="1" column_invisible="1"/>
                             <field name="has_integration_form" invisible="1" column_invisible="1"/>
                             <button name="action_open_integration" type="object" string="Int&#233;gration" class="btn-primary" invisible="(demande_state != 'parcours_integration' and has_integration_form == False)"/>
-                            <field name="feedback_rh" string="Feedback RH" readonly="demande_state != 'feedback_rh'"/>
-                            <field name="feedback_md" string="Feedback MD" readonly="demande_state != 'feedback_md'"/>
+                            <field name="feedback_rh" string="Feedback RH" readonly="demande_state != 'feedback_rh' or current_user_is_rh == False"/>
+                            <field name="feedback_md" string="Feedback MD" readonly="demande_state != 'feedback_md' or current_user_is_md == False"/>
                         </list>
                     </field>
                 </group>
@@ -1702,12 +1716,15 @@
                     <field name="candidate_validation_integration_ids" class="ar_followup_trial_table" nolabel="1" colspan="2" domain="[('validation_demande_id', '=', demande_id)]">
                         <list create="0" delete="0" editable="bottom">
                             <field name="demande_state" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_rh" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_manager" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_md" invisible="1" column_invisible="1"/>
                             <field name="is_trial_history" invisible="1" column_invisible="1"/>
-                            <field name="validation_n1_essai" string="P&#233;riode d'essai N+1" readonly="(demande_state != 'periode_essai_n1' or is_trial_history == True)"/>
+                            <field name="validation_n1_essai" string="P&#233;riode d'essai N+1" readonly="(demande_state != 'periode_essai_n1' or current_user_is_manager == False or is_trial_history == True)"/>
                             <button name="action_open_epe" type="object" string="EPE" class="btn-success" invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
-                            <field name="validation_rh_essai" string="P&#233;riode d'essai RH" readonly="(demande_state != 'periode_essai_rh' or is_trial_history == True)"/>
-                            <field name="validation_direction_generale" string="Direction g&#233;n&#233;rale" readonly="(demande_state != 'direction_generale' or is_trial_history == True)"/>
-                            <field name="validation_deliberation_finale" string="D&#233;lib&#233;ration finale" readonly="(demande_state != 'deliberation_finale' or is_trial_history == True)"/>
+                            <field name="validation_rh_essai" string="P&#233;riode d'essai RH" readonly="(demande_state != 'periode_essai_rh' or current_user_is_rh == False or is_trial_history == True)"/>
+                            <field name="validation_direction_generale" string="Direction g&#233;n&#233;rale" readonly="(demande_state != 'direction_generale' or current_user_is_md == False or is_trial_history == True)"/>
+                            <field name="validation_deliberation_finale" string="D&#233;lib&#233;ration finale" readonly="(demande_state != 'deliberation_finale' or current_user_is_rh == False or is_trial_history == True)"/>
                         </list>
                     </field>
                 </group>
@@ -1727,21 +1744,24 @@
         <form string="Documents stagiaire" class="ar_recrutement_modern ar_recrutement_popup">
             <sheet>
                 <field name="state" invisible="1"/>
+                <field name="current_user_is_rh" invisible="1"/>
                 <field name="demande_type" invisible="1"/>
                 <field name="stagiaire_duree_mois" invisible="1"/>
-                <field name="stagiaire_line_ids" nolabel="1" colspan="2" readonly="state != 'date_embauche'">
-                    <list editable="bottom" readonly="parent.state != 'date_embauche'">
+                <field name="stagiaire_line_ids" nolabel="1" colspan="2" readonly="state != 'date_embauche' or current_user_is_rh == False">
+                    <list editable="bottom" readonly="parent.state != 'date_embauche' or parent.current_user_is_rh == False">
                         <field name="demande_state" invisible="1" column_invisible="1"/>
-                        <field name="document_type" string="Type de document" readonly="parent.state != 'date_embauche'"/>
-                        <field name="assurance_file" filename="assurance_filename" string="Document" readonly="parent.state != 'date_embauche'"/>
+                        <field name="current_user_is_rh" invisible="1" column_invisible="1"/>
+                        <field name="document_type" string="Type de document" readonly="parent.state != 'date_embauche' or parent.current_user_is_rh == False"/>
+                        <field name="assurance_file" filename="assurance_filename" string="Document" readonly="parent.state != 'date_embauche' or parent.current_user_is_rh == False"/>
                         <field name="assurance_filename" invisible="1" column_invisible="1"/>
                     </list>
                     <form string="Document">
                         <group>
                             <field name="demande_id" invisible="1"/>
                             <field name="demande_state" invisible="1"/>
-                            <field name="document_type" readonly="demande_state != 'date_embauche'" required="demande_state == 'date_embauche'"/>
-                            <field name="assurance_file" filename="assurance_filename" readonly="demande_state != 'date_embauche'" required="demande_state == 'date_embauche'"/>
+                            <field name="current_user_is_rh" invisible="1"/>
+                            <field name="document_type" readonly="demande_state != 'date_embauche' or current_user_is_rh == False" required="demande_state == 'date_embauche'"/>
+                            <field name="assurance_file" filename="assurance_filename" readonly="demande_state != 'date_embauche' or current_user_is_rh == False" required="demande_state == 'date_embauche'"/>
                             <field name="assurance_filename" invisible="1"/>
                         </group>
                     </form>
@@ -1763,19 +1783,21 @@
             <sheet>
                 <field name="state" invisible="1"/>
                 <field name="step" invisible="1"/>
+                <field name="current_user_can_act_as_demandeur" invisible="1"/>
+                <field name="current_user_is_rh" invisible="1"/>
                 <field name="candidate_ids" nolabel="1" colspan="2">
                     <list editable="bottom" decoration-muted="is_refused_line">
                         <field name="fa_complete" invisible="1" column_invisible="1"/>
                         <field name="rhfa_complete" invisible="1" column_invisible="1"/>
                         <field name="is_refused_line" invisible="1" column_invisible="1"/>
-                        <field name="candidate_name" string="Nom du candidat" readonly="parent.step != 'rh_collect_candidates'" required="parent.step == 'rh_collect_candidates'"/>
-                        <field name="cv_file" filename="cv_filename" readonly="parent.step != 'rh_collect_candidates'" required="parent.step == 'rh_collect_candidates'"/>
+                        <field name="candidate_name" string="Nom du candidat" readonly="parent.step != 'rh_collect_candidates' or parent.current_user_is_rh == False" required="parent.step == 'rh_collect_candidates'"/>
+                        <field name="cv_file" filename="cv_filename" readonly="parent.step != 'rh_collect_candidates' or parent.current_user_is_rh == False" required="parent.step == 'rh_collect_candidates'"/>
                         <field name="cv_filename" invisible="1" column_invisible="1"/>
-                        <field name="demandeur_decision" string="Avis entretien" readonly="parent.step != 'demandeur_choose'"/>
-                        <field name="interview_datetime" readonly="(parent.step != 'rh_schedule_interview' or is_refused_line == True)"/>
-                        <field name="retenu_final" string="Validation demandeur" readonly="(parent.step != 'demandeur_final_choice' or is_refused_line == True)"/>
+                        <field name="demandeur_decision" string="Avis entretien" readonly="parent.step != 'demandeur_choose' or parent.current_user_can_act_as_demandeur == False"/>
+                        <field name="interview_datetime" readonly="(parent.step != 'rh_schedule_interview' or parent.current_user_is_rh == False or is_refused_line == True)"/>
+                        <field name="retenu_final" string="Validation demandeur" readonly="(parent.step != 'demandeur_final_choice' or parent.current_user_can_act_as_demandeur == False or is_refused_line == True)"/>
                         <button name="action_open_fa" type="object" string="FA" class="btn-success" invisible="is_refused_line == True"/>
-                        <field name="rh_validation" readonly="(parent.step != 'rh_validate_final' or is_refused_line == True)"/>
+                        <field name="rh_validation" readonly="(parent.step != 'rh_validate_final' or parent.current_user_is_rh == False or is_refused_line == True)"/>
                         <field name="deliberation_decision" string="Délibération" groups="ar_recrutement.group_ar_recrutement_rh" readonly="parent.state != 'deliberation' or is_refused_line == True" required="parent.state == 'deliberation'"/>
                         <button name="action_open_rh_fa" type="object" string="FA RH" class="btn-success" invisible="is_refused_line == True"/>
                     </list>
@@ -1801,10 +1823,10 @@
                     <list editable="bottom" create="0" delete="0">
                         <field name="candidate_name" string="Nom du candidat" readonly="1"/>
                         <field name="deliberation_decision" invisible="1" column_invisible="1"/>
-                        <field name="offre_candidat_nom" string="Nom de l'Offre" readonly="parent.state != 'offre_candidat' or deliberation_decision != 'oui'" required="parent.state == 'offre_candidat' and deliberation_decision == 'oui'"/>
-                        <field name="offre_candidat_file" string="Fichier de l'Offre" filename="offre_candidat_filename" readonly="parent.state != 'offre_candidat' or deliberation_decision != 'oui'" required="parent.state == 'offre_candidat' and deliberation_decision == 'oui'"/>
+                        <field name="offre_candidat_nom" string="Nom de l'Offre" readonly="parent.state != 'offre_candidat' or parent.current_user_is_rh == False or deliberation_decision != 'oui'" required="parent.state == 'offre_candidat' and deliberation_decision == 'oui'"/>
+                        <field name="offre_candidat_file" string="Fichier de l'Offre" filename="offre_candidat_filename" readonly="parent.state != 'offre_candidat' or parent.current_user_is_rh == False or deliberation_decision != 'oui'" required="parent.state == 'offre_candidat' and deliberation_decision == 'oui'"/>
                         <field name="offre_candidat_filename" invisible="1" column_invisible="1"/>
-                        <field name="offre_decision" string="Décision offre" readonly="parent.state != 'offre_en_cours' or deliberation_decision != 'oui'"/>
+                        <field name="offre_decision" string="Décision offre" readonly="parent.state != 'offre_en_cours' or parent.current_user_is_rh == False or deliberation_decision != 'oui'"/>
                     </list>
                 </field>
                 <footer><button string="Enregistrer" special="save" class="btn-primary"/><button string="Fermer" special="cancel" class="btn-secondary"/></footer>
@@ -1821,6 +1843,7 @@
             <sheet>
                 <field name="state" invisible="1"/>
                 <field name="step" invisible="1"/>
+                <field name="current_user_is_rh" invisible="1"/>
                 <field name="demande_type" invisible="1"/>
                 <field name="type_contrat" invisible="1"/>
                 <field name="changement_contrat" invisible="1"/>
@@ -1828,7 +1851,7 @@
                     <list editable="bottom" edit="1" create="0" delete="0" decoration-muted="is_refused_line">
                         <field name="is_refused_line" invisible="1" column_invisible="1"/>
                         <field name="candidate_name" class="ar_hiring_candidate_col" string="Candidats retenus" readonly="1"/>
-                        <field name="hiring_date" class="ar_hiring_date_col" string="Date d'embauche" readonly="(parent.step != 'rh_hiring_date' or is_refused_line == True)"/>
+                        <field name="hiring_date" class="ar_hiring_date_col" string="Date d'embauche" readonly="(parent.step != 'rh_hiring_date' or parent.current_user_is_rh == False or is_refused_line == True)"/>
                         <field name="ancien_matricule" class="ar_hiring_old_matricule_col" string="Ancien matricule" groups="ar_recrutement.group_ar_recrutement_rh" column_invisible="parent.demande_type == 'demande_stagiaire' or parent.demande_type != 'changement_contrat' or parent.type_contrat != 'anapec'"/>
                         <field name="nouvelle_affectation_matricule" class="ar_hiring_matricule_col" string="Matricule à renseigner" groups="ar_recrutement.group_ar_recrutement_rh" column_invisible="parent.demande_type == 'demande_stagiaire'"/>
                     </list>
@@ -1867,12 +1890,13 @@
         <form string="Visite médicale" class="ar_recrutement_modern ar_recrutement_popup">
             <sheet>
                 <field name="state" invisible="1"/>
+                <field name="current_user_is_rh" invisible="1"/>
                 <field name="candidate_ids" class="ar_equal_three_table" nolabel="1" colspan="2" domain="[('offre_decision', '=', 'accepte'), ('hiring_date', '!=', False)]">
                     <list editable="bottom" edit="1" create="0" delete="0" decoration-muted="is_refused_line">
                         <field name="is_refused_line" invisible="1" column_invisible="1"/>
                         <field name="candidate_name" string="Candidat" readonly="1"/>
-                        <field name="medical_visit_done" string="Visite médicale faite" readonly="parent.state != 'visite_medicale'" required="parent.state == 'visite_medicale'"/>
-                        <field name="medical_visit_date" string="Date visite médicale" readonly="parent.state != 'visite_medicale'"/>
+                        <field name="medical_visit_done" string="Visite médicale faite" readonly="parent.state != 'visite_medicale' or parent.current_user_is_rh == False" required="parent.state == 'visite_medicale'"/>
+                        <field name="medical_visit_date" string="Date visite médicale" readonly="parent.state != 'visite_medicale' or parent.current_user_is_rh == False"/>
                     </list>
                 </field>
                 <footer><button string="Enregistrer" special="save" class="btn-primary"/><button string="Fermer" special="cancel" class="btn-secondary"/></footer>
@@ -1888,11 +1912,12 @@
         <form string="Announcement" class="ar_recrutement_modern ar_recrutement_popup">
             <sheet>
                 <field name="state" invisible="1"/>
+                <field name="current_user_is_rh" invisible="1"/>
                 <field name="candidate_ids" class="ar_equal_three_table" nolabel="1" colspan="2" domain="[('offre_decision', '=', 'accepte'), ('hiring_date', '!=', False)]">
                     <list editable="bottom" edit="1" create="0" delete="0" decoration-muted="is_refused_line">
                         <field name="is_refused_line" invisible="1" column_invisible="1"/>
                         <field name="candidate_name" string="Candidat" readonly="1"/>
-                        <field name="announcement_civility" string="Civilité" required="parent.state == 'envoie_annonce'"/>
+                        <field name="announcement_civility" string="Civilité" required="parent.state == 'envoie_annonce'" readonly="parent.state != 'envoie_annonce' or parent.current_user_is_rh == False"/>
                         <field name="announcement_sent_date" string="Date d'envoi" readonly="1"/>
                     </list>
                 </field>
@@ -1916,11 +1941,13 @@
                     <field name="integration_ids" class="ar_followup_feedback_table" nolabel="1" colspan="2">
                         <list create="0" delete="0" editable="bottom">
                             <field name="demande_state" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_rh" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_md" invisible="1" column_invisible="1"/>
                             <field name="has_integration_form" invisible="1" column_invisible="1"/>
                             <field name="candidate_name" string="Nom des candidats" readonly="1"/>
                             <button name="action_open_integration" type="object" string="Intégration" class="btn-primary" invisible="(demande_state != 'parcours_integration' and has_integration_form == False)"/>
-                            <field name="feedback_rh" string="Feedback RH" readonly="demande_state != 'feedback_rh'"/>
-                            <field name="feedback_md" string="Feedback MD" readonly="demande_state != 'feedback_md'"/>
+                            <field name="feedback_rh" string="Feedback RH" readonly="demande_state != 'feedback_rh' or current_user_is_rh == False"/>
+                            <field name="feedback_md" string="Feedback MD" readonly="demande_state != 'feedback_md' or current_user_is_md == False"/>
                         </list>
                     </field>
                 </group>
@@ -1928,13 +1955,16 @@
                     <field name="validation_integration_ids" class="ar_followup_trial_table" nolabel="1" colspan="2">
                         <list create="0" delete="0" editable="bottom">
                             <field name="demande_state" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_rh" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_manager" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_md" invisible="1" column_invisible="1"/>
                             <field name="is_trial_history" invisible="1" column_invisible="1"/>
                             <field name="candidate_name" string="Nom du candidat" readonly="1"/>
-                            <field name="validation_n1_essai" string="Période d'essai N+1" readonly="(demande_state != 'periode_essai_n1' or is_trial_history == True)"/>
+                            <field name="validation_n1_essai" string="Période d'essai N+1" readonly="(demande_state != 'periode_essai_n1' or current_user_is_manager == False or is_trial_history == True)"/>
                             <button name="action_open_epe" type="object" string="EPE" class="btn-success" invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
-                            <field name="validation_rh_essai" string="Période d'essai RH" readonly="(demande_state != 'periode_essai_rh' or is_trial_history == True)"/>
-                            <field name="validation_direction_generale" string="Direction générale" readonly="(demande_state != 'direction_generale' or is_trial_history == True)"/>
-                            <field name="validation_deliberation_finale" string="Délibération finale" readonly="(demande_state != 'deliberation_finale' or is_trial_history == True)"/>
+                            <field name="validation_rh_essai" string="Période d'essai RH" readonly="(demande_state != 'periode_essai_rh' or current_user_is_rh == False or is_trial_history == True)"/>
+                            <field name="validation_direction_generale" string="Direction générale" readonly="(demande_state != 'direction_generale' or current_user_is_md == False or is_trial_history == True)"/>
+                            <field name="validation_deliberation_finale" string="Délibération finale" readonly="(demande_state != 'deliberation_finale' or current_user_is_rh == False or is_trial_history == True)"/>
                         </list>
                     </field>
                 </group>

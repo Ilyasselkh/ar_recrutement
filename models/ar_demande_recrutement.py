@@ -98,6 +98,11 @@ class ARDemandeDeRecrutement(models.Model):
         compute="_compute_current_user_is_rh",
         store=False,
     )
+    current_user_can_act_as_demandeur = fields.Boolean(
+        string="Peut agir comme demandeur",
+        compute="_compute_current_user_can_act_as_demandeur",
+        store=False,
+    )
 
     is_rupture_archived = fields.Boolean(
         string="Rupture archivée",
@@ -329,6 +334,21 @@ class ARDemandeDeRecrutement(models.Model):
         for rec in self:
             rec.current_user_is_rh = is_rh
 
+    @api.depends("demandeur_id", "rattachement_hierarchique_id")
+    @api.depends_context("uid")
+    def _compute_current_user_can_act_as_demandeur(self):
+        current_user_id = self.env.user.id
+        for rec in self:
+            rec.current_user_can_act_as_demandeur = current_user_id in (
+                rec.demandeur_id.id,
+                rec.rattachement_hierarchique_id.id,
+            )
+
+    def _check_can_act_as_demandeur(self):
+        self.ensure_one()
+        if self.env.user.id not in (self.demandeur_id.id, self.rattachement_hierarchique_id.id):
+            raise AccessError(_("Seul le demandeur ou le rattachement hiérarchique peut continuer cette étape."))
+
     def _sync_step_from_state(self):
         mapping = {
             "demandeur": "draft",
@@ -402,6 +422,15 @@ class ARDemandeDeRecrutement(models.Model):
     def _get_demandeur_email(self):
         self.ensure_one()
         return self._get_user_email(self.demandeur_id)
+
+    def _get_demandeur_recipient_emails(self):
+        self.ensure_one()
+        emails = []
+        for user in (self.demandeur_id, self.rattachement_hierarchique_id):
+            email = self._get_user_email(user)
+            if email and email not in emails:
+                emails.append(email)
+        return emails
 
     def _get_manager_email(self):
         self.ensure_one()
@@ -600,7 +629,7 @@ class ARDemandeDeRecrutement(models.Model):
         if old_state == "n1" and new_state == "rh" and new_step == "wait_validation":
             self._send_template(
                 "ar_recrutement.mail_template_rec_manager_approved_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_to_rh_processing",
@@ -611,7 +640,7 @@ class ARDemandeDeRecrutement(models.Model):
         if old_state == "rh" and old_step == "wait_validation" and new_state == "md" and new_step == "wait_validation":
             self._send_template(
                 "ar_recrutement.mail_template_rec_rh_approved_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_to_md_processing",
@@ -645,7 +674,7 @@ class ARDemandeDeRecrutement(models.Model):
         if old_state == "cv_tech" and old_step == "rh_collect_candidates" and new_state == "selection_candidats" and new_step == "demandeur_choose":
             self._send_template(
                 "ar_recrutement.mail_template_rec_candidates_ready_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -659,7 +688,7 @@ class ARDemandeDeRecrutement(models.Model):
         if old_state == "entretien" and old_step == "rh_schedule_interview" and new_state == "candidat_retenu" and new_step == "demandeur_final_choice":
             self._send_template(
                 "ar_recrutement.mail_template_rec_interview_planned_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -701,7 +730,7 @@ class ARDemandeDeRecrutement(models.Model):
         if old_state == "offre_en_cours" and old_step == "rh_offer_in_progress" and new_state == "cv_tech" and new_step == "rh_collect_candidates":
             self._send_template(
                 "ar_recrutement.mail_template_rec_offer_refused_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
         
@@ -713,7 +742,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_en_cours_stage_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -725,7 +754,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_parcours_integration_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
         
@@ -737,7 +766,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_archive_stage_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -754,7 +783,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_matricule_a_renseigner_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -766,7 +795,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_dossier_candidat_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -778,7 +807,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_visite_medicale_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -790,7 +819,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_envoie_annonce_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -804,7 +833,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_parcours_integration_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
         
@@ -816,7 +845,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_feedback_rh_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -828,7 +857,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_feedback_rh_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -840,7 +869,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_feedback_md_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -852,7 +881,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_periode_essai_n1_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -864,7 +893,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_periode_essai_rh_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
         
@@ -880,7 +909,7 @@ class ARDemandeDeRecrutement(models.Model):
         if old_state == "periode_essai_rh" and old_step == "wait_validation" and new_state == "accepte" and new_step == "done":
             self._send_template(
                 "ar_recrutement.mail_template_rec_direction_generale_approved_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -895,7 +924,7 @@ class ARDemandeDeRecrutement(models.Model):
         if old_state == "direction_generale" and old_step == "wait_validation" and new_state == "rupture" and new_step == "done":
             self._send_template(
                 "ar_recrutement.mail_template_rec_direction_generale_rupture_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_direction_generale_rupture_to_rh",
@@ -906,7 +935,7 @@ class ARDemandeDeRecrutement(models.Model):
         if old_state == "deliberation_finale" and old_step == "wait_validation" and new_state == "accepte" and new_step == "done":
             self._send_template(
                 "ar_recrutement.mail_template_rec_direction_generale_approved_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -914,7 +943,7 @@ class ARDemandeDeRecrutement(models.Model):
         if old_state == "deliberation_finale" and old_step == "wait_validation" and new_state == "rupture" and new_step == "done":
             self._send_template(
                 "ar_recrutement.mail_template_rec_direction_generale_rupture_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_direction_generale_rupture_to_rh",
@@ -926,7 +955,7 @@ class ARDemandeDeRecrutement(models.Model):
         if old_state == "direction_generale" and old_step == "wait_validation" and new_state == "accepte" and new_step == "done":
             self._send_template(
                 "ar_recrutement.mail_template_rec_direction_generale_approved_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -937,7 +966,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_periode_essai_n1_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -954,7 +983,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_back_to_cvtech_no_selected_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -971,7 +1000,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_back_to_cvtech_no_selected_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -988,7 +1017,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_back_to_cvtech_no_selected_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
         
@@ -1005,7 +1034,7 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_back_to_cvtech_no_selected_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -1013,7 +1042,7 @@ class ARDemandeDeRecrutement(models.Model):
         if new_state == "rupture":
             self._send_template(
                 "ar_recrutement.mail_template_rec_rupture_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_rupture_to_rh",
@@ -1024,7 +1053,7 @@ class ARDemandeDeRecrutement(models.Model):
         if new_state == "refuse":
             self._send_template(
                 "ar_recrutement.mail_template_rec_refused_to_demandeur",
-                [self._get_demandeur_email()],
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -1368,6 +1397,7 @@ class ARDemandeDeRecrutement(models.Model):
 
             allowed = (
                 self.env.user == rec.demandeur_id
+                or self.env.user == rec.rattachement_hierarchique_id
                 or (
                     self.env.user.has_group("ar_recrutement.group_ar_recrutement_manager")
                     and rec.manager_id
@@ -1429,6 +1459,42 @@ class ARDemandeDeRecrutement(models.Model):
             rec.visite_medicale_faite = rec.visite_medicale_faite_radio == "oui"
 
     def write(self, vals):
+        demandeur_only_fields = {
+            "personne_remplacee_id",
+            "raison_remplacement",
+            "renouvellement_type",
+            "renouvellement_duree",
+            "changement_contrat",
+            "objet_recrutement",
+            "stagiaire_sujet",
+            "stagiaire_nombre",
+            "stagiaire_duree_mois",
+            "stagiaire_remuneration",
+            "categorie_prof",
+            "date_embauche_souhaitee",
+            "motif_demande",
+            "type_contrat",
+            "duree_contrat",
+            "recrutement_budget",
+            "contenu_poste",
+            "profil_annexe",
+            "profil_annexe_filename",
+            "rattachement_hierarchique_id",
+            "nom_tuteur_id",
+            "remuneration_avantages",
+            "formation_base",
+            "formation_base_autre",
+            "experience_annees",
+            "nombre_personnes",
+            "qualites_personnelles",
+            "formation_complementaire",
+            "consequences_si_refus",
+        }
+        if demandeur_only_fields.intersection(vals):
+            for rec in self:
+                if rec.state == "demandeur":
+                    rec._check_can_act_as_demandeur()
+
         rh_only_fields = {
             "ancien_matricule",
             "nouvelle_affectation_matricule",
@@ -1663,6 +1729,7 @@ class ARDemandeDeRecrutement(models.Model):
 
             # 1) Création -> N+1
             if rec.state == "demandeur" and rec.step == "draft":
+                rec._check_can_act_as_demandeur()
                 rec._check_stagiaire_lines(check_document_type=False, check_document_file=False)
                 rec.write({"state": "n1", "step": "wait_validation"})
                 continue
@@ -1672,6 +1739,7 @@ class ARDemandeDeRecrutement(models.Model):
             #    - si au moins une ligne = Approuvé => Entretien
             #    - sinon => blocage tant que toutes les lignes ne sont pas décidées
             if rec.state == "selection_candidats" and rec.step == "demandeur_choose":
+                rec._check_can_act_as_demandeur()
                 if not rec.candidate_ids:
                     raise ValidationError(_("Aucun candidat trouvé."))
 
@@ -1698,6 +1766,7 @@ class ARDemandeDeRecrutement(models.Model):
             #    - si au moins une ligne = Oui => Entretien RH
             #    - sinon => blocage tant que toutes les lignes ne sont pas décidées
             if rec.state == "candidat_retenu" and rec.step == "demandeur_final_choice":
+                rec._check_can_act_as_demandeur()
                 if not rec.candidate_ids:
                     raise ValidationError(_("Aucun candidat trouvé."))
 
@@ -2393,6 +2462,31 @@ class ARDemandeRecrutementStagiaireLine(models.Model):
         readonly=True
     )
 
+    current_user_is_rh = fields.Boolean(
+        related="demande_id.current_user_is_rh",
+        string="Utilisateur RH",
+        store=False,
+        readonly=True,
+    )
+
+    def _check_rh_can_edit(self):
+        if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
+            raise AccessError(_("Seul le groupe RH peut renseigner les documents stagiaire."))
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        self._check_rh_can_edit()
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if {"document_type", "assurance_file", "assurance_filename"}.intersection(vals):
+            self._check_rh_can_edit()
+        return super().write(vals)
+
+    def unlink(self):
+        self._check_rh_can_edit()
+        return super().unlink()
+
     @api.constrains("document_type", "assurance_file", "demande_state", "demande_type", "stagiaire_duree_mois")
     def _check_document_required_date_embauche(self):
         for rec in self:
@@ -2782,6 +2876,32 @@ class ARDemandeRecrutementCandidate(models.Model):
         readonly=True, tracking=True
     )
 
+    parent_user_can_act_as_demandeur = fields.Boolean(
+        related="demande_id.current_user_can_act_as_demandeur",
+        string="Peut agir comme demandeur",
+        store=False,
+        readonly=True,
+    )
+
+    parent_user_is_rh = fields.Boolean(
+        related="demande_id.current_user_is_rh",
+        string="Utilisateur RH",
+        store=False,
+        readonly=True,
+    )
+
+    parent_user_is_manager = fields.Boolean(
+        string="Utilisateur manager",
+        compute="_compute_parent_user_roles",
+        store=False,
+    )
+
+    parent_user_is_md = fields.Boolean(
+        string="Utilisateur MD",
+        compute="_compute_parent_user_roles",
+        store=False,
+    )
+
     fa_note_globale = fields.Float(
         string="Note globale",
         compute="_compute_fa_note_globale",
@@ -2826,6 +2946,14 @@ class ARDemandeRecrutementCandidate(models.Model):
                 and rec.stage_end_date
                 and today > rec.stage_end_date
             )
+
+    @api.depends_context("uid")
+    def _compute_parent_user_roles(self):
+        is_manager = self.env.user.has_group("ar_recrutement.group_ar_recrutement_manager")
+        is_md = self.env.user.has_group("ar_recrutement.group_ar_recrutement_md")
+        for rec in self:
+            rec.parent_user_is_manager = is_manager
+            rec.parent_user_is_md = is_md
 
     @api.constrains("stage_in_progress", "stage_end_date", "demande_id.demande_type")
     def _check_stage_in_progress_manual_update(self):
@@ -2890,6 +3018,92 @@ class ARDemandeRecrutementCandidate(models.Model):
             if not vals.get("epe_nom_prenom") and vals.get("candidate_name"):
                 vals["epe_nom_prenom"] = vals["candidate_name"]
         return super().create(vals_list)
+
+    def write(self, vals):
+        demandeur_fields = {"demandeur_decision", "retenu_final"}
+        if demandeur_fields.intersection(vals):
+            for rec in self:
+                if rec.demande_id and rec.demande_id.step in ("demandeur_choose", "demandeur_final_choice"):
+                    rec.demande_id._check_can_act_as_demandeur()
+        fa_fields = {
+            "fa_date_entretien",
+            "fa_presentation_generale",
+            "fa_formation_initiale",
+            "fa_formation_complementaire_eval",
+            "fa_experiences_professionnelles",
+            "fa_communication_orale",
+            "fa_ecoute",
+            "fa_negociation_persuasion",
+            "fa_esprit_equipe_leadership",
+            "fa_autonomie",
+            "fa_dynamisme",
+            "fa_reactivite",
+            "fa_engagement",
+            "fa_rigueur",
+            "fa_actuellement_en_poste",
+            "fa_fonction_actuelle",
+            "fa_entreprise_actuelle",
+            "fa_salaire_actuel",
+            "fa_preavis",
+            "fa_pretentions_salariales_num",
+            "fa_appreciations_generales",
+        }
+        if fa_fields.intersection(vals):
+            for rec in self:
+                if not rec.demande_id or rec.demande_id.step != "demandeur_final_choice":
+                    raise AccessError(_("La FA est modifiable uniquement à l'étape Validation demandeur."))
+                rec.demande_id._check_can_act_as_demandeur()
+        rhfa_fields = {
+            "rhfa_date_entretien",
+            "rhfa_presentation_generale",
+            "rhfa_formation_initiale",
+            "rhfa_formation_complementaire_eval",
+            "rhfa_experiences_professionnelles",
+            "rhfa_communication_orale",
+            "rhfa_ecoute",
+            "rhfa_negociation_persuasion",
+            "rhfa_esprit_equipe_leadership",
+            "rhfa_autonomie",
+            "rhfa_dynamisme",
+            "rhfa_reactivite",
+            "rhfa_engagement",
+            "rhfa_rigueur",
+            "rhfa_actuellement_en_poste",
+            "rhfa_fonction_actuelle",
+            "rhfa_entreprise_actuelle",
+            "rhfa_salaire_actuel",
+            "rhfa_preavis",
+            "rhfa_pretentions_salariales_num",
+            "rhfa_appreciations_generales",
+        }
+        if rhfa_fields.intersection(vals):
+            if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
+                raise AccessError(_("Seul le groupe RH peut renseigner la FA RH."))
+            for rec in self:
+                if not rec.demande_id or rec.demande_id.step != "rh_validate_final":
+                    raise AccessError(_("La FA RH est modifiable uniquement à l'étape Validation RH."))
+        rh_fields = {
+            "candidate_name",
+            "cv_file",
+            "cv_filename",
+            "interview_datetime",
+            "rh_validation",
+            "hiring_date",
+            "ancien_matricule",
+            "nouvelle_affectation_matricule",
+            "offre_candidat_nom",
+            "offre_candidat_file",
+            "offre_candidat_filename",
+            "offre_decision",
+            "medical_visit_done",
+            "medical_visit_date",
+            "announcement_civility",
+        }
+        if rh_fields.intersection(vals):
+            is_rh = self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh")
+            if not is_rh:
+                raise AccessError(_("Seul le groupe RH peut renseigner ces informations."))
+        return super().write(vals)
 
     @api.depends(
         "candidate_name",
@@ -3659,6 +3873,24 @@ class ARDemandeRecrutementAnnonce(models.Model):
 
     annonce_link = fields.Char(string="Lien d'annonce", tracking=True)
 
+    def _check_rh_can_edit(self):
+        if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
+            raise AccessError(_("Seul le groupe RH peut renseigner les annonces."))
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        self._check_rh_can_edit()
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if {"annonce_file", "annonce_filename", "annonce_link"}.intersection(vals):
+            self._check_rh_can_edit()
+        return super().write(vals)
+
+    def unlink(self):
+        self._check_rh_can_edit()
+        return super().unlink()
+
 
 class ARDemandeRecrutementDossierCandidatLine(models.Model):
     _name = "ar.demande.recrutement.dossier.candidat.line"
@@ -3890,11 +4122,39 @@ class ARDemandeRecrutementIntegration(models.Model):
         readonly=True
     )
 
+    current_user_is_rh = fields.Boolean(
+        string="Utilisateur RH",
+        compute="_compute_current_user_roles",
+        store=False,
+    )
+
+    current_user_is_manager = fields.Boolean(
+        string="Utilisateur manager",
+        compute="_compute_current_user_roles",
+        store=False,
+    )
+
+    current_user_is_md = fields.Boolean(
+        string="Utilisateur MD",
+        compute="_compute_current_user_roles",
+        store=False,
+    )
+
     @api.depends("demande_id.state", "validation_demande_id.state")
     def _compute_demande_state(self):
         for rec in self:
             demande = rec.demande_id or rec.validation_demande_id
             rec.demande_state = demande.state if demande else False
+
+    @api.depends_context("uid")
+    def _compute_current_user_roles(self):
+        is_rh = self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh")
+        is_manager = self.env.user.has_group("ar_recrutement.group_ar_recrutement_manager")
+        is_md = self.env.user.has_group("ar_recrutement.group_ar_recrutement_md")
+        for rec in self:
+            rec.current_user_is_rh = is_rh
+            rec.current_user_is_manager = is_manager
+            rec.current_user_is_md = is_md
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -3903,6 +4163,21 @@ class ARDemandeRecrutementIntegration(models.Model):
         if demandes:
             demandes._cleanup_suivi_duplicate_lines()
         return records
+
+    def write(self, vals):
+        if "feedback_rh" in vals and not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
+            raise AccessError(_("Seul le groupe RH peut renseigner le Feedback RH."))
+        if "feedback_md" in vals and not self.env.user.has_group("ar_recrutement.group_ar_recrutement_md"):
+            raise AccessError(_("Seul le groupe MD peut renseigner le Feedback MD."))
+        if "validation_n1_essai" in vals and not self.env.user.has_group("ar_recrutement.group_ar_recrutement_manager"):
+            raise AccessError(_("Seul le manager N+1 peut renseigner la période d'essai N+1."))
+        if "validation_rh_essai" in vals and not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
+            raise AccessError(_("Seul le groupe RH peut renseigner la période d'essai RH."))
+        if "validation_direction_generale" in vals and not self.env.user.has_group("ar_recrutement.group_ar_recrutement_md"):
+            raise AccessError(_("Seul le groupe MD peut renseigner la Direction générale."))
+        if "validation_deliberation_finale" in vals and not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
+            raise AccessError(_("Seul le groupe RH peut renseigner la délibération finale."))
+        return super().write(vals)
 
     candidate_id = fields.Many2one(
         "ar.demande.recrutement.candidate",
