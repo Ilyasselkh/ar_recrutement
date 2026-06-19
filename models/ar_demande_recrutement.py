@@ -1856,9 +1856,9 @@ class ARDemandeDeRecrutement(models.Model):
     def action_valider_n1(self):
         for rec in self:
             if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_manager"):
-                raise AccessError(_("Vous n'êtes pas autorisé à valider en tant que Manager N+1."))
+                raise AccessError(_("Vous n'etes pas autorise a valider en tant que Manager N+1."))
             if rec.state != "n1":
-                raise AccessError(_("Validation N+1 uniquement à l'état Manager N+1."))
+                raise AccessError(_("Validation N+1 uniquement a l'etat Manager N+1."))
             rec._check_is_real_manager()
             rec.write({
                 "state": "rh",
@@ -1870,23 +1870,19 @@ class ARDemandeDeRecrutement(models.Model):
     def action_valider_periode_essai_n1(self):
         for rec in self:
             if rec.state != "periode_essai_n1":
-                raise AccessError(_("Validation autorisée uniquement à l'état Période d'essai N+1."))
-
-            if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_manager"):
-                raise AccessError(_("Vous n'êtes pas autorisé à valider en tant que Manager N+1."))
-
-            rec._check_is_real_rattachement_hierarchique()
+                raise AccessError(_("Validation autorisee uniquement a l'etat Periode d'essai N+1."))
+            rec._check_can_act_as_demandeur()
 
             lignes = rec._get_active_trial_lines()
 
             if not lignes:
-                raise ValidationError(_("Aucun candidat concerné."))
+                raise ValidationError(_("Aucun candidat concerne."))
 
             if lignes.filtered(lambda l: not l.validation_n1_essai):
                 raise ValidationError(_("Veuillez renseigner la validation N+1."))
-        
+
             if lignes.filtered(lambda l: not l.epe_complete):
-                raise ValidationError(_("Veuillez compléter la fiche EPE pour tous les candidats concernés."))
+                raise ValidationError(_("Veuillez completer la fiche EPE pour tous les candidats concernes."))
 
             rec.write({
                 "state": "periode_essai_rh",
@@ -2049,6 +2045,14 @@ class ARDemandeDeRecrutement(models.Model):
                 # Contrôle des documents stagiaire
                 rec._check_stagiaire_lines(check_document_type=True, check_document_file=True)
 
+                if rec.categorie_prof == "ouvrier":
+                    missing = [
+                        _("Date d'embauche : Chef d'equipe (%s)") % c.candidate_name
+                        for c in retenus_rh
+                        if not c.chef_equipe_id
+                    ]
+                    rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
+
                 # Workflow stagiaire
                 if rec.demande_type == "demande_stagiaire":
                     rec.write({"state": "en_cours_stage", "step": "wait_validation"})
@@ -2077,7 +2081,7 @@ class ARDemandeDeRecrutement(models.Model):
             # 8) Suite MOI : Matricule -> Dossier -> Visite médicale -> Announcement -> Parcours
             if rec.state == "matricule_a_renseigner" and rec.step == "wait_validation":
                 if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "non_cadre":
-                    raise AccessError(_("Cette étape est réservée aux demandes MOI hors stagiaire."))
+                    raise AccessError(_("Cette etape est reservee aux demandes MOI hors stagiaire."))
 
                 accepted_lines = rec.candidate_ids.filtered(
                     lambda c: c.offre_decision == "accepte"
@@ -2098,7 +2102,7 @@ class ARDemandeDeRecrutement(models.Model):
 
             if rec.state == "dossier_candidat" and rec.step == "wait_validation":
                 if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "non_cadre":
-                    raise AccessError(_("Cette étape est réservée aux demandes MOI hors stagiaire."))
+                    raise AccessError(_("Cette etape est reservee aux demandes MOI hors stagiaire."))
 
                 rec._ensure_dossier_candidat_lines()
                 missing = []
@@ -2121,7 +2125,7 @@ class ARDemandeDeRecrutement(models.Model):
 
             if rec.state == "visite_medicale" and rec.step == "wait_validation":
                 if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "non_cadre":
-                    raise AccessError(_("Cette étape est réservée aux demandes MOI hors stagiaire."))
+                    raise AccessError(_("Cette etape est reservee aux demandes MOI hors stagiaire."))
 
                 candidates = rec._get_announcement_candidates()
                 if not candidates:
@@ -2139,7 +2143,7 @@ class ARDemandeDeRecrutement(models.Model):
 
             if rec.state == "envoie_annonce" and rec.step == "wait_validation":
                 if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "non_cadre":
-                    raise AccessError(_("Cette étape est réservée aux demandes MOI hors stagiaire."))
+                    raise AccessError(_("Cette etape est reservee aux demandes MOI hors stagiaire."))
 
                 candidates = rec._get_announcement_candidates()
                 if not candidates:
@@ -2604,8 +2608,14 @@ class ARDemandeRecrutementCandidate(models.Model):
     )
 
     hiring_date = fields.Date(string="Date d'embauche", Tracking=True)
+    chef_equipe_id = fields.Many2one("res.users", string="Chef d'equipe", tracking=True)
     ancien_matricule = fields.Char(string="Ancien Matricule", tracking=True)
     nouvelle_affectation_matricule = fields.Char(string="Matricule à renseigner", tracking=True)
+    demande_categorie_prof = fields.Selection(
+        related="demande_id.categorie_prof",
+        string="Categorie professionnelle",
+        store=False,
+    )
 
     is_refused_line = fields.Boolean(
         string="Ligne refusée (UI)",
@@ -3082,6 +3092,28 @@ class ARDemandeRecrutementCandidate(models.Model):
             for rec in self:
                 if not rec.demande_id or rec.demande_id.step != "rh_validate_final":
                     raise AccessError(_("La FA RH est modifiable uniquement à l'étape Validation RH."))
+        epe_fields = {
+            "epe_poste",
+            "epe_date_entree_fonction",
+            "epe_affectation_id",
+            "epe_evaluateur_id",
+            "epe_date_evaluation",
+            "epe_points_forts",
+            "epe_points_ameliorer",
+            "epe_missions_realisation",
+            "epe_atteinte_resultats",
+            "epe_potentiel_developpement",
+            "epe_maitrise_technique",
+            "epe_capacite_adaptation",
+            "epe_engagement_dynamisme",
+            "epe_autonomie_initiative",
+            "epe_commentaire",
+        }
+        if epe_fields.intersection(vals):
+            for rec in self:
+                if not rec.demande_id or rec.demande_id.state != "periode_essai_n1":
+                    raise AccessError(_("L'EPE est modifiable uniquement Ã  l'Ã©tape PÃ©riode d'essai N+1."))
+                rec.demande_id._check_can_act_as_demandeur()
         rh_fields = {
             "candidate_name",
             "cv_file",
@@ -3089,6 +3121,7 @@ class ARDemandeRecrutementCandidate(models.Model):
             "interview_datetime",
             "rh_validation",
             "hiring_date",
+            "chef_equipe_id",
             "ancien_matricule",
             "nouvelle_affectation_matricule",
             "offre_candidat_nom",
@@ -3103,6 +3136,10 @@ class ARDemandeRecrutementCandidate(models.Model):
             is_rh = self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh")
             if not is_rh:
                 raise AccessError(_("Seul le groupe RH peut renseigner ces informations."))
+        if "chef_equipe_id" in vals:
+            for rec in self:
+                if not rec.demande_id or rec.demande_id.state != "date_embauche" or rec.demande_id.step != "rh_hiring_date":
+                    raise AccessError(_("Le chef d'equipe est modifiable uniquement a l'etape Date d'embauche."))
         return super().write(vals)
 
     @api.depends(
@@ -4134,6 +4171,12 @@ class ARDemandeRecrutementIntegration(models.Model):
         store=False,
     )
 
+    current_user_can_act_as_demandeur = fields.Boolean(
+        string="Peut agir comme demandeur",
+        compute="_compute_current_user_roles",
+        store=False,
+    )
+
     current_user_is_md = fields.Boolean(
         string="Utilisateur MD",
         compute="_compute_current_user_roles",
@@ -4155,6 +4198,10 @@ class ARDemandeRecrutementIntegration(models.Model):
             rec.current_user_is_rh = is_rh
             rec.current_user_is_manager = is_manager
             rec.current_user_is_md = is_md
+            demande = rec.validation_demande_id or rec.demande_id
+            rec.current_user_can_act_as_demandeur = bool(
+                demande and demande.current_user_can_act_as_demandeur
+            )
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -4169,8 +4216,12 @@ class ARDemandeRecrutementIntegration(models.Model):
             raise AccessError(_("Seul le groupe RH peut renseigner le Feedback RH."))
         if "feedback_md" in vals and not self.env.user.has_group("ar_recrutement.group_ar_recrutement_md"):
             raise AccessError(_("Seul le groupe MD peut renseigner le Feedback MD."))
-        if "validation_n1_essai" in vals and not self.env.user.has_group("ar_recrutement.group_ar_recrutement_manager"):
-            raise AccessError(_("Seul le manager N+1 peut renseigner la période d'essai N+1."))
+        if "validation_n1_essai" in vals:
+            for rec in self:
+                demande = rec.validation_demande_id or rec.demande_id
+                if not demande or demande.state != "periode_essai_n1":
+                    raise AccessError(_("La période d'essai N+1 est modifiable uniquement à l'étape Période d'essai N+1."))
+                demande._check_can_act_as_demandeur()
         if "validation_rh_essai" in vals and not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
             raise AccessError(_("Seul le groupe RH peut renseigner la période d'essai RH."))
         if "validation_direction_generale" in vals and not self.env.user.has_group("ar_recrutement.group_ar_recrutement_md"):
