@@ -347,6 +347,9 @@
                                         <th>D&#233;lib&#233;ration</th>
                                         <th>Offre</th>
                                         <th>Date embauche</th>
+                                        <th t-if="o.categorie_prof == 'ouvrier'">Chef d'&#233;quipe affect&#233;</th>
+                                        <th t-if="o.categorie_prof == 'ouvrier'">Manager affect&#233;</th>
+                                        <th t-if="o.categorie_prof == 'ouvrier'">Superviseur affect&#233;</th>
                                         <th t-if="o.demande_type != 'demande_stagiaire'">Matricule</th>
                                     </tr>
                                 </thead>
@@ -363,6 +366,9 @@
                                             <div class="gen-muted" t-if="cand.offre_candidat_nom"><span t-esc="cand.offre_candidat_nom"/></div>
                                         </td>
                                         <td><span t-esc="cand.hiring_date or ''"/></td>
+                                        <td t-if="o.categorie_prof == 'ouvrier'"><span t-esc="cand.chef_equipe_id.name or ''"/></td>
+                                        <td t-if="o.categorie_prof == 'ouvrier'"><span t-esc="cand.manager_affecte_id.name or ''"/></td>
+                                        <td t-if="o.categorie_prof == 'ouvrier'"><span t-esc="cand.superviseur_affecte_id.name or ''"/></td>
                                         <td t-if="o.demande_type != 'demande_stagiaire'">
                                             <span t-esc="cand.nouvelle_affectation_matricule or ''"/>
                                             <div class="gen-muted" t-if="cand.ancien_matricule">Ancien : <span t-esc="cand.ancien_matricule"/></div>

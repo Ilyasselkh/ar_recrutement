@@ -30,6 +30,7 @@ class ARDemandeDeRecrutement(models.Model):
         ("offre_candidat", "Offre du Candidat"),
         ("offre_en_cours", "Offre en Cours"),
         ("date_embauche", "Date d'Embauche"),
+        ("affectation", "Affectation"),
 
         ("en_cours_stage", "En cours de stage"),
 
@@ -365,6 +366,7 @@ class ARDemandeDeRecrutement(models.Model):
             "offre_candidat": "rh_offer_candidate",
             "offre_en_cours": "rh_offer_in_progress",
             "date_embauche": "rh_hiring_date",
+            "affectation": "wait_validation",
             "en_cours_stage": "wait_validation",
             "matricule_a_renseigner": "wait_validation",
             "envoie_annonce": "wait_validation",
@@ -837,8 +839,32 @@ class ARDemandeDeRecrutement(models.Model):
             )
             return
         
-        # Date d'embauche -> Feedback RH (cas MOD / ouvrier)
-        if old_state == "date_embauche" and old_step == "rh_hiring_date" and new_state == "feedback_rh" and new_step == "wait_validation":
+        # Date d'embauche -> Affectation (cas MOD / ouvrier)
+        if old_state == "date_embauche" and old_step == "rh_hiring_date" and new_state == "affectation" and new_step == "wait_validation":
+            self._send_template(
+                "ar_recrutement.mail_template_rec_to_rh_affectation",
+                self._get_group_emails(RH_GRP),
+            )
+            self._send_template(
+                "ar_recrutement.mail_template_rec_affectation_to_demandeur",
+                self._get_demandeur_recipient_emails(),
+            )
+            return
+
+        # Affectation -> Matricule à Renseigner (cas MOD / ouvrier)
+        if old_state == "affectation" and old_step == "wait_validation" and new_state == "matricule_a_renseigner" and new_step == "wait_validation":
+            self._send_template(
+                "ar_recrutement.mail_template_rec_to_rh_matricule_a_renseigner",
+                self._get_group_emails(RH_GRP),
+            )
+            self._send_template(
+                "ar_recrutement.mail_template_rec_matricule_a_renseigner_to_demandeur",
+                self._get_demandeur_recipient_emails(),
+            )
+            return
+
+        # Matricule à Renseigner -> Feedback RH (cas MOD / ouvrier)
+        if old_state == "matricule_a_renseigner" and old_step == "wait_validation" and new_state == "feedback_rh" and new_step == "wait_validation":
             self._send_template(
                 "ar_recrutement.mail_template_rec_to_rh_feedback_rh",
                 self._get_group_emails(RH_GRP),
@@ -2045,14 +2071,6 @@ class ARDemandeDeRecrutement(models.Model):
                 # Contrôle des documents stagiaire
                 rec._check_stagiaire_lines(check_document_type=True, check_document_file=True)
 
-                if rec.categorie_prof == "ouvrier":
-                    missing = [
-                        _("Date d'embauche : Chef d'equipe (%s)") % c.candidate_name
-                        for c in retenus_rh
-                        if not c.chef_equipe_id
-                    ]
-                    rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
-
                 # Workflow stagiaire
                 if rec.demande_type == "demande_stagiaire":
                     rec.write({"state": "en_cours_stage", "step": "wait_validation"})
@@ -2063,7 +2081,7 @@ class ARDemandeDeRecrutement(models.Model):
                     rec._sync_integration_lines()
 
                     if rec.categorie_prof == "ouvrier":
-                        rec.write({"state": "feedback_rh", "step": "wait_validation"})
+                        rec.write({"state": "affectation", "step": "wait_validation"})
                         continue
 
                     if rec.categorie_prof == "non_cadre":
@@ -2079,9 +2097,31 @@ class ARDemandeDeRecrutement(models.Model):
 
 
             # 8) Suite MOI : Matricule -> Dossier -> Visite médicale -> Announcement -> Parcours
+            if rec.state == "affectation" and rec.step == "wait_validation":
+                if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "ouvrier":
+                    raise AccessError(_("Cette etape est reservee aux demandes MOD hors stagiaire."))
+
+                retenus_rh = rec.candidate_ids.filtered(
+                    lambda c: c.offre_decision == "accepte"
+                    and c.hiring_date
+                    and not c.is_refused_line
+                )
+                missing = []
+                for candidate in retenus_rh:
+                    if not candidate.chef_equipe_id:
+                        missing.append(_("Affectation : Chef d'equipe affecte (%s)") % candidate.candidate_name)
+                    if not candidate.manager_affecte_id:
+                        missing.append(_("Affectation : Manager affecte (%s)") % candidate.candidate_name)
+                    if not candidate.superviseur_affecte_id:
+                        missing.append(_("Affectation : Superviseur affecte (%s)") % candidate.candidate_name)
+                rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
+
+                rec.write({"state": "matricule_a_renseigner", "step": "wait_validation"})
+                continue
+
             if rec.state == "matricule_a_renseigner" and rec.step == "wait_validation":
-                if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "non_cadre":
-                    raise AccessError(_("Cette etape est reservee aux demandes MOI hors stagiaire."))
+                if rec.demande_type == "demande_stagiaire" or rec.categorie_prof not in ("ouvrier", "non_cadre"):
+                    raise AccessError(_("Cette etape est reservee aux demandes MOD/MOI hors stagiaire."))
 
                 accepted_lines = rec.candidate_ids.filtered(
                     lambda c: c.offre_decision == "accepte"
@@ -2096,8 +2136,11 @@ class ARDemandeDeRecrutement(models.Model):
                     missing.append(_("Date d'embauche & Matricule : Matricule à renseigner (%s)") % candidate.candidate_name)
                 rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
 
-                rec.write({"state": "dossier_candidat", "step": "wait_validation"})
-                rec._ensure_dossier_candidat_lines()
+                if rec.categorie_prof == "ouvrier":
+                    rec.write({"state": "feedback_rh", "step": "wait_validation"})
+                else:
+                    rec.write({"state": "dossier_candidat", "step": "wait_validation"})
+                    rec._ensure_dossier_candidat_lines()
                 continue
 
             if rec.state == "dossier_candidat" and rec.step == "wait_validation":
@@ -2316,7 +2359,7 @@ class ARDemandeDeRecrutement(models.Model):
         for rec in self:
             if rec.state not in (
                 "n1", "rh", "md", "annonce", "cv_tech", "selection_candidats",
-                "entretien", "candidat_retenu", "validation_rh", "deliberation", "date_embauche",
+                "entretien", "candidat_retenu", "validation_rh", "deliberation", "date_embauche", "affectation",
                 "en_cours_stage", "matricule_a_renseigner", "dossier_candidat",
                 "visite_medicale", "envoie_annonce", "parcours_integration", "feedback_rh", "feedback_md",
             "periode_essai_n1", "periode_essai_rh", "direction_generale", "deliberation_finale"
@@ -2334,7 +2377,7 @@ class ARDemandeDeRecrutement(models.Model):
                 rec._check_is_real_rattachement_hierarchique()
 
             elif rec.state in ("rh", "annonce", "cv_tech", "selection_candidats", "entretien", "candidat_retenu",
-                                "validation_rh", "deliberation", "date_embauche", "en_cours_stage", "matricule_a_renseigner",
+                                "validation_rh", "deliberation", "date_embauche", "affectation", "en_cours_stage", "matricule_a_renseigner",
                                 "dossier_candidat", "visite_medicale", "envoie_annonce", "parcours_integration",
                                 "feedback_rh", "periode_essai_rh", "deliberation_finale"):
                 if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
@@ -2608,7 +2651,9 @@ class ARDemandeRecrutementCandidate(models.Model):
     )
 
     hiring_date = fields.Date(string="Date d'embauche", Tracking=True)
-    chef_equipe_id = fields.Many2one("res.users", string="Chef d'equipe", tracking=True)
+    chef_equipe_id = fields.Many2one("res.users", string="Chef d'equipe affecte", tracking=True)
+    manager_affecte_id = fields.Many2one("res.users", string="Manager affecte", tracking=True)
+    superviseur_affecte_id = fields.Many2one("res.users", string="Superviseur affecte", tracking=True)
     ancien_matricule = fields.Char(string="Ancien Matricule", tracking=True)
     nouvelle_affectation_matricule = fields.Char(string="Matricule à renseigner", tracking=True)
     demande_categorie_prof = fields.Selection(
@@ -3122,6 +3167,8 @@ class ARDemandeRecrutementCandidate(models.Model):
             "rh_validation",
             "hiring_date",
             "chef_equipe_id",
+            "manager_affecte_id",
+            "superviseur_affecte_id",
             "ancien_matricule",
             "nouvelle_affectation_matricule",
             "offre_candidat_nom",
@@ -3136,10 +3183,10 @@ class ARDemandeRecrutementCandidate(models.Model):
             is_rh = self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh")
             if not is_rh:
                 raise AccessError(_("Seul le groupe RH peut renseigner ces informations."))
-        if "chef_equipe_id" in vals:
+        if {"chef_equipe_id", "manager_affecte_id", "superviseur_affecte_id"}.intersection(vals):
             for rec in self:
-                if not rec.demande_id or rec.demande_id.state != "date_embauche" or rec.demande_id.step != "rh_hiring_date":
-                    raise AccessError(_("Le chef d'equipe est modifiable uniquement a l'etape Date d'embauche."))
+                if not rec.demande_id or rec.demande_id.state != "affectation" or rec.demande_id.step != "wait_validation":
+                    raise AccessError(_("Les champs d'affectation sont modifiables uniquement a l'etape Affectation."))
         return super().write(vals)
 
     @api.depends(

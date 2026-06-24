@@ -576,13 +576,14 @@
     .ar_candidate_step_table .o_field_x2many_list {
         border: 1px solid #cfe0ee;
         border-radius: 8px;
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: hidden;
         background: #ffffff;
     }
 
     .ar_candidate_step_table .o_list_table {
         width: 100% !important;
-        min-width: 0;
+        min-width: 960px;
         table-layout: auto;
         border-collapse: separate;
         border-spacing: 0;
@@ -596,16 +597,16 @@
 
     .ar_candidate_step_table .o_list_table th[data-name='candidate_name'],
     .ar_candidate_step_table .o_list_table td[name='candidate_name'] {
-        width: 22%;
-        min-width: 170px;
+        width: 14%;
+        min-width: 130px;
         font-weight: 700;
         color: #172033;
     }
 
     .ar_candidate_step_table .o_list_table th[data-name='cv_file'],
     .ar_candidate_step_table .o_list_table td[name='cv_file'] {
-        width: 16%;
-        min-width: 130px;
+        width: 9%;
+        min-width: 82px;
         color: #475569;
         white-space: nowrap;
     }
@@ -629,14 +630,15 @@
         align-items: center;
         border-radius: 6px;
         display: inline-flex;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 750;
         justify-content: center;
         line-height: 1.15;
         margin: 2px;
         min-height: 30px;
-        min-width: 92px;
-        padding: 6px 10px;
+        min-width: 76px;
+        padding: 6px 8px;
+        text-align: center;
         white-space: nowrap;
         width: auto;
         box-shadow: none;
@@ -655,6 +657,14 @@
     .ar_candidate_step_table .o_list_table .o_field_x2many_list_row_add a {
         color: #6f5aa0;
         font-weight: 650;
+    }
+
+    .ar_candidate_step_table .o_list_table tbody tr {
+        --ar-step-action-width: 92px;
+    }
+
+    .ar_candidate_step_table .o_list_table tbody td:not([name='candidate_name']):not([name='cv_file']):not(.o_list_record_remove) {
+        min-width: var(--ar-step-action-width);
     }
 
     .o_chatter {
@@ -947,7 +957,13 @@
         }
 
         .ar_candidate_step_table .o_list_table {
-            min-width: 880px;
+            min-width: 960px;
+        }
+
+        .ar_candidate_step_table .o_list_table .btn {
+            font-size: 11px;
+            min-width: 78px;
+            padding: 6px 8px;
         }
     }
 }
@@ -1059,6 +1075,12 @@
         .ar_sortie_caisse_panel,
         .ar_sortie_caisse_lines {
             padding: 12px;
+        }
+
+        .ar_candidate_step_table .o_list_table .btn {
+            min-height: 34px;
+            min-width: 76px;
+            padding: 7px 8px;
         }
 
         .o_horizontal_separator,
