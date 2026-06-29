@@ -41,6 +41,8 @@ class ARDemandeDeRecrutement(models.Model):
         ("parcours_integration", "Parcours d'Intégration"),
         ("feedback_rh", "Feedback RH"),
         ("feedback_md", "Feedback MD"),
+        ("chef_equipe_essai", "Chef d'équipe"),
+        ("superviseur_essai", "Superviseur"),
         ("periode_essai_n1", "Période d'Essai N+1"),
         ("periode_essai_rh", "Période d'Essai RH"),
         ("direction_generale", "Direction générale"),
@@ -102,6 +104,21 @@ class ARDemandeDeRecrutement(models.Model):
     current_user_can_act_as_demandeur = fields.Boolean(
         string="Peut agir comme demandeur",
         compute="_compute_current_user_can_act_as_demandeur",
+        store=False,
+    )
+    current_user_is_chef_equipe_affecte = fields.Boolean(
+        string="Chef d'équipe affecté courant",
+        compute="_compute_current_user_affectation_roles",
+        store=False,
+    )
+    current_user_is_superviseur_affecte = fields.Boolean(
+        string="Superviseur affecté courant",
+        compute="_compute_current_user_affectation_roles",
+        store=False,
+    )
+    current_user_is_manager_affecte = fields.Boolean(
+        string="Manager affecté courant",
+        compute="_compute_current_user_affectation_roles",
         store=False,
     )
 
@@ -345,6 +362,26 @@ class ARDemandeDeRecrutement(models.Model):
                 rec.rattachement_hierarchique_id.id,
             )
 
+    @api.depends(
+        "candidate_ids.chef_equipe_id",
+        "candidate_ids.superviseur_affecte_id",
+        "candidate_ids.manager_affecte_id",
+        "candidate_ids.offre_decision",
+        "candidate_ids.hiring_date",
+    )
+    @api.depends_context("uid")
+    def _compute_current_user_affectation_roles(self):
+        current_user = self.env.user
+        for rec in self:
+            candidates = rec.candidate_ids.filtered(
+                lambda c: c.offre_decision == "accepte"
+                and c.hiring_date
+                and not c.is_refused_line
+            )
+            rec.current_user_is_chef_equipe_affecte = current_user in candidates.mapped("chef_equipe_id")
+            rec.current_user_is_superviseur_affecte = current_user in candidates.mapped("superviseur_affecte_id")
+            rec.current_user_is_manager_affecte = current_user in candidates.mapped("manager_affecte_id")
+
     def _check_can_act_as_demandeur(self):
         self.ensure_one()
         if self.env.user.id not in (self.demandeur_id.id, self.rattachement_hierarchique_id.id):
@@ -375,6 +412,8 @@ class ARDemandeDeRecrutement(models.Model):
             "parcours_integration": "wait_validation",
             "feedback_rh": "wait_validation",
             "feedback_md": "wait_validation",
+            "chef_equipe_essai": "wait_validation",
+            "superviseur_essai": "wait_validation",
             "periode_essai_n1": "wait_validation",
             "periode_essai_rh": "wait_validation",
             "direction_generale": "wait_validation",
@@ -430,6 +469,20 @@ class ARDemandeDeRecrutement(models.Model):
         emails = []
         for user in (self.demandeur_id, self.rattachement_hierarchique_id):
             email = self._get_user_email(user)
+            if email and email not in emails:
+                emails.append(email)
+        return emails
+
+    def _get_trial_role_emails(self, role_field):
+        self.ensure_one()
+        emails = []
+        candidates = self.candidate_ids.filtered(
+            lambda c: c.offre_decision == "accepte"
+            and c.hiring_date
+            and not c.is_refused_line
+        )
+        for candidate in candidates:
+            email = self._get_user_email(candidate[role_field])
             if email and email not in emails:
                 emails.append(email)
         return emails
@@ -900,6 +953,39 @@ class ARDemandeDeRecrutement(models.Model):
             return
 
         # Feedback MD -> Période d'essai N+1
+        if old_state == "feedback_rh" and old_step == "wait_validation" and new_state == "chef_equipe_essai" and new_step == "wait_validation":
+            self._send_template(
+                "ar_recrutement.mail_template_rec_to_chef_equipe_essai",
+                self._get_trial_role_emails("chef_equipe_id"),
+            )
+            self._send_template(
+                "ar_recrutement.mail_template_rec_chef_equipe_essai_to_demandeur",
+                self._get_demandeur_recipient_emails(),
+            )
+            return
+
+        if old_state == "chef_equipe_essai" and old_step == "wait_validation" and new_state == "superviseur_essai" and new_step == "wait_validation":
+            self._send_template(
+                "ar_recrutement.mail_template_rec_to_superviseur_essai",
+                self._get_trial_role_emails("superviseur_affecte_id"),
+            )
+            self._send_template(
+                "ar_recrutement.mail_template_rec_superviseur_essai_to_demandeur",
+                self._get_demandeur_recipient_emails(),
+            )
+            return
+
+        if old_state == "superviseur_essai" and old_step == "wait_validation" and new_state == "periode_essai_n1" and new_step == "wait_validation":
+            self._send_template(
+                "ar_recrutement.mail_template_rec_to_n1_periode_essai",
+                self._get_trial_role_emails("manager_affecte_id"),
+            )
+            self._send_template(
+                "ar_recrutement.mail_template_rec_periode_essai_n1_to_demandeur",
+                self._get_demandeur_recipient_emails(),
+            )
+            return
+
         if old_state == "feedback_md" and old_step == "wait_validation" and new_state == "periode_essai_n1" and new_step == "wait_validation":
             self._send_template(
                 "ar_recrutement.mail_template_rec_to_n1_periode_essai",
@@ -928,6 +1014,13 @@ class ARDemandeDeRecrutement(models.Model):
             self._send_template(
                 "ar_recrutement.mail_template_rec_to_md_direction_generale",
                 self._get_group_emails(MD_GRP),
+            )
+            return
+
+        if old_state == "periode_essai_rh" and old_step == "wait_validation" and new_state == "deliberation_finale" and new_step == "wait_validation":
+            self._send_template(
+                "ar_recrutement.mail_template_rec_to_rh_deliberation_finale",
+                self._get_group_emails(RH_GRP),
             )
             return
         
@@ -997,6 +1090,17 @@ class ARDemandeDeRecrutement(models.Model):
             return
 
         # Retour à Cv-Tech si aucun candidat retenu (Validation demandeur = tous Non)
+        if old_state == "deliberation_finale" and old_step == "wait_validation" and new_state == "chef_equipe_essai" and new_step == "wait_validation":
+            self._send_template(
+                "ar_recrutement.mail_template_rec_to_chef_equipe_essai",
+                self._get_trial_role_emails("chef_equipe_id"),
+            )
+            self._send_template(
+                "ar_recrutement.mail_template_rec_chef_equipe_essai_to_demandeur",
+                self._get_demandeur_recipient_emails(),
+            )
+            return
+
         if (
             old_state == "candidat_retenu"
             and old_step == "demandeur_final_choice"
@@ -1404,6 +1508,14 @@ class ARDemandeDeRecrutement(models.Model):
         self.ensure_one()
         return self._open_action_wizard("validate_periode_essai_n1")
 
+    def action_open_validate_chef_equipe_essai_wizard(self):
+        self.ensure_one()
+        return self._open_action_wizard("validate_chef_equipe_essai")
+
+    def action_open_validate_superviseur_essai_wizard(self):
+        self.ensure_one()
+        return self._open_action_wizard("validate_superviseur_essai")
+
     def action_open_offer_accept_wizard(self):
         self.ensure_one()
         return self._open_action_wizard("offer_accept")
@@ -1636,6 +1748,8 @@ class ARDemandeDeRecrutement(models.Model):
                         "validation_demande_id": rec.id,
                         "candidate_id": cand.id,
                         "integration_department_id": rec.department_id.id or False,
+                        "validation_chef_equipe_essai": cand.validation_chef_equipe_essai,
+                        "validation_superviseur_essai": cand.validation_superviseur_essai,
                         "validation_n1_essai": cand.validation_n1_essai,
                         "validation_rh_essai": cand.validation_rh_essai,
                         "validation_direction_generale": cand.validation_direction_generale,
@@ -1663,7 +1777,7 @@ class ARDemandeDeRecrutement(models.Model):
                     key=lambda line: (
                         bool(line.integration_line_ids),
                         bool(line.feedback_rh or line.feedback_md),
-                        bool(line.validation_n1_essai or line.validation_rh_essai or line.validation_direction_generale or line.validation_deliberation_finale),
+                        bool(line.validation_chef_equipe_essai or line.validation_superviseur_essai or line.validation_n1_essai or line.validation_rh_essai or line.validation_direction_generale or line.validation_deliberation_finale),
                         line.id,
                     ),
                     reverse=True,
@@ -1897,12 +2011,18 @@ class ARDemandeDeRecrutement(models.Model):
         for rec in self:
             if rec.state != "periode_essai_n1":
                 raise AccessError(_("Validation autorisee uniquement a l'etat Periode d'essai N+1."))
-            rec._check_can_act_as_demandeur()
 
             lignes = rec._get_active_trial_lines()
 
             if not lignes:
                 raise ValidationError(_("Aucun candidat concerne."))
+
+            if rec._is_non_stagiaire_standard_flow() and rec.categorie_prof == "ouvrier":
+                invalid_lines = lignes.filtered(lambda l: l.candidate_id.manager_affecte_id != self.env.user)
+                if invalid_lines:
+                    raise AccessError(_("Seul le Manager affecté peut valider l'étape N+1 pour les demandes MOD."))
+            else:
+                rec._check_can_act_as_demandeur()
 
             if lignes.filtered(lambda l: not l.validation_n1_essai):
                 raise ValidationError(_("Veuillez renseigner la validation N+1."))
@@ -1914,6 +2034,46 @@ class ARDemandeDeRecrutement(models.Model):
                 "state": "periode_essai_rh",
                 "step": "wait_validation"
             })
+
+    def action_valider_chef_equipe_essai(self):
+        for rec in self:
+            if rec.state != "chef_equipe_essai":
+                raise AccessError(_("Validation autorisée uniquement à l'état Chef d'équipe."))
+            if not rec._is_non_stagiaire_standard_flow() or rec.categorie_prof != "ouvrier":
+                raise AccessError(_("Cette étape est réservée aux demandes MOD hors stagiaire."))
+
+            lignes = rec._get_active_trial_lines()
+            if not lignes:
+                raise ValidationError(_("Aucun candidat concerné."))
+
+            invalid_lines = lignes.filtered(lambda l: l.candidate_id.chef_equipe_id != self.env.user)
+            if invalid_lines:
+                raise AccessError(_("Seul le Chef d'équipe affecté peut valider cette étape."))
+
+            if lignes.filtered(lambda l: not l.validation_chef_equipe_essai):
+                raise ValidationError(_("Veuillez renseigner la validation Chef d'équipe pour tous les candidats concernés."))
+
+            rec.write({"state": "superviseur_essai", "step": "wait_validation"})
+
+    def action_valider_superviseur_essai(self):
+        for rec in self:
+            if rec.state != "superviseur_essai":
+                raise AccessError(_("Validation autorisée uniquement à l'état Superviseur."))
+            if not rec._is_non_stagiaire_standard_flow() or rec.categorie_prof != "ouvrier":
+                raise AccessError(_("Cette étape est réservée aux demandes MOD hors stagiaire."))
+
+            lignes = rec._get_active_trial_lines()
+            if not lignes:
+                raise ValidationError(_("Aucun candidat concerné."))
+
+            invalid_lines = lignes.filtered(lambda l: l.candidate_id.superviseur_affecte_id != self.env.user)
+            if invalid_lines:
+                raise AccessError(_("Seul le Superviseur affecté peut valider cette étape."))
+
+            if lignes.filtered(lambda l: not l.validation_superviseur_essai):
+                raise ValidationError(_("Veuillez renseigner la validation Superviseur pour tous les candidats concernés."))
+
+            rec.write({"state": "periode_essai_n1", "step": "wait_validation"})
 
     def action_valider_rh(self):
         for rec in self:
@@ -2099,7 +2259,7 @@ class ARDemandeDeRecrutement(models.Model):
             # 8) Suite MOI : Matricule -> Dossier -> Visite médicale -> Announcement -> Parcours
             if rec.state == "affectation" and rec.step == "wait_validation":
                 if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "ouvrier":
-                    raise AccessError(_("Cette etape est reservee aux demandes MOD hors stagiaire."))
+                    raise AccessError(_("Cette étape est réservée aux demandes MOD hors stagiaire."))
 
                 retenus_rh = rec.candidate_ids.filtered(
                     lambda c: c.offre_decision == "accepte"
@@ -2109,11 +2269,11 @@ class ARDemandeDeRecrutement(models.Model):
                 missing = []
                 for candidate in retenus_rh:
                     if not candidate.chef_equipe_id:
-                        missing.append(_("Affectation : Chef d'equipe affecte (%s)") % candidate.candidate_name)
+                        missing.append(_("Affectation : Chef d'équipe affecté (%s)") % candidate.candidate_name)
                     if not candidate.manager_affecte_id:
-                        missing.append(_("Affectation : Manager affecte (%s)") % candidate.candidate_name)
+                        missing.append(_("Affectation : Manager affecté (%s)") % candidate.candidate_name)
                     if not candidate.superviseur_affecte_id:
-                        missing.append(_("Affectation : Superviseur affecte (%s)") % candidate.candidate_name)
+                        missing.append(_("Affectation : Superviseur affecté (%s)") % candidate.candidate_name)
                 rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
 
                 rec.write({"state": "matricule_a_renseigner", "step": "wait_validation"})
@@ -2121,7 +2281,7 @@ class ARDemandeDeRecrutement(models.Model):
 
             if rec.state == "matricule_a_renseigner" and rec.step == "wait_validation":
                 if rec.demande_type == "demande_stagiaire" or rec.categorie_prof not in ("ouvrier", "non_cadre"):
-                    raise AccessError(_("Cette etape est reservee aux demandes MOD/MOI hors stagiaire."))
+                    raise AccessError(_("Cette étape est réservée aux demandes MOD/MOI hors stagiaire."))
 
                 accepted_lines = rec.candidate_ids.filtered(
                     lambda c: c.offre_decision == "accepte"
@@ -2145,7 +2305,7 @@ class ARDemandeDeRecrutement(models.Model):
 
             if rec.state == "dossier_candidat" and rec.step == "wait_validation":
                 if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "non_cadre":
-                    raise AccessError(_("Cette etape est reservee aux demandes MOI hors stagiaire."))
+                    raise AccessError(_("Cette étape est réservée aux demandes MOI hors stagiaire."))
 
                 rec._ensure_dossier_candidat_lines()
                 missing = []
@@ -2168,7 +2328,7 @@ class ARDemandeDeRecrutement(models.Model):
 
             if rec.state == "visite_medicale" and rec.step == "wait_validation":
                 if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "non_cadre":
-                    raise AccessError(_("Cette etape est reservee aux demandes MOI hors stagiaire."))
+                    raise AccessError(_("Cette étape est réservée aux demandes MOI hors stagiaire."))
 
                 candidates = rec._get_announcement_candidates()
                 if not candidates:
@@ -2186,7 +2346,7 @@ class ARDemandeDeRecrutement(models.Model):
 
             if rec.state == "envoie_annonce" and rec.step == "wait_validation":
                 if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "non_cadre":
-                    raise AccessError(_("Cette etape est reservee aux demandes MOI hors stagiaire."))
+                    raise AccessError(_("Cette étape est réservée aux demandes MOI hors stagiaire."))
 
                 candidates = rec._get_announcement_candidates()
                 if not candidates:
@@ -2250,6 +2410,10 @@ class ARDemandeDeRecrutement(models.Model):
                 if rec.integration_ids.filtered(lambda l: not l.feedback_rh):
                     raise ValidationError(_("Veuillez renseigner le Feedback RH pour tous les candidats."))
 
+                if rec._is_non_stagiaire_standard_flow() and rec.categorie_prof == "ouvrier":
+                    rec.write({"state": "chef_equipe_essai", "step": "wait_validation"})
+                    continue
+
                 rec.write({"state": "feedback_md", "step": "wait_validation"})
                 continue
 
@@ -2266,6 +2430,28 @@ class ARDemandeDeRecrutement(models.Model):
                 if lignes.filtered(lambda l: not l.validation_rh_essai):
                     raise ValidationError(_("Veuillez renseigner 'Validation RH' pour tous les candidats concernés."))
 
+                if rec._is_non_stagiaire_standard_flow() and rec.categorie_prof == "ouvrier":
+                    if lignes.filtered(lambda l: not l.validation_chef_equipe_essai):
+                        raise ValidationError(_("Veuillez renseigner 'Validation Chef d'équipe' pour tous les candidats concernés."))
+
+                    if lignes.filtered(lambda l: not l.validation_superviseur_essai):
+                        raise ValidationError(_("Veuillez renseigner 'Validation Superviseur' pour tous les candidats concernés."))
+
+                    has_rupture = any(
+                        l.validation_chef_equipe_essai == "rupture"
+                        or l.validation_superviseur_essai == "rupture"
+                        or l.validation_n1_essai == "rupture"
+                        or l.validation_rh_essai == "rupture"
+                        for l in lignes
+                    )
+
+                    if has_rupture:
+                        rec.write({"state": "rupture", "step": "done"})
+                        continue
+
+                    rec.write({"state": "deliberation_finale", "step": "wait_validation"})
+                    continue
+
                 has_rupture = any(
                     l.validation_n1_essai == "rupture" or l.validation_rh_essai == "rupture"
                     for l in lignes
@@ -2277,10 +2463,6 @@ class ARDemandeDeRecrutement(models.Model):
 
                 # Si aucune rupture n'est demandée, le flux continue.
                 if rec._is_non_stagiaire_standard_flow():
-                    if rec.categorie_prof == "ouvrier":
-                        rec.write({"state": "accepte", "step": "done"})
-                        continue
-
                     if rec.categorie_prof == "non_cadre":
                         rec.write({"state": "direction_generale", "step": "wait_validation"})
                         continue
@@ -2451,7 +2633,10 @@ class ARDemandeDeRecrutement(models.Model):
                         "integration_department_id": line.integration_department_id.id or rec.department_id.id or False,
                     })
                 rec._cleanup_suivi_duplicate_lines()
-                rec.write({"state": "periode_essai_n1", "step": "wait_validation"})
+                if rec._is_non_stagiaire_standard_flow() and rec.categorie_prof == "ouvrier":
+                    rec.write({"state": "chef_equipe_essai", "step": "wait_validation"})
+                else:
+                    rec.write({"state": "periode_essai_n1", "step": "wait_validation"})
             else:
                 rec.write({"state": "accepte", "step": "done"})
 
@@ -2651,14 +2836,14 @@ class ARDemandeRecrutementCandidate(models.Model):
     )
 
     hiring_date = fields.Date(string="Date d'embauche", Tracking=True)
-    chef_equipe_id = fields.Many2one("res.users", string="Chef d'equipe affecte", tracking=True)
-    manager_affecte_id = fields.Many2one("res.users", string="Manager affecte", tracking=True)
-    superviseur_affecte_id = fields.Many2one("res.users", string="Superviseur affecte", tracking=True)
+    chef_equipe_id = fields.Many2one("res.users", string="Chef d'équipe affecté", tracking=True)
+    manager_affecte_id = fields.Many2one("res.users", string="Manager affecté", tracking=True)
+    superviseur_affecte_id = fields.Many2one("res.users", string="Superviseur affecté", tracking=True)
     ancien_matricule = fields.Char(string="Ancien Matricule", tracking=True)
     nouvelle_affectation_matricule = fields.Char(string="Matricule à renseigner", tracking=True)
     demande_categorie_prof = fields.Selection(
         related="demande_id.categorie_prof",
-        string="Categorie professionnelle",
+        string="Catégorie professionnelle",
         store=False,
     )
 
@@ -2717,6 +2902,16 @@ class ARDemandeRecrutementCandidate(models.Model):
     validation_n1_essai = fields.Selection(
         PERIODE_ESSAI_DECISION,
         string="PE N+1",
+        tracking=True,
+    )
+    validation_chef_equipe_essai = fields.Selection(
+        PERIODE_ESSAI_DECISION,
+        string="PE Chef d'équipe",
+        tracking=True,
+    )
+    validation_superviseur_essai = fields.Selection(
+        PERIODE_ESSAI_DECISION,
+        string="PE Superviseur",
         tracking=True,
     )
 
@@ -3107,7 +3302,11 @@ class ARDemandeRecrutementCandidate(models.Model):
             for rec in self:
                 if not rec.demande_id or rec.demande_id.step != "demandeur_final_choice":
                     raise AccessError(_("La FA est modifiable uniquement à l'étape Validation demandeur."))
-                rec.demande_id._check_can_act_as_demandeur()
+                if rec.demande_id._is_non_stagiaire_standard_flow() and rec.demande_id.categorie_prof == "ouvrier":
+                    if rec.manager_affecte_id != self.env.user:
+                        raise AccessError(_("Seul le Manager affecté peut renseigner l'EPE pour les demandes MOD."))
+                else:
+                    rec.demande_id._check_can_act_as_demandeur()
         rhfa_fields = {
             "rhfa_date_entretien",
             "rhfa_presentation_generale",
@@ -3157,8 +3356,12 @@ class ARDemandeRecrutementCandidate(models.Model):
         if epe_fields.intersection(vals):
             for rec in self:
                 if not rec.demande_id or rec.demande_id.state != "periode_essai_n1":
-                    raise AccessError(_("L'EPE est modifiable uniquement Ã  l'Ã©tape PÃ©riode d'essai N+1."))
-                rec.demande_id._check_can_act_as_demandeur()
+                    raise AccessError(_("L'EPE est modifiable uniquement à l'étape Période d'essai N+1."))
+                if rec.demande_id._is_non_stagiaire_standard_flow() and rec.demande_id.categorie_prof == "ouvrier":
+                    if rec.manager_affecte_id != self.env.user:
+                        raise AccessError(_("Seul le Manager affecté peut renseigner l'EPE pour les demandes MOD."))
+                else:
+                    rec.demande_id._check_can_act_as_demandeur()
         rh_fields = {
             "candidate_name",
             "cv_file",
@@ -3186,7 +3389,7 @@ class ARDemandeRecrutementCandidate(models.Model):
         if {"chef_equipe_id", "manager_affecte_id", "superviseur_affecte_id"}.intersection(vals):
             for rec in self:
                 if not rec.demande_id or rec.demande_id.state != "affectation" or rec.demande_id.step != "wait_validation":
-                    raise AccessError(_("Les champs d'affectation sont modifiables uniquement a l'etape Affectation."))
+                    raise AccessError(_("Les champs d'affectation sont modifiables uniquement à l'étape Affectation."))
         return super().write(vals)
 
     @api.depends(
@@ -3721,9 +3924,16 @@ class ARDemandeRecrutementCandidate(models.Model):
                 "ar_recrutement.view_ar_demande_recrutement_candidate_popup_date_embauche",
                 _("Date d'embauche"),
             )
+        title = _("Date d'embauche & Affectation") if self.demande_id.categorie_prof == "ouvrier" else _("Date d'embauche")
         return self._open_candidate_recruitment_popup(
             "ar_recrutement.view_ar_demande_recrutement_candidate_popup_date_matricule",
-            _("Date d'embauche & Matricule"),
+            title,
+        )
+
+    def action_open_candidate_matricule_popup(self):
+        return self._open_candidate_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_candidate_popup_matricule",
+            _("Matricule"),
         )
 
     def action_open_candidate_stagiaire_documents_popup(self):
@@ -4168,7 +4378,9 @@ class ARDemandeRecrutementIntegration(models.Model):
                                                   THEN 1 ELSE 0
                                               END DESC,
                                               CASE
-                                                  WHEN COALESCE(integration.validation_n1_essai, '') != ''
+                                                  WHEN COALESCE(integration.validation_chef_equipe_essai, '') != ''
+                                                    OR COALESCE(integration.validation_superviseur_essai, '') != ''
+                                                    OR COALESCE(integration.validation_n1_essai, '') != ''
                                                     OR COALESCE(integration.validation_rh_essai, '') != ''
                                                     OR COALESCE(integration.validation_direction_generale, '') != ''
                                                     OR COALESCE(integration.validation_deliberation_finale, '') != ''
@@ -4206,6 +4418,13 @@ class ARDemandeRecrutementIntegration(models.Model):
         readonly=True
     )
 
+    demande_categorie_prof = fields.Selection(
+        selection=lambda self: self.env["ar.demande.de.recrutement"]._fields["categorie_prof"].selection,
+        string="Catégorie professionnelle",
+        compute="_compute_demande_categorie_prof",
+        store=False,
+    )
+
     current_user_is_rh = fields.Boolean(
         string="Utilisateur RH",
         compute="_compute_current_user_roles",
@@ -4230,11 +4449,35 @@ class ARDemandeRecrutementIntegration(models.Model):
         store=False,
     )
 
+    current_user_is_chef_equipe_affecte = fields.Boolean(
+        string="Chef d'équipe affecté courant",
+        compute="_compute_current_user_roles",
+        store=False,
+    )
+
+    current_user_is_superviseur_affecte = fields.Boolean(
+        string="Superviseur affecté courant",
+        compute="_compute_current_user_roles",
+        store=False,
+    )
+
+    current_user_is_manager_affecte = fields.Boolean(
+        string="Manager affecté courant",
+        compute="_compute_current_user_roles",
+        store=False,
+    )
+
     @api.depends("demande_id.state", "validation_demande_id.state")
     def _compute_demande_state(self):
         for rec in self:
             demande = rec.demande_id or rec.validation_demande_id
             rec.demande_state = demande.state if demande else False
+
+    @api.depends("demande_id.categorie_prof", "validation_demande_id.categorie_prof")
+    def _compute_demande_categorie_prof(self):
+        for rec in self:
+            demande = rec.demande_id or rec.validation_demande_id
+            rec.demande_categorie_prof = demande.categorie_prof if demande else False
 
     @api.depends_context("uid")
     def _compute_current_user_roles(self):
@@ -4249,6 +4492,9 @@ class ARDemandeRecrutementIntegration(models.Model):
             rec.current_user_can_act_as_demandeur = bool(
                 demande and demande.current_user_can_act_as_demandeur
             )
+            rec.current_user_is_chef_equipe_affecte = rec.candidate_id.chef_equipe_id == self.env.user
+            rec.current_user_is_superviseur_affecte = rec.candidate_id.superviseur_affecte_id == self.env.user
+            rec.current_user_is_manager_affecte = rec.candidate_id.manager_affecte_id == self.env.user
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -4263,12 +4509,34 @@ class ARDemandeRecrutementIntegration(models.Model):
             raise AccessError(_("Seul le groupe RH peut renseigner le Feedback RH."))
         if "feedback_md" in vals and not self.env.user.has_group("ar_recrutement.group_ar_recrutement_md"):
             raise AccessError(_("Seul le groupe MD peut renseigner le Feedback MD."))
+        if "validation_chef_equipe_essai" in vals:
+            for rec in self:
+                demande = rec.validation_demande_id or rec.demande_id
+                if not demande or demande.state != "chef_equipe_essai":
+                    raise AccessError(_("La validation Chef d'équipe est modifiable uniquement à l'étape Chef d'équipe."))
+                if not demande._is_non_stagiaire_standard_flow() or demande.categorie_prof != "ouvrier":
+                    raise AccessError(_("La validation Chef d'équipe est réservée aux demandes MOD."))
+                if rec.candidate_id.chef_equipe_id != self.env.user:
+                    raise AccessError(_("Seul le Chef d'équipe affecté peut renseigner cette colonne."))
+        if "validation_superviseur_essai" in vals:
+            for rec in self:
+                demande = rec.validation_demande_id or rec.demande_id
+                if not demande or demande.state != "superviseur_essai":
+                    raise AccessError(_("La validation Superviseur est modifiable uniquement à l'étape Superviseur."))
+                if not demande._is_non_stagiaire_standard_flow() or demande.categorie_prof != "ouvrier":
+                    raise AccessError(_("La validation Superviseur est réservée aux demandes MOD."))
+                if rec.candidate_id.superviseur_affecte_id != self.env.user:
+                    raise AccessError(_("Seul le Superviseur affecté peut renseigner cette colonne."))
         if "validation_n1_essai" in vals:
             for rec in self:
                 demande = rec.validation_demande_id or rec.demande_id
                 if not demande or demande.state != "periode_essai_n1":
                     raise AccessError(_("La période d'essai N+1 est modifiable uniquement à l'étape Période d'essai N+1."))
-                demande._check_can_act_as_demandeur()
+                if demande._is_non_stagiaire_standard_flow() and demande.categorie_prof == "ouvrier":
+                    if rec.candidate_id.manager_affecte_id != self.env.user:
+                        raise AccessError(_("Seul le Manager affecté peut renseigner la colonne N+1 pour les demandes MOD."))
+                else:
+                    demande._check_can_act_as_demandeur()
         if "validation_rh_essai" in vals and not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
             raise AccessError(_("Seul le groupe RH peut renseigner la période d'essai RH."))
         if "validation_direction_generale" in vals and not self.env.user.has_group("ar_recrutement.group_ar_recrutement_md"):
@@ -4312,6 +4580,18 @@ class ARDemandeRecrutementIntegration(models.Model):
         ("reconduction", "Reconduction"),
         ("rupture", "Rupture du contrat"),
     ], string="PE N+1", tracking=True)
+
+    validation_chef_equipe_essai = fields.Selection([
+        ("confirmation", "Confirmation"),
+        ("reconduction", "Reconduction"),
+        ("rupture", "Rupture du contrat"),
+    ], string="PE Chef d'équipe", tracking=True)
+
+    validation_superviseur_essai = fields.Selection([
+        ("confirmation", "Confirmation"),
+        ("reconduction", "Reconduction"),
+        ("rupture", "Rupture du contrat"),
+    ], string="PE Superviseur", tracking=True)
 
     epe_complete = fields.Boolean(
         related="candidate_id.epe_complete",

@@ -509,25 +509,25 @@
 
 <!-- Période N+1 -->
 <record id="mail_template_rec_to_rh_affectation" model="mail.template">
-  <field name="name">Recrutement - Affectation a renseigner (RH)</field>
+  <field name="name">Recrutement - Affectation à renseigner (RH)</field>
   <field name="model_id" ref="model_ar_demande_de_recrutement"/>
-  <field name="subject">[Recrutement] {{ object.name }} - Affectation a renseigner</field>
+  <field name="subject">[Recrutement] {{ object.name }} - Affectation à renseigner</field>
   <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
   <field name="email_to"></field>
   <field name="body_html" type="html">
     <div>
       <p>Bonjour,</p>
-      <p>La demande <b><t t-out="object.name"/></b> est passee a l'etape <b>Affectation</b>.</p>
-      <p>Merci de renseigner le chef d'equipe affecte, le manager affecte et le superviseur affecte pour le(s) candidat(s) concerne(s), puis valider.</p>
-      <p><b>Reference :</b> <t t-out="object.name"/></p>
+      <p>La demande <b><t t-out="object.name"/></b> est passée à l'étape <b>Affectation</b>.</p>
+      <p>Merci de renseigner le chef d'équipe affecté, le manager affecté et le superviseur affecté pour le(s) candidat(s) concerné(s), puis valider.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
       <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
       <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
-      <p><b>Departement :</b> <t t-out="object.department_id.name or ''"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
       <t t-set="base_url" t-value="object.get_base_url()"/>
       <div style="margin: 16px 0px;">
         <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
            style="background-color:#6f5aa0;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
-          Acceder a la demande
+          Accéder à la demande
         </a>
       </div>
     </div>
@@ -537,17 +537,17 @@
 <record id="mail_template_rec_affectation_to_demandeur" model="mail.template">
   <field name="name">Recrutement - Passage Affectation (Demandeur)</field>
   <field name="model_id" ref="model_ar_demande_de_recrutement"/>
-  <field name="subject">[Recrutement] {{ object.name }} - Passage a l'etape Affectation</field>
+  <field name="subject">[Recrutement] {{ object.name }} - Passage à l'étape Affectation</field>
   <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
   <field name="email_to"></field>
   <field name="body_html" type="html">
     <div>
       <p>Bonjour,</p>
-      <p>Votre demande <b><t t-out="object.name"/></b> passe a l'etape <b>Affectation</b>.</p>
-      <p><b>Reference :</b> <t t-out="object.name"/></p>
+      <p>Votre demande <b><t t-out="object.name"/></b> passe à l'étape <b>Affectation</b>.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
       <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
       <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
-      <p><b>Departement :</b> <t t-out="object.department_id.name or ''"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
       <t t-set="base_url" t-value="object.get_base_url()"/>
       <div style="margin: 16px 0px;">
         <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
@@ -799,6 +799,94 @@
           Voir la demande
         </a>
       </div>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_to_chef_equipe_essai" model="mail.template">
+  <field name="name">Recrutement - Validation Chef d'équipe</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Validation Chef d'équipe requise</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>La demande <b><t t-out="object.name"/></b> est arrivée à l'étape <b>Chef d'équipe</b>.</p>
+      <p>Merci de renseigner la colonne <b>Chef d'équipe</b> dans le tableau Période d'essai, puis valider.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+      <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+      <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#2563eb;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Ouvrir la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_chef_equipe_essai_to_demandeur" model="mail.template">
+  <field name="name">Recrutement - Passage Chef d'équipe (Demandeur)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Passage à l'étape Chef d'équipe</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>Votre demande <b><t t-out="object.name"/></b> passe à l'étape <b>Chef d'équipe</b>.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+      <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+      <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_to_superviseur_essai" model="mail.template">
+  <field name="name">Recrutement - Validation Superviseur</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Validation Superviseur requise</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>La demande <b><t t-out="object.name"/></b> est arrivée à l'étape <b>Superviseur</b>.</p>
+      <p>Merci de renseigner la colonne <b>Superviseur</b> dans le tableau Période d'essai, puis valider.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+      <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+      <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+      <t t-set="base_url" t-value="object.get_base_url()"/>
+      <div style="margin: 16px 0px;">
+        <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+           style="background-color:#2563eb;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+          Ouvrir la demande
+        </a>
+      </div>
+    </div>
+  </field>
+</record>
+
+<record id="mail_template_rec_superviseur_essai_to_demandeur" model="mail.template">
+  <field name="name">Recrutement - Passage Superviseur (Demandeur)</field>
+  <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+  <field name="subject">[Recrutement] {{ object.name }} - Passage à l'étape Superviseur</field>
+  <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+  <field name="email_to"></field>
+  <field name="body_html" type="html">
+    <div>
+      <p>Bonjour,</p>
+      <p>Votre demande <b><t t-out="object.name"/></b> passe à l'étape <b>Superviseur</b>.</p>
+      <p><b>Référence :</b> <t t-out="object.name"/></p>
+      <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+      <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+      <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
     </div>
   </field>
 </record>

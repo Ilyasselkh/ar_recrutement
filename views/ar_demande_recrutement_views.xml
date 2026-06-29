@@ -10,7 +10,7 @@
                widget="badge"
                width="230px"
                decoration-muted="state in ('demandeur', 'refuse', 'archive_stage')"
-               decoration-info="state in ('n1', 'rh', 'md', 'annonce', 'cv_tech', 'selection_candidats', 'entretien', 'candidat_retenu', 'validation_rh', 'deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'affectation', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'accepte')"
+               decoration-info="state in ('n1', 'rh', 'md', 'annonce', 'cv_tech', 'selection_candidats', 'entretien', 'candidat_retenu', 'validation_rh', 'deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'affectation', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'chef_equipe_essai', 'superviseur_essai', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'accepte')"
                decoration-danger="state == 'rupture'"/>
         <field name="demande_type" string="Type de demande"/>
         <field name="demandeur_id" string="Demandeur"/>
@@ -73,7 +73,7 @@
       <form string="Demande de Recrutement" class="ar_recrutement_modern">
         <header>
             <!-- Statusbar  -->
-<field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,offre_candidat,offre_en_cours,date_embauche,affectation,en_cours_stage,matricule_a_renseigner,dossier_candidat,visite_medicale,envoie_annonce,parcours_integration,feedback_rh,feedback_md,periode_essai_n1,periode_essai_rh,direction_generale,deliberation_finale,accepte,refuse,rupture,archive_stage" invisible="demande_type == 'demande_stagiaire'"/>
+<field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,offre_candidat,offre_en_cours,date_embauche,affectation,en_cours_stage,matricule_a_renseigner,dossier_candidat,visite_medicale,envoie_annonce,parcours_integration,feedback_rh,feedback_md,chef_equipe_essai,superviseur_essai,periode_essai_n1,periode_essai_rh,direction_generale,deliberation_finale,accepte,refuse,rupture,archive_stage" invisible="demande_type == 'demande_stagiaire'"/>
 <field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,offre_candidat,offre_en_cours,date_embauche,en_cours_stage,refuse,rupture,archive_stage" invisible="demande_type != 'demande_stagiaire' or stagiaire_duree_mois &lt;= 3"/>
 <field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,offre_candidat,offre_en_cours,date_embauche,en_cours_stage,refuse,rupture,archive_stage" invisible="demande_type != 'demande_stagiaire' or stagiaire_duree_mois &gt; 3"/>
         </header>
@@ -159,12 +159,22 @@
         groups="ar_recrutement.group_ar_recrutement_rh"
         invisible="state != 'deliberation_finale'"/>
 <button name="action_open_refuse_wizard" type="object" string="Refuser" class="btn-danger" groups="ar_recrutement.group_ar_recrutement_md" invisible="state not in ('md', 'feedback_md', 'direction_generale')"/>
+          <button name="action_open_validate_chef_equipe_essai_wizard"
+        type="object"
+        string="Valider"
+        class="btn-success"
+        invisible="state != 'chef_equipe_essai' or current_user_is_chef_equipe_affecte == False"/>
+          <button name="action_open_validate_superviseur_essai_wizard"
+        type="object"
+        string="Valider"
+        class="btn-success"
+        invisible="state != 'superviseur_essai' or current_user_is_superviseur_affecte == False"/>
           
           <button name="action_open_validate_periode_essai_n1_wizard"
         type="object"
         string="Valider"
         class="btn-success"
-        invisible="state != 'periode_essai_n1' or current_user_can_act_as_demandeur == False"/>
+        invisible="state != 'periode_essai_n1' or ((categorie_prof == 'ouvrier' and current_user_is_manager_affecte == False) or (categorie_prof != 'ouvrier' and current_user_can_act_as_demandeur == False))"/>
 
           <field name="step" invisible="1"/>
           <field name="is_rupture_archived" invisible="1"/>
@@ -185,6 +195,7 @@
             </div>
           </div>
 
+          <div class="ar_identity_request_row">
           <group class="ar_sortie_caisse_panel ar_sortie_caisse_identity">
             <!-- Grisés -->
             <field name="demandeur_id" readonly="1"/>
@@ -196,6 +207,9 @@
             <field name="has_retenu_final" invisible="1"/>
             <field name="current_user_is_rh" invisible="1"/>
             <field name="current_user_can_act_as_demandeur" invisible="1"/>
+            <field name="current_user_is_chef_equipe_affecte" invisible="1"/>
+            <field name="current_user_is_superviseur_affecte" invisible="1"/>
+            <field name="current_user_is_manager_affecte" invisible="1"/>
           </group>
 
           <!-- ================== -->
@@ -251,6 +265,7 @@
                invisible="formation_base != 'autre'" required="formation_base == 'autre'" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
     </group>
 </group>
+          </div>
 
           
 <!-- ================== -->
@@ -357,7 +372,7 @@
 
 <group string="Suivi du recrutement"
        class="ar_sortie_caisse_panel ar_sortie_caisse_lines ar_candidate_step_table"
-       invisible="state not in ('cv_tech', 'selection_candidats', 'entretien', 'candidat_retenu', 'validation_rh', 'deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'affectation', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'archive_stage', 'accepte', 'refuse')">
+       invisible="state not in ('cv_tech', 'selection_candidats', 'entretien', 'candidat_retenu', 'validation_rh', 'deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'affectation', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'chef_equipe_essai', 'superviseur_essai', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'archive_stage', 'accepte', 'refuse')">
     <field name="candidate_ids" nolabel="1" colspan="2">
         <list editable="bottom" decoration-muted="is_refused_line">
             <field name="is_refused_line" invisible="1" column_invisible="1"/>
@@ -382,7 +397,7 @@
                     groups="ar_recrutement.group_ar_recrutement_rh"/>
             <button name="action_open_candidate_date_matricule_popup"
                     type="object"
-                    string="Date &amp; Matricule"
+                    string="Date d'embauche"
                     class="btn-primary"
                     invisible="parent.demande_type == 'demande_stagiaire' or parent.categorie_prof == 'ouvrier'"/>
             <button name="action_open_candidate_date_matricule_popup"
@@ -395,6 +410,11 @@
                     string="Date d'embauche"
                     class="btn-primary"
                     invisible="parent.demande_type != 'demande_stagiaire'"/>
+            <button name="action_open_candidate_matricule_popup"
+                    type="object"
+                    string="Matricule"
+                    class="btn-primary"
+                    invisible="parent.demande_type == 'demande_stagiaire'"/>
             <button name="action_open_candidate_stagiaire_documents_popup"
                     type="object"
                     string="Documents"
@@ -583,19 +603,19 @@
                    width="22%"
                    readonly="(parent.step != 'rh_hiring_date' or is_refused_line == True)"/>
             <field name="chef_equipe_id"
-                   string="Chef d'equipe affecte"
+                   string="Chef d'équipe affecté"
                    width="24%"
                    readonly="parent.state != 'affectation' or parent.current_user_is_rh == False or is_refused_line == True"
                    required="parent.state == 'affectation' and parent.categorie_prof == 'ouvrier'"
                    column_invisible="parent.categorie_prof != 'ouvrier'"/>
             <field name="manager_affecte_id"
-                   string="Manager affecte"
+                   string="Manager affecté"
                    width="24%"
                    readonly="parent.state != 'affectation' or parent.current_user_is_rh == False or is_refused_line == True"
                    required="parent.state == 'affectation' and parent.categorie_prof == 'ouvrier'"
                    column_invisible="parent.categorie_prof != 'ouvrier'"/>
             <field name="superviseur_affecte_id"
-                   string="Superviseur affecte"
+                   string="Superviseur affecté"
                    width="24%"
                    readonly="parent.state != 'affectation' or parent.current_user_is_rh == False or is_refused_line == True"
                    required="parent.state == 'affectation' and parent.categorie_prof == 'ouvrier'"
@@ -636,15 +656,15 @@
                    string="Date d'embauche"
                    width="22%"/>
             <field name="chef_equipe_id"
-                   string="Chef d'equipe affecte"
+                   string="Chef d'équipe affecté"
                    width="24%"
                    column_invisible="parent.categorie_prof != 'ouvrier'"/>
             <field name="manager_affecte_id"
-                   string="Manager affecte"
+                   string="Manager affecté"
                    width="24%"
                    column_invisible="parent.categorie_prof != 'ouvrier'"/>
             <field name="superviseur_affecte_id"
-                   string="Superviseur affecte"
+                   string="Superviseur affecté"
                    width="24%"
                    column_invisible="parent.categorie_prof != 'ouvrier'"/>
             <field name="ancien_matricule"
@@ -839,11 +859,11 @@
 
             <field name="feedback_rh"
                    string="Feedback RH"
-                   readonly="demande_state != 'feedback_rh'" invisible="demande_state not in ('feedback_rh', 'feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
+                   readonly="demande_state != 'feedback_rh'" invisible="demande_state not in ('feedback_rh', 'feedback_md', 'chef_equipe_essai', 'superviseur_essai', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
 
             <field name="feedback_md"
                    string="Feedback MD"
-                   readonly="demande_state != 'feedback_md'" invisible="demande_state not in ('feedback_md', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
+                   readonly="demande_state != 'feedback_md'" invisible="demande_state not in ('feedback_md', 'chef_equipe_essai', 'superviseur_essai', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
 
         </list>
     </field>
@@ -860,7 +880,7 @@
             <field name="candidate_name" string="Nom du candidat" readonly="1"/>
 
             <field name="validation_n1_essai"
-                   string="Période d'essai N+1"
+                   string="N+1"
                    readonly="is_trial_history == True"/>
 
             <button name="action_open_epe"
@@ -870,10 +890,11 @@
                     invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'accepte')"/>
 
             <field name="validation_rh_essai"
-                   string="Période d'essai RH"
+                   string="RH"
                    readonly="1"/>
 
             <field name="validation_direction_generale"
+                   column_invisible="parent.categorie_prof == 'ouvrier'"
                    string="Direction générale"
                    readonly="1"/>
 
@@ -895,7 +916,7 @@
             <field name="candidate_name" string="Nom du candidat" readonly="1"/>
 
             <field name="validation_n1_essai"
-                   string="Période d'essai N+1"
+                   string="N+1"
                    readonly="1"/>
 
             <button name="action_open_epe"
@@ -905,10 +926,11 @@
                     invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'accepte')"/>
 
             <field name="validation_rh_essai"
-                   string="Période d'essai RH"
+                   string="RH"
                    readonly="is_trial_history == True"/>
 
             <field name="validation_direction_generale"
+                   column_invisible="parent.categorie_prof == 'ouvrier'"
                    string="Direction générale"
                    readonly="1"/>
 
@@ -930,7 +952,7 @@
             <field name="candidate_name" string="Nom du candidat" readonly="1"/>
 
             <field name="validation_n1_essai"
-                   string="Période d'essai N+1"
+                   string="N+1"
                    readonly="1"/>
 
             <button name="action_open_epe"
@@ -940,10 +962,11 @@
                     invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'accepte')"/>
 
             <field name="validation_rh_essai"
-                   string="Période d'essai RH"
+                   string="RH"
                    readonly="1"/>
 
             <field name="validation_direction_generale"
+                   column_invisible="parent.categorie_prof == 'ouvrier'"
                    string="Direction générale"
                    readonly="is_trial_history == True"/>
 
@@ -965,7 +988,7 @@
             <field name="candidate_name" string="Nom du candidat" readonly="1"/>
 
             <field name="validation_n1_essai"
-                   string="Période d'essai N+1"
+                   string="N+1"
                    readonly="1"/>
 
             <button name="action_open_epe"
@@ -975,10 +998,11 @@
                     invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
 
             <field name="validation_rh_essai"
-                   string="Période d'essai RH"
+                   string="RH"
                    readonly="1"/>
 
             <field name="validation_direction_generale"
+                   column_invisible="parent.categorie_prof == 'ouvrier'"
                    string="Direction générale"
                    readonly="1"/>
 
@@ -1000,7 +1024,7 @@
             <field name="candidate_name" string="Nom du candidat" readonly="1"/>
 
             <field name="validation_n1_essai"
-                   string="Période d'essai N+1"
+                   string="N+1"
                    readonly="1"/>
 
             <button name="action_open_epe"
@@ -1010,10 +1034,11 @@
                     invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'rupture', 'accepte')"/>
 
             <field name="validation_rh_essai"
-                   string="Période d'essai RH"
+                   string="RH"
                    readonly="1"/>
 
             <field name="validation_direction_generale"
+                   column_invisible="parent.categorie_prof == 'ouvrier'"
                    string="Direction générale"
                    readonly="1"/>
 
@@ -1463,7 +1488,7 @@
             <field name="demande_id" invisible="1"/>
             <field name="action_type" invisible="1"/>
 
-            <div class="ar_rec_wizard_message" invisible="action_type not in ('submit', 'validate_n1', 'validate_rh', 'validate_md', 'validate_direction_generale', 'validate_deliberation_finale', 'validate_periode_essai_n1', 'offer_accept')">
+            <div class="ar_rec_wizard_message" invisible="action_type not in ('submit', 'validate_n1', 'validate_rh', 'validate_md', 'validate_direction_generale', 'validate_chef_equipe_essai', 'validate_superviseur_essai', 'validate_deliberation_finale', 'validate_periode_essai_n1', 'offer_accept')">
                 <div class="ar_rec_wizard_icon ar_rec_wizard_icon_validate">OK</div>
                 <h2>Confirmer la validation</h2>
                 <p><field name="message" nolabel="1" readonly="1"/></p>
@@ -1622,7 +1647,7 @@
     <field name="name">ar.demande.recrutement.candidate.popup.date.matricule</field>
     <field name="model">ar.demande.recrutement.candidate</field>
     <field name="arch" type="xml">
-        <form string="Date d'embauche &amp; Matricule" class="ar_recrutement_modern ar_recrutement_popup">
+        <form string="Date d'embauche &amp; Affectation" class="ar_recrutement_modern ar_recrutement_popup">
             <sheet>
                 <field name="parent_state" invisible="1"/>
                 <field name="parent_step" invisible="1"/>
@@ -1634,28 +1659,50 @@
                     <field name="candidate_name" readonly="1"/>
                     <field name="hiring_date" string="Date d'embauche" readonly="parent_step != 'rh_hiring_date' or parent_user_is_rh == False"/>
                     <field name="chef_equipe_id"
-                           string="Chef d'equipe affecte"
+                           string="Chef d'équipe affecté"
                            invisible="demande_categorie_prof != 'ouvrier'"
                            readonly="parent_state != 'affectation' or parent_user_is_rh == False"
                            required="parent_state == 'affectation' and demande_categorie_prof == 'ouvrier'"/>
                     <field name="manager_affecte_id"
-                           string="Manager affecte"
+                           string="Manager affecté"
                            invisible="demande_categorie_prof != 'ouvrier'"
                            readonly="parent_state != 'affectation' or parent_user_is_rh == False"
                            required="parent_state == 'affectation' and demande_categorie_prof == 'ouvrier'"/>
                     <field name="superviseur_affecte_id"
-                           string="Superviseur affecte"
+                           string="Superviseur affecté"
                            invisible="demande_categorie_prof != 'ouvrier'"
                            readonly="parent_state != 'affectation' or parent_user_is_rh == False"
                            required="parent_state == 'affectation' and demande_categorie_prof == 'ouvrier'"/>
+                </group>
+                <footer>
+                    <button string="Enregistrer" special="save" class="btn-primary"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_candidate_popup_matricule" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.candidate.popup.matricule</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="arch" type="xml">
+        <form string="Matricule" class="ar_recrutement_modern ar_recrutement_popup">
+            <sheet>
+                <field name="parent_state" invisible="1"/>
+                <field name="parent_user_is_rh" invisible="1"/>
+                <field name="demande_type" invisible="1"/>
+                <field name="type_contrat" invisible="1"/>
+                <group>
+                    <field name="candidate_name" readonly="1"/>
                     <field name="ancien_matricule"
                            string="Ancien matricule"
                            groups="ar_recrutement.group_ar_recrutement_rh"
                            invisible="demande_type == 'demande_stagiaire' or demande_type != 'changement_contrat' or type_contrat != 'anapec'"
-                           readonly="parent_state != 'matricule_a_renseigner'"
+                           readonly="parent_state != 'matricule_a_renseigner' or parent_user_is_rh == False"
                            required="demande_type != 'demande_stagiaire' and demande_type == 'changement_contrat' and type_contrat == 'anapec'"/>
                     <field name="nouvelle_affectation_matricule"
-                           string="Matricule &#224; renseigner"
+                           string="Matricule à renseigner"
                            groups="ar_recrutement.group_ar_recrutement_rh"
                            invisible="demande_type == 'demande_stagiaire'"
                            readonly="parent_state != 'matricule_a_renseigner' or parent_user_is_rh == False"/>
@@ -1767,14 +1814,20 @@
                     <field name="candidate_validation_integration_ids" class="ar_followup_trial_table" nolabel="1" colspan="2" domain="[('validation_demande_id', '=', demande_id)]">
                         <list create="0" delete="0" editable="bottom">
                             <field name="demande_state" invisible="1" column_invisible="1"/>
+                            <field name="demande_categorie_prof" invisible="1" column_invisible="1"/>
                             <field name="current_user_is_rh" invisible="1" column_invisible="1"/>
                             <field name="current_user_can_act_as_demandeur" invisible="1" column_invisible="1"/>
                             <field name="current_user_is_md" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_chef_equipe_affecte" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_superviseur_affecte" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_manager_affecte" invisible="1" column_invisible="1"/>
                             <field name="is_trial_history" invisible="1" column_invisible="1"/>
-                            <field name="validation_n1_essai" string="P&#233;riode d'essai N+1" readonly="(demande_state != 'periode_essai_n1' or current_user_can_act_as_demandeur == False or is_trial_history == True)"/>
-                            <button name="action_open_epe" type="object" string="EPE" class="btn-success" invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
-                            <field name="validation_rh_essai" string="P&#233;riode d'essai RH" readonly="(demande_state != 'periode_essai_rh' or current_user_is_rh == False or is_trial_history == True)"/>
-                            <field name="validation_direction_generale" string="Direction g&#233;n&#233;rale" readonly="(demande_state != 'direction_generale' or current_user_is_md == False or is_trial_history == True)"/>
+                            <field name="validation_chef_equipe_essai" string="Chef d'équipe" column_invisible="parent.demande_categorie_prof != 'ouvrier'" readonly="(demande_state != 'chef_equipe_essai' or current_user_is_chef_equipe_affecte == False or is_trial_history == True)"/>
+                            <field name="validation_superviseur_essai" string="Superviseur" column_invisible="parent.demande_categorie_prof != 'ouvrier'" readonly="(demande_state != 'superviseur_essai' or current_user_is_superviseur_affecte == False or is_trial_history == True)"/>
+                            <field name="validation_n1_essai" string="N+1" readonly="(demande_state != 'periode_essai_n1' or ((demande_categorie_prof == 'ouvrier' and current_user_is_manager_affecte == False) or (demande_categorie_prof != 'ouvrier' and current_user_can_act_as_demandeur == False)) or is_trial_history == True)"/>
+                            <button name="action_open_epe" type="object" string="EPE" class="btn-success" invisible="demande_state not in ('chef_equipe_essai', 'superviseur_essai', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
+                            <field name="validation_rh_essai" string="RH" readonly="(demande_state != 'periode_essai_rh' or current_user_is_rh == False or is_trial_history == True)"/>
+                            <field name="validation_direction_generale" string="Direction générale" column_invisible="parent.demande_categorie_prof == 'ouvrier'" readonly="(demande_state != 'direction_generale' or current_user_is_md == False or is_trial_history == True)"/>
                             <field name="validation_deliberation_finale" string="D&#233;lib&#233;ration finale" readonly="(demande_state != 'deliberation_finale' or current_user_is_rh == False or is_trial_history == True)"/>
                         </list>
                     </field>
@@ -1905,11 +1958,11 @@
                         <field name="is_refused_line" invisible="1" column_invisible="1"/>
                         <field name="candidate_name" class="ar_hiring_candidate_col" string="Candidats retenus" readonly="1"/>
                         <field name="hiring_date" class="ar_hiring_date_col" string="Date d'embauche" readonly="(parent.step != 'rh_hiring_date' or parent.current_user_is_rh == False or is_refused_line == True)"/>
-                        <field name="chef_equipe_id" string="Chef d'equipe affecte" readonly="parent.state != 'affectation' or parent.current_user_is_rh == False or is_refused_line == True" required="parent.state == 'affectation' and parent.categorie_prof == 'ouvrier'" column_invisible="parent.categorie_prof != 'ouvrier'"/>
-                        <field name="manager_affecte_id" string="Manager affecte" readonly="parent.state != 'affectation' or parent.current_user_is_rh == False or is_refused_line == True" required="parent.state == 'affectation' and parent.categorie_prof == 'ouvrier'" column_invisible="parent.categorie_prof != 'ouvrier'"/>
-                        <field name="superviseur_affecte_id" string="Superviseur affecte" readonly="parent.state != 'affectation' or parent.current_user_is_rh == False or is_refused_line == True" required="parent.state == 'affectation' and parent.categorie_prof == 'ouvrier'" column_invisible="parent.categorie_prof != 'ouvrier'"/>
+                        <field name="chef_equipe_id" string="Chef d'équipe affecté" readonly="parent.state != 'affectation' or parent.current_user_is_rh == False or is_refused_line == True" required="parent.state == 'affectation' and parent.categorie_prof == 'ouvrier'" column_invisible="parent.categorie_prof != 'ouvrier'"/>
+                        <field name="manager_affecte_id" string="Manager affecté" readonly="parent.state != 'affectation' or parent.current_user_is_rh == False or is_refused_line == True" required="parent.state == 'affectation' and parent.categorie_prof == 'ouvrier'" column_invisible="parent.categorie_prof != 'ouvrier'"/>
+                        <field name="superviseur_affecte_id" string="Superviseur affecté" readonly="parent.state != 'affectation' or parent.current_user_is_rh == False or is_refused_line == True" required="parent.state == 'affectation' and parent.categorie_prof == 'ouvrier'" column_invisible="parent.categorie_prof != 'ouvrier'"/>
                         <field name="ancien_matricule" class="ar_hiring_old_matricule_col" string="Ancien matricule" groups="ar_recrutement.group_ar_recrutement_rh" column_invisible="parent.demande_type == 'demande_stagiaire' or parent.demande_type != 'changement_contrat' or parent.type_contrat != 'anapec'"/>
-                        <field name="nouvelle_affectation_matricule" class="ar_hiring_matricule_col" string="Matricule a renseigner" groups="ar_recrutement.group_ar_recrutement_rh" readonly="parent.state != 'matricule_a_renseigner' or parent.current_user_is_rh == False" column_invisible="parent.demande_type == 'demande_stagiaire'"/>
+                        <field name="nouvelle_affectation_matricule" class="ar_hiring_matricule_col" string="Matricule à renseigner" groups="ar_recrutement.group_ar_recrutement_rh" readonly="parent.state != 'matricule_a_renseigner' or parent.current_user_is_rh == False" column_invisible="parent.demande_type == 'demande_stagiaire'"/>
                     </list>
                 </field>
                 <footer><button string="Enregistrer" special="save" class="btn-primary"/><button string="Fermer" special="cancel" class="btn-secondary"/></footer>
@@ -2011,15 +2064,21 @@
                     <field name="validation_integration_ids" class="ar_followup_trial_table" nolabel="1" colspan="2">
                         <list create="0" delete="0" editable="bottom">
                             <field name="demande_state" invisible="1" column_invisible="1"/>
+                            <field name="demande_categorie_prof" invisible="1" column_invisible="1"/>
                             <field name="current_user_is_rh" invisible="1" column_invisible="1"/>
                             <field name="current_user_can_act_as_demandeur" invisible="1" column_invisible="1"/>
                             <field name="current_user_is_md" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_chef_equipe_affecte" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_superviseur_affecte" invisible="1" column_invisible="1"/>
+                            <field name="current_user_is_manager_affecte" invisible="1" column_invisible="1"/>
                             <field name="is_trial_history" invisible="1" column_invisible="1"/>
                             <field name="candidate_name" string="Nom du candidat" readonly="1"/>
-                            <field name="validation_n1_essai" string="Période d'essai N+1" readonly="(demande_state != 'periode_essai_n1' or current_user_can_act_as_demandeur == False or is_trial_history == True)"/>
-                            <button name="action_open_epe" type="object" string="EPE" class="btn-success" invisible="demande_state not in ('periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
-                            <field name="validation_rh_essai" string="Période d'essai RH" readonly="(demande_state != 'periode_essai_rh' or current_user_is_rh == False or is_trial_history == True)"/>
-                            <field name="validation_direction_generale" string="Direction générale" readonly="(demande_state != 'direction_generale' or current_user_is_md == False or is_trial_history == True)"/>
+                            <field name="validation_chef_equipe_essai" string="Chef d'équipe" column_invisible="parent.categorie_prof != 'ouvrier'" readonly="(demande_state != 'chef_equipe_essai' or current_user_is_chef_equipe_affecte == False or is_trial_history == True)"/>
+                            <field name="validation_superviseur_essai" string="Superviseur" column_invisible="parent.categorie_prof != 'ouvrier'" readonly="(demande_state != 'superviseur_essai' or current_user_is_superviseur_affecte == False or is_trial_history == True)"/>
+                            <field name="validation_n1_essai" string="N+1" readonly="(demande_state != 'periode_essai_n1' or ((demande_categorie_prof == 'ouvrier' and current_user_is_manager_affecte == False) or (demande_categorie_prof != 'ouvrier' and current_user_can_act_as_demandeur == False)) or is_trial_history == True)"/>
+                            <button name="action_open_epe" type="object" string="EPE" class="btn-success" invisible="demande_state not in ('chef_equipe_essai', 'superviseur_essai', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
+                            <field name="validation_rh_essai" string="RH" readonly="(demande_state != 'periode_essai_rh' or current_user_is_rh == False or is_trial_history == True)"/>
+                            <field name="validation_direction_generale" string="Direction générale" column_invisible="parent.categorie_prof == 'ouvrier'" readonly="(demande_state != 'direction_generale' or current_user_is_md == False or is_trial_history == True)"/>
                             <field name="validation_deliberation_finale" string="Délibération finale" readonly="(demande_state != 'deliberation_finale' or current_user_is_rh == False or is_trial_history == True)"/>
                         </list>
                     </field>

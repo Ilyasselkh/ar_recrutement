@@ -17,6 +17,8 @@ class ARDemandeRecrutementActionWizard(models.TransientModel):
         ("validate_n1", "Valider N+1"),
         ("validate_rh", "Valider RH"),
         ("validate_md", "Valider MD"),
+        ("validate_chef_equipe_essai", "Valider Chef d'équipe"),
+        ("validate_superviseur_essai", "Valider Superviseur"),
         ("validate_direction_generale", "Valider Direction générale"),
         ("validate_periode_essai_n1", "Valider période d'essai N+1"),
         ("validate_deliberation_finale", "Valider délibération finale"),
@@ -60,6 +62,12 @@ class ARDemandeRecrutementActionWizard(models.TransientModel):
             "validate_md": _(
                 "Merci de confirmer la validation de cette demande au niveau MD."
             ),
+            "validate_chef_equipe_essai": _(
+                "Merci de confirmer la validation de cette demande au niveau Chef d'équipe."
+            ),
+            "validate_superviseur_essai": _(
+                "Merci de confirmer la validation de cette demande au niveau Superviseur."
+            ),
             "validate_direction_generale": _(
                 "Merci de confirmer la validation de cette demande au niveau Direction générale."
             ),
@@ -100,6 +108,12 @@ class ARDemandeRecrutementActionWizard(models.TransientModel):
 
         elif self.action_type == "validate_md":
             self.demande_id.action_valider_md()
+
+        elif self.action_type == "validate_chef_equipe_essai":
+            self.demande_id.action_valider_chef_equipe_essai()
+
+        elif self.action_type == "validate_superviseur_essai":
+            self.demande_id.action_valider_superviseur_essai()
 
         elif self.action_type == "validate_direction_generale":
             self.demande_id.action_valider_direction_generale()

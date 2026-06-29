@@ -199,13 +199,37 @@
     .ar_request_status_box .badge, .ar_request_status_box .o_field_badge { border-radius: 999px; background: #ffb63f !important; color: #10202e !important; font-size: 14px; font-weight: 900; padding: 6px 14px; }
     .ar_sortie_caisse_panel { display: flex; flex-direction: column; margin: 0 0 18px; min-height: var(--ar-section-height); padding: 20px 22px; border: 1px solid rgba(213, 224, 236, 0.95); border-radius: 8px; background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%); box-shadow: 0 10px 22px rgba(23, 32, 51, 0.045); transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
     .ar_sortie_caisse_panel:hover { border-color: #b9ccdf; box-shadow: 0 14px 28px rgba(23, 32, 51, 0.07); transform: translateY(-1px); }
-    .ar_recrutement_common { display: block !important; width: 100%; }
+    .ar_recrutement_common {
+        box-sizing: border-box;
+        display: block !important;
+        padding-left: 16px;
+        padding-right: 16px;
+        width: 100%;
+    }
+    .ar_identity_request_row {
+        display: block;
+        margin-bottom: 18px;
+        width: 100%;
+    }
+    .ar_identity_request_row:has(> .ar_sortie_caisse_panel:not(.ar_sortie_caisse_identity):not(.o_invisible_modifier):not(.d-none)) {
+        align-items: stretch;
+        display: grid;
+        gap: 18px 26px;
+        grid-template-columns: minmax(340px, 0.9fr) minmax(380px, 1.1fr);
+    }
+    .ar_identity_request_row > .ar_sortie_caisse_panel {
+        height: 100%;
+        margin-bottom: 0;
+        min-width: 0;
+        width: 100%;
+    }
     .ar_sortie_caisse_main_row { align-items: stretch; display: grid !important; gap: 18px 26px; grid-template-columns: repeat(2, minmax(360px, 1fr)); margin-bottom: 18px; width: 100%; }
     .ar_sortie_caisse_main_row > .ar_sortie_caisse_panel { flex: none !important; height: 100%; margin-bottom: 0; max-width: none !important; min-width: 0; width: 100% !important; }
     .ar_sortie_caisse_panel > .o_inner_group,
     .ar_sortie_caisse_panel > .o_group,
     .ar_sortie_caisse_panel > div:not(.o_horizontal_separator) { flex: 1 1 auto; }
     .ar_sortie_caisse_identity { background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%); }
+
     .ar_recrutement_panel_primary { border-left: 5px solid #0f766e; }
     .ar_recrutement_panel_secondary { border-left: 5px solid #7aa7d9; }
     .ar_sortie_caisse_lines { border-left: 5px solid #0f766e; }
@@ -573,16 +597,28 @@
         padding-bottom: 18px;
     }
 
+    .ar_candidate_step_table .o_field_widget,
+    .ar_candidate_step_table .o_field_x2many_list_row_add,
+    .ar_candidate_step_table .o_list_renderer {
+        min-width: 0;
+    }
+
     .ar_candidate_step_table .o_field_x2many_list {
         border: 1px solid #cfe0ee;
         border-radius: 8px;
-        overflow-x: auto;
-        overflow-y: hidden;
+        overflow: hidden;
         background: #ffffff;
     }
 
+    .ar_candidate_step_table .o_list_renderer {
+        overflow-x: auto !important;
+        overflow-y: hidden;
+        padding-bottom: 8px;
+        width: 100%;
+    }
+
     .ar_candidate_step_table .o_list_table {
-        width: 100% !important;
+        width: 960px !important;
         min-width: 960px;
         table-layout: auto;
         border-collapse: separate;
@@ -659,17 +695,60 @@
         font-weight: 650;
     }
 
-    .ar_candidate_step_table .o_list_table tbody tr {
-        --ar-step-action-width: 92px;
-    }
-
-    .ar_candidate_step_table .o_list_table tbody td:not([name='candidate_name']):not([name='cv_file']):not(.o_list_record_remove) {
-        min-width: var(--ar-step-action-width);
-    }
-
     .o_chatter {
         border-top: 1px solid var(--ar-border);
         background: #fbfdff;
+    }
+}
+
+.o_form_view.ar_recrutement_modern:not(.ar_recrutement_popup) {
+    display: flex !important;
+    flex-direction: row !important;
+    min-width: 0;
+
+    .o_form_renderer,
+    .o_form_view_container {
+        max-width: none !important;
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+
+    .o_form_renderer {
+        display: flex !important;
+        flex-direction: row !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+
+    .o_form_sheet_bg {
+        flex: 0 1 70% !important;
+        max-width: 70% !important;
+        min-width: 0 !important;
+        order: 10;
+        width: 70% !important;
+    }
+
+    .o_FormRenderer_chatterContainer,
+    .o_form_renderer_chatter,
+    .o_chatter_container,
+    .o-mail-Form-chatter,
+    .o-mail-ChatterContainer,
+    .o_ChatterContainer,
+    .o_chatter {
+        border-left: 1px solid var(--ar-border) !important;
+        border-top: 0 !important;
+        flex: 0 0 30% !important;
+        max-width: 30% !important;
+        min-width: 320px !important;
+        width: 30% !important;
+    }
+
+    .o_FormRenderer_chatterContainer,
+    .o_FormRenderer_chatterContainer.o-aside,
+    .o-mail-Form-chatter,
+    .o_chatter {
+        order: 20;
     }
 }
 
@@ -735,9 +814,16 @@
 
     .ar_followup_feedback_table .o_list_table,
     .ar_followup_trial_table .o_list_table {
-        min-width: 0 !important;
         table-layout: fixed !important;
         width: 100% !important;
+    }
+
+    .ar_followup_feedback_table .o_list_table {
+        min-width: 0 !important;
+    }
+
+    .ar_followup_trial_table .o_list_table {
+        min-width: 860px !important;
     }
 
     .ar_followup_feedback_table .o_list_table col,
@@ -761,7 +847,7 @@
         max-width: none;
         overflow: visible;
         text-overflow: clip;
-        white-space: normal;
+        white-space: nowrap;
     }
 
     .ar_followup_feedback_table .o_list_table th[data-name='candidate_name'],
@@ -778,9 +864,13 @@
 
     .ar_followup_trial_table .o_list_table th[data-name='candidate_name'],
     .ar_followup_trial_table .o_list_table td[name='candidate_name'] {
-        width: 18%;
+        width: 16%;
     }
 
+    .ar_followup_trial_table .o_list_table th[data-name='validation_chef_equipe_essai'],
+    .ar_followup_trial_table .o_list_table td[name='validation_chef_equipe_essai'],
+    .ar_followup_trial_table .o_list_table th[data-name='validation_superviseur_essai'],
+    .ar_followup_trial_table .o_list_table td[name='validation_superviseur_essai'],
     .ar_followup_trial_table .o_list_table th[data-name='validation_n1_essai'],
     .ar_followup_trial_table .o_list_table td[name='validation_n1_essai'],
     .ar_followup_trial_table .o_list_table th[data-name='validation_rh_essai'],
@@ -789,7 +879,18 @@
     .ar_followup_trial_table .o_list_table td[name='validation_direction_generale'],
     .ar_followup_trial_table .o_list_table th[data-name='validation_deliberation_finale'],
     .ar_followup_trial_table .o_list_table td[name='validation_deliberation_finale'] {
-        width: 20%;
+        min-width: 132px;
+        width: 16.8%;
+    }
+
+    .ar_followup_trial_table .o_list_table th[data-name='validation_chef_equipe_essai'],
+    .ar_followup_trial_table .o_list_table th[data-name='validation_superviseur_essai'],
+    .ar_followup_trial_table .o_list_table th[data-name='validation_n1_essai'],
+    .ar_followup_trial_table .o_list_table th[data-name='validation_rh_essai'],
+    .ar_followup_trial_table .o_list_table th[data-name='validation_direction_generale'],
+    .ar_followup_trial_table .o_list_table th[data-name='validation_deliberation_finale'] {
+        overflow-wrap: normal;
+        white-space: nowrap;
     }
 
     .ar_followup_feedback_table .o_list_table .btn,
@@ -812,13 +913,18 @@
 
     .ar_followup_trial_table .o_list_table th[data-name='validation_n1_essai'],
     .ar_followup_trial_table .o_list_table td[name='validation_n1_essai'],
+    .ar_followup_trial_table .o_list_table th[data-name='validation_chef_equipe_essai'],
+    .ar_followup_trial_table .o_list_table td[name='validation_chef_equipe_essai'],
+    .ar_followup_trial_table .o_list_table th[data-name='validation_superviseur_essai'],
+    .ar_followup_trial_table .o_list_table td[name='validation_superviseur_essai'],
     .ar_followup_trial_table .o_list_table th[data-name='validation_rh_essai'],
     .ar_followup_trial_table .o_list_table td[name='validation_rh_essai'],
     .ar_followup_trial_table .o_list_table th[data-name='validation_direction_generale'],
     .ar_followup_trial_table .o_list_table td[name='validation_direction_generale'],
     .ar_followup_trial_table .o_list_table th[data-name='validation_deliberation_finale'],
     .ar_followup_trial_table .o_list_table td[name='validation_deliberation_finale'] {
-        width: 25%;
+        min-width: 132px;
+        width: 20%;
     }
 }
 
@@ -956,14 +1062,59 @@
             overflow-x: auto;
         }
 
+        .ar_candidate_step_table .o_field_x2many_list {
+            overflow: hidden;
+        }
+
+        .ar_candidate_step_table .o_list_renderer {
+            overflow-x: auto !important;
+            overflow-y: hidden;
+        }
+
         .ar_candidate_step_table .o_list_table {
+            width: 960px !important;
             min-width: 960px;
         }
+
 
         .ar_candidate_step_table .o_list_table .btn {
             font-size: 11px;
             min-width: 78px;
             padding: 6px 8px;
+        }
+    }
+}
+
+@media (max-width: 1100px) {
+    .o_form_view.ar_recrutement_modern:not(.ar_recrutement_popup) {
+        flex-direction: column !important;
+
+        .o_form_renderer {
+            flex-direction: column !important;
+        }
+
+        .o_form_sheet_bg,
+        .o_FormRenderer_chatterContainer,
+        .o_form_renderer_chatter,
+        .o_chatter_container,
+        .o-mail-Form-chatter,
+        .o-mail-ChatterContainer,
+        .o_ChatterContainer,
+        .o_chatter {
+            border-left: 0 !important;
+            max-width: none !important;
+            min-width: 0 !important;
+            width: 100% !important;
+        }
+
+        .o_FormRenderer_chatterContainer,
+        .o_form_renderer_chatter,
+        .o_chatter_container,
+        .o-mail-Form-chatter,
+        .o-mail-ChatterContainer,
+        .o_ChatterContainer,
+        .o_chatter {
+            border-top: 1px solid var(--ar-border) !important;
         }
     }
 }
@@ -1049,6 +1200,15 @@
             min-height: 0;
         }
 
+        .ar_identity_request_row {
+            grid-template-columns: 1fr;
+        }
+
+        .ar_recrutement_common {
+            padding-left: 0;
+            padding-right: 0;
+        }
+
         .ar_stagiaire_request_panel .ar_stagiaire_field_grid {
             grid-template-columns: 1fr;
         }
@@ -1076,6 +1236,7 @@
         .ar_sortie_caisse_lines {
             padding: 12px;
         }
+
 
         .ar_candidate_step_table .o_list_table .btn {
             min-height: 34px;
