@@ -1404,9 +1404,11 @@ class ARDemandeDeRecrutement(models.Model):
         return self.demande_type in (
             "creation_poste",
             "remplacement",
-            "renouvellement",
-            "changement_contrat",
         )
+
+    def _is_contract_short_flow(self):
+        self.ensure_one()
+        return self.demande_type in ("renouvellement", "changement_contrat")
 
     def _open_action_wizard(self, action_type):
         self.ensure_one()
@@ -2511,8 +2513,17 @@ class ARDemandeDeRecrutement(models.Model):
             if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_md"):
                 raise AccessError(_("Vous n'êtes pas autorisé à valider en tant que MD."))
 
-            # MD -> Annonce pour tous les types, y compris stagiaire
+            # MD -> Acceptée for contract renewal/change requests.
             if rec.state == "md":
+                if rec._is_contract_short_flow():
+                    rec.write({
+                        "state": "accepte",
+                        "step": "done",
+                        "validateur_md_id": self.env.user.id,
+                        "date_validation_md": fields.Datetime.now(),
+                    })
+                    continue
+
                 rec.write({
                     "state": "annonce",
                     "step": "wait_validation",
