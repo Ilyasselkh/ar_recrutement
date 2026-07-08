@@ -233,7 +233,22 @@
     .ar_recrutement_panel_primary { border-left: 5px solid #0f766e; }
     .ar_recrutement_panel_secondary { border-left: 5px solid #7aa7d9; }
     .ar_sortie_caisse_lines { border-left: 5px solid #0f766e; }
-    .ar_recrutement_compact_panel { height: auto !important; min-height: 0 !important; }
+    .ar_recrutement_contract_panel > .o_inner_group,
+    .ar_recrutement_contract_panel > .o_group,
+    .ar_recrutement_contract_panel > div:not(.o_horizontal_separator) {
+        flex: 0 0 auto !important;
+    }
+    .ar_recrutement_compact_panel { align-self: start !important; height: auto !important; min-height: 0 !important; }
+    .ar_recrutement_short_flow_row {
+        align-items: start !important;
+    }
+    .ar_recrutement_short_flow_row > .ar_sortie_caisse_panel,
+    .ar_identity_request_row > .ar_recrutement_compact_panel,
+    .ar_sortie_caisse_main_row > .ar_recrutement_compact_panel {
+        align-self: start !important;
+        height: auto !important;
+        min-height: 0 !important;
+    }
     .ar_recrutement_compact_panel > .o_inner_group,
     .ar_recrutement_compact_panel > .o_group,
     .ar_recrutement_compact_panel > .o_inner_group > .o_group {

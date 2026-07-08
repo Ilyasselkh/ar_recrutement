@@ -1459,6 +1459,8 @@ class ARDemandeDeRecrutement(models.Model):
         )
 
     def action_open_dossier_candidat_popup(self):
+        if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
+            raise AccessError(_("Seul le groupe RH peut consulter le Dossier du Candidat."))
         return self._open_recruitment_popup(
             "ar_recrutement.view_ar_demande_recrutement_popup_dossier_candidat",
             _("Dossier du Candidat"),
@@ -1575,12 +1577,16 @@ class ARDemandeDeRecrutement(models.Model):
     @api.constrains("type_contrat", "duree_contrat")
     def _check_duree_contrat(self):
         for rec in self:
+            if rec._is_contract_short_flow():
+                continue
             if rec.type_contrat in ("cdd", "anapec") and not (rec.duree_contrat or "").strip():
                 raise ValidationError(_("Merci de renseigner la durée du contrat (CDD/ANAPEC)."))
 
     @api.constrains("formation_base", "formation_base_autre")
     def _check_formation_autre(self):
         for rec in self:
+            if rec._is_contract_short_flow():
+                continue
             if rec.formation_base == "autre" and not (rec.formation_base_autre or "").strip():
                 raise ValidationError(_("Merci de préciser la formation de base (Autre)."))
             
@@ -1685,8 +1691,14 @@ class ARDemandeDeRecrutement(models.Model):
         "demande_type",
         "personne_remplacee_id",
         "raison_remplacement",
+        "renouvellement_type",
         "renouvellement_duree",
         "changement_contrat",
+        "categorie_prof",
+        "date_embauche_souhaitee",
+        "motif_demande",
+        "profil_annexe",
+        "rattachement_hierarchique_id",
         "stagiaire_nombre",
         "stagiaire_duree_mois",
         "stagiaire_remuneration",
@@ -1701,10 +1713,40 @@ class ARDemandeDeRecrutement(models.Model):
                     raise ValidationError(_("Remplacement: merci de renseigner la personne remplacée et la raison."))
 
             if rec.demande_type == "renouvellement":
+                missing = []
+                if not rec.renouvellement_type:
+                    missing.append(_("Renouvellement"))
+                if not rec.renouvellement_duree:
+                    missing.append(_("Durée de renouvellement"))
+                if not rec.objet_recrutement:
+                    missing.append(_("Objet de recrutement"))
+                if not rec.categorie_prof:
+                    missing.append(_("Catégorie professionnelle"))
+                if not rec.date_embauche_souhaitee:
+                    missing.append(_("Date d'embauche souhaitée"))
+                if not rec.motif_demande:
+                    missing.append(_("Motif de la demande"))
+                if not rec.rattachement_hierarchique_id:
+                    missing.append(_("Rattachement hiérarchique"))
+                rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
                 if not rec.renouvellement_duree:
                     raise ValidationError(_("Renouvellement: merci de renseigner la durée."))
 
             if rec.demande_type == "changement_contrat":
+                missing = []
+                if not rec.changement_contrat:
+                    missing.append(_("Changement de contrat"))
+                if not rec.objet_recrutement:
+                    missing.append(_("Objet de recrutement"))
+                if not rec.categorie_prof:
+                    missing.append(_("Catégorie professionnelle"))
+                if not rec.date_embauche_souhaitee:
+                    missing.append(_("Date d'embauche souhaitée"))
+                if not rec.motif_demande:
+                    missing.append(_("Motif de la demande"))
+                if not rec.rattachement_hierarchique_id:
+                    missing.append(_("Rattachement hiérarchique"))
+                rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
                 if not rec.changement_contrat:
                     raise ValidationError(_("Changement contrat: merci de sélectionner le type de changement."))
 

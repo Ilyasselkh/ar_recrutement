@@ -224,16 +224,17 @@
           <!-- ===================== -->
           <!-- Bloc "Renouvellement" -->
           <!-- ===================== -->
-          <group string="Renouvellement" class="ar_sortie_caisse_panel" invisible="demande_type != 'renouvellement'">
-            <field name="renouvellement_type" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
-            <field name="renouvellement_duree" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
+          <group string="Renouvellement" class="ar_sortie_caisse_panel ar_recrutement_compact_panel" invisible="demande_type != 'renouvellement'">
+            <field name="renouvellement_type" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'renouvellement'"/>
+            <field name="renouvellement_duree" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'renouvellement'"/>
           </group>
 
           <!-- =========================== -->
           <!-- Bloc "Changement de contrat" -->
           <!-- =========================== -->
-          <group string="Changement de type de contrat" class="ar_sortie_caisse_panel" invisible="demande_type != 'changement_contrat'">
-            <field name="changement_contrat" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
+          <group string="Changement de type de contrat" class="ar_sortie_caisse_panel ar_recrutement_compact_panel" invisible="demande_type != 'changement_contrat'">
+            <label for="changement_contrat" string="Changement de contrat"/>
+            <field name="changement_contrat" nolabel="1" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'changement_contrat'"/>
           </group>
 
 <group string="Demande de stagiaire"
@@ -241,29 +242,29 @@
        invisible="demande_type != 'demande_stagiaire'">
     <group class="ar_stagiaire_field_grid">
         <field name="objet_recrutement"
-               required="1"
+               required="demande_type == 'demande_stagiaire'"
                readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
         <field name="stagiaire_sujet"
                readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'demande_stagiaire'"/>
 
         <field name="stagiaire_nombre"
-               required="1"
+               required="demande_type == 'demande_stagiaire'"
                readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
         <field name="stagiaire_duree_mois"
-               required="1"
+               required="demande_type == 'demande_stagiaire'"
                readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
         <field name="stagiaire_remuneration"
                readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'demande_stagiaire'"/>
 
         <field name="formation_base"
-               required="1"
+               required="demande_type == 'demande_stagiaire'"
                readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
         <field name="formation_base_autre"
-               invisible="formation_base != 'autre'" required="formation_base == 'autre'" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
+               invisible="formation_base != 'autre'" required="demande_type == 'demande_stagiaire' and formation_base == 'autre'" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
     </group>
 </group>
           </div>
@@ -272,7 +273,7 @@
 <!-- ================== -->
 <!-- Bloc commun -->
 <!-- ================== -->
-<group class="ar_recrutement_common" invisible="(demande_type == False or demande_type == 'demande_stagiaire')" col="1">
+<group class="ar_recrutement_common" invisible="(demande_type == False or demande_type == 'demande_stagiaire' or demande_type in ('renouvellement', 'changement_contrat'))" col="1">
 
     <!-- Ligne 1 -->
     <group class="ar_sortie_caisse_main_row" col="2">
@@ -283,31 +284,35 @@
 
             <label for="categorie_prof" string="CATEGORIE PROFESSIONNELLE"/>
             <field name="categorie_prof" widget="radio" nolabel="1"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
 
             <label for="date_embauche_souhaitee" string="DATE D'EMBAUCHE SOUHAITEE"/>
             <field name="date_embauche_souhaitee" nolabel="1"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
 
             <label for="motif_demande" string="MOTIF DE LA DEMANDE"/>
             <field name="motif_demande" nolabel="1"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
         </group>
 
-        <group string="CONTRAT" class="ar_sortie_caisse_panel ar_recrutement_panel_secondary">
-            <field name="type_contrat"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
+        <group string="CONTRAT" class="ar_sortie_caisse_panel ar_recrutement_panel_secondary ar_recrutement_contract_panel">
+            <label for="type_contrat" string="Type de contrat"/>
+            <field name="type_contrat" nolabel="1"
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
 
+            <label for="duree_contrat" string="Durée(En mois)" invisible="type_contrat not in ('cdd', 'anapec')"/>
             <field name="duree_contrat"
-                   invisible="type_contrat not in ('cdd', 'anapec')" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
+                   nolabel="1" invisible="type_contrat not in ('cdd', 'anapec')" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
-            <label for="recrutement_budget" string="LE RECRUTEMENT EST-IL AU BUDGET ?"/>
+            <label for="recrutement_budget" string="LE RECRUTEMENT EST-IL AU BUDGET ?"
+                   invisible="demande_type in ('renouvellement', 'changement_contrat')"/>
             <field name="recrutement_budget" widget="radio" nolabel="1"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
+       invisible="demande_type in ('renouvellement', 'changement_contrat')" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
 
-            <label for="contenu_poste" string="CONTENU DU POSTE ET DESCRIPTIF DES TACHES PRINCIPALES"/>
+            <label for="contenu_poste" string="CONTENU DU POSTE ET DESCRIPTIF DES TACHES PRINCIPALES"
+                   invisible="demande_type in ('renouvellement', 'changement_contrat')"/>
             <field name="contenu_poste" nolabel="1"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
+       invisible="demande_type in ('renouvellement', 'changement_contrat')" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
         </group>
     </group>
 
@@ -320,19 +325,21 @@
 
             <field name="rattachement_hierarchique_id"
        options="{'no_create': True}"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
 
             <field name="nom_tuteur_id"
        options="{'no_create': True}"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
+       invisible="demande_type in ('renouvellement', 'changement_contrat')" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
 
             <field name="remuneration_avantages"
+                   invisible="demande_type in ('renouvellement', 'changement_contrat')"
                    readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
         </group>
 
-        <group string="PROFIL SOUHAITÉ" class="ar_sortie_caisse_panel ar_recrutement_panel_primary">
+        <group string="PROFIL SOUHAITÉ" class="ar_sortie_caisse_panel ar_recrutement_panel_primary"
+               invisible="demande_type in ('renouvellement', 'changement_contrat')">
             <field name="formation_base"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
 
             <field name="formation_base_autre"
                    invisible="formation_base != 'autre'" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
@@ -344,7 +351,7 @@
                    readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <field name="qualites_personnelles"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type != 'demande_stagiaire'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
 
             <field name="formation_complementaire"
                    readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
@@ -354,6 +361,38 @@
         </group>
     </group>
 
+</group>
+
+<group class="ar_recrutement_common ar_recrutement_short_flow_common" invisible="demande_type not in ('renouvellement', 'changement_contrat')" col="1">
+    <group class="ar_sortie_caisse_main_row ar_recrutement_short_flow_row" col="2">
+        <group string="INFORMATIONS DU POSTE" class="ar_sortie_caisse_panel ar_recrutement_panel_primary ar_recrutement_compact_panel">
+            <label for="objet_recrutement" string="OBJET DE RECRUTEMENT"/>
+            <field name="objet_recrutement" nolabel="1"
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'renouvellement' or demande_type == 'changement_contrat'"/>
+
+            <label for="categorie_prof" string="CATEGORIE PROFESSIONNELLE"/>
+            <field name="categorie_prof" widget="radio" nolabel="1"
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'renouvellement' or demande_type == 'changement_contrat'"/>
+
+            <label for="date_embauche_souhaitee" string="DATE D'EMBAUCHE SOUHAITEE"/>
+            <field name="date_embauche_souhaitee" nolabel="1"
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'renouvellement' or demande_type == 'changement_contrat'"/>
+
+            <label for="motif_demande" string="MOTIF DE LA DEMANDE"/>
+            <field name="motif_demande" nolabel="1"
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'renouvellement' or demande_type == 'changement_contrat'"/>
+        </group>
+
+        <group string="NIVEAU HIERARCHIQUE ET QUALIFICATION" class="ar_sortie_caisse_panel ar_recrutement_panel_secondary ar_recrutement_compact_panel">
+            <field name="profil_annexe"
+                   filename="profil_annexe_filename"
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
+
+            <field name="rattachement_hierarchique_id"
+                   options="{'no_create': True}"
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'renouvellement' or demande_type == 'changement_contrat'"/>
+        </group>
+    </group>
 </group>
 
 <group string="ANNONCE" class="ar_sortie_caisse_panel ar_sortie_caisse_lines" invisible="state not in ('annonce', 'cv_tech', 'selection_candidats', 'entretien', 'candidat_retenu', 'validation_rh', 'deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'affectation', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'periode_essai_n1', 'periode_essai_rh', 'rupture', 'accepte', 'refuse')">
@@ -1164,7 +1203,7 @@
 <field name="stagiaire_remuneration" invisible="1"/>
 
 <field name="fa_pretentions_salariales_num"
-       invisible="(demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'sans')" readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)" required="(demande_type != 'demande_stagiaire' or (demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'avec'))"/>
+       invisible="(demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'sans')" readonly="(parent_step != 'demandeur_final_choice' or parent_user_can_act_as_demandeur == False or is_refused_line == True)" required="(demande_type == 'creation_poste' or demande_type == 'remplacement' or (demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'avec'))"/>
 
                     <field name="fa_appreciations_generales"
                            required="1"
@@ -1302,7 +1341,7 @@
 <field name="stagiaire_remuneration" invisible="1"/>
 
 <field name="rhfa_pretentions_salariales_num"
-       invisible="(demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'sans')" readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)" required="(demande_type != 'demande_stagiaire' or (demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'avec'))"/>
+       invisible="(demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'sans')" readonly="(parent_step != 'rh_validate_final' or parent_user_is_rh == False or is_refused_line == True)" required="(demande_type == 'creation_poste' or demande_type == 'remplacement' or (demande_type == 'demande_stagiaire' and stagiaire_remuneration == 'avec'))"/>
 
                     <field name="rhfa_appreciations_generales"
                            required="1"
@@ -1976,7 +2015,7 @@
     <field name="name">ar.demande.de.recrutement.popup.dossier.candidat</field>
     <field name="model">ar.demande.de.recrutement</field>
     <field name="arch" type="xml">
-        <form string="Dossier du Candidat" class="ar_recrutement_modern ar_recrutement_popup ar_dossier_popup ar_dossier_request_popup">
+        <form string="Dossier du Candidat" class="ar_recrutement_modern ar_recrutement_popup ar_dossier_popup ar_dossier_request_popup" groups="ar_recrutement.group_ar_recrutement_rh">
             <sheet>
                 <field name="state" invisible="1"/>
                 <field name="dossier_candidat_line_ids" class="ar_dossier_table" nolabel="1" colspan="2">
