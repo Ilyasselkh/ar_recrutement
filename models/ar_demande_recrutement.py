@@ -1694,11 +1694,16 @@ class ARDemandeDeRecrutement(models.Model):
         "renouvellement_type",
         "renouvellement_duree",
         "changement_contrat",
+        "type_contrat",
+        "recrutement_budget",
+        "contenu_poste",
         "categorie_prof",
         "date_embauche_souhaitee",
         "motif_demande",
         "profil_annexe",
         "rattachement_hierarchique_id",
+        "nom_tuteur_id",
+        "qualites_personnelles",
         "stagiaire_nombre",
         "stagiaire_duree_mois",
         "stagiaire_remuneration",
@@ -1708,6 +1713,37 @@ class ARDemandeDeRecrutement(models.Model):
     )
     def _check_specific_fields(self):
         for rec in self:
+            if rec.demande_type in ("creation_poste", "remplacement"):
+                missing = []
+                if rec.demande_type == "remplacement":
+                    if not rec.personne_remplacee_id:
+                        missing.append(_("Personne remplacée"))
+                    if not rec.raison_remplacement:
+                        missing.append(_("Raison du remplacement"))
+                if not rec.categorie_prof:
+                    missing.append(_("Catégorie professionnelle"))
+                if not rec.date_embauche_souhaitee:
+                    missing.append(_("Date d'embauche souhaitée"))
+                if not rec.motif_demande:
+                    missing.append(_("Motif de la demande"))
+                if not rec.type_contrat:
+                    missing.append(_("Type de contrat"))
+                if rec.type_contrat in ("cdd", "anapec") and not (rec.duree_contrat or "").strip():
+                    missing.append(_("Durée du contrat"))
+                if not rec.recrutement_budget:
+                    missing.append(_("Recrutement au budget"))
+                if not rec.contenu_poste:
+                    missing.append(_("Contenu du poste"))
+                if not rec.rattachement_hierarchique_id:
+                    missing.append(_("Rattachement hiérarchique"))
+                if not rec.nom_tuteur_id:
+                    missing.append(_("Nom du tuteur d'accueil"))
+                if not rec.formation_base:
+                    missing.append(_("Formation de base"))
+                if not rec.qualites_personnelles:
+                    missing.append(_("Qualités personnelles"))
+                rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
+
             if rec.demande_type == "remplacement":
                 if not rec.personne_remplacee_id or not rec.raison_remplacement:
                     raise ValidationError(_("Remplacement: merci de renseigner la personne remplacée et la raison."))

@@ -225,8 +225,8 @@
           <!-- Bloc "Renouvellement" -->
           <!-- ===================== -->
           <group string="Renouvellement" class="ar_sortie_caisse_panel ar_recrutement_compact_panel" invisible="demande_type != 'renouvellement'">
-            <field name="renouvellement_type" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'renouvellement'"/>
-            <field name="renouvellement_duree" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'renouvellement'"/>
+            <field name="renouvellement_type" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
+            <field name="renouvellement_duree" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
           </group>
 
           <!-- =========================== -->
@@ -234,7 +234,7 @@
           <!-- =========================== -->
           <group string="Changement de type de contrat" class="ar_sortie_caisse_panel ar_recrutement_compact_panel" invisible="demande_type != 'changement_contrat'">
             <label for="changement_contrat" string="Changement de contrat"/>
-            <field name="changement_contrat" nolabel="1" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'changement_contrat'"/>
+            <field name="changement_contrat" nolabel="1" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
           </group>
 
 <group string="Demande de stagiaire"
@@ -242,29 +242,25 @@
        invisible="demande_type != 'demande_stagiaire'">
     <group class="ar_stagiaire_field_grid">
         <field name="objet_recrutement"
-               required="demande_type == 'demande_stagiaire'"
                readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
         <field name="stagiaire_sujet"
-               readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'demande_stagiaire'"/>
+               readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
         <field name="stagiaire_nombre"
-               required="demande_type == 'demande_stagiaire'"
                readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
         <field name="stagiaire_duree_mois"
-               required="demande_type == 'demande_stagiaire'"
                readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
         <field name="stagiaire_remuneration"
-               readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'demande_stagiaire'"/>
+               readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
         <field name="formation_base"
-               required="demande_type == 'demande_stagiaire'"
                readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
         <field name="formation_base_autre"
-               invisible="formation_base != 'autre'" required="demande_type == 'demande_stagiaire' and formation_base == 'autre'" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
+               invisible="formation_base != 'autre'" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
     </group>
 </group>
           </div>
@@ -284,21 +280,21 @@
 
             <label for="categorie_prof" string="CATEGORIE PROFESSIONNELLE"/>
             <field name="categorie_prof" widget="radio" nolabel="1"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <label for="date_embauche_souhaitee" string="DATE D'EMBAUCHE SOUHAITEE"/>
             <field name="date_embauche_souhaitee" nolabel="1"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <label for="motif_demande" string="MOTIF DE LA DEMANDE"/>
             <field name="motif_demande" nolabel="1"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
         </group>
 
         <group string="CONTRAT" class="ar_sortie_caisse_panel ar_recrutement_panel_secondary ar_recrutement_contract_panel">
             <label for="type_contrat" string="Type de contrat"/>
             <field name="type_contrat" nolabel="1"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <label for="duree_contrat" string="Durée(En mois)" invisible="type_contrat not in ('cdd', 'anapec')"/>
             <field name="duree_contrat"
@@ -307,12 +303,12 @@
             <label for="recrutement_budget" string="LE RECRUTEMENT EST-IL AU BUDGET ?"
                    invisible="demande_type in ('renouvellement', 'changement_contrat')"/>
             <field name="recrutement_budget" widget="radio" nolabel="1"
-       invisible="demande_type in ('renouvellement', 'changement_contrat')" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
+       invisible="demande_type in ('renouvellement', 'changement_contrat')" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <label for="contenu_poste" string="CONTENU DU POSTE ET DESCRIPTIF DES TACHES PRINCIPALES"
                    invisible="demande_type in ('renouvellement', 'changement_contrat')"/>
             <field name="contenu_poste" nolabel="1"
-       invisible="demande_type in ('renouvellement', 'changement_contrat')" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
+       invisible="demande_type in ('renouvellement', 'changement_contrat')" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
         </group>
     </group>
 
@@ -325,11 +321,11 @@
 
             <field name="rattachement_hierarchique_id"
        options="{'no_create': True}"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <field name="nom_tuteur_id"
        options="{'no_create': True}"
-       invisible="demande_type in ('renouvellement', 'changement_contrat')" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
+       invisible="demande_type in ('renouvellement', 'changement_contrat')" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <field name="remuneration_avantages"
                    invisible="demande_type in ('renouvellement', 'changement_contrat')"
@@ -339,7 +335,7 @@
         <group string="PROFIL SOUHAITÉ" class="ar_sortie_caisse_panel ar_recrutement_panel_primary"
                invisible="demande_type in ('renouvellement', 'changement_contrat')">
             <field name="formation_base"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <field name="formation_base_autre"
                    invisible="formation_base != 'autre'" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
@@ -351,7 +347,7 @@
                    readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <field name="qualites_personnelles"
-       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'creation_poste' or demande_type == 'remplacement'"/>
+       readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <field name="formation_complementaire"
                    readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
@@ -368,19 +364,19 @@
         <group string="INFORMATIONS DU POSTE" class="ar_sortie_caisse_panel ar_recrutement_panel_primary ar_recrutement_compact_panel">
             <label for="objet_recrutement" string="OBJET DE RECRUTEMENT"/>
             <field name="objet_recrutement" nolabel="1"
-                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'renouvellement' or demande_type == 'changement_contrat'"/>
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <label for="categorie_prof" string="CATEGORIE PROFESSIONNELLE"/>
             <field name="categorie_prof" widget="radio" nolabel="1"
-                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'renouvellement' or demande_type == 'changement_contrat'"/>
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <label for="date_embauche_souhaitee" string="DATE D'EMBAUCHE SOUHAITEE"/>
             <field name="date_embauche_souhaitee" nolabel="1"
-                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'renouvellement' or demande_type == 'changement_contrat'"/>
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
 
             <label for="motif_demande" string="MOTIF DE LA DEMANDE"/>
             <field name="motif_demande" nolabel="1"
-                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'renouvellement' or demande_type == 'changement_contrat'"/>
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
         </group>
 
         <group string="NIVEAU HIERARCHIQUE ET QUALIFICATION" class="ar_sortie_caisse_panel ar_recrutement_panel_secondary ar_recrutement_compact_panel">
@@ -390,7 +386,7 @@
 
             <field name="rattachement_hierarchique_id"
                    options="{'no_create': True}"
-                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False" required="demande_type == 'renouvellement' or demande_type == 'changement_contrat'"/>
+                   readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
         </group>
     </group>
 </group>
