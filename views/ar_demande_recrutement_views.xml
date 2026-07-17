@@ -80,6 +80,7 @@
         </header>
 
         <header>
+          <field name="current_user_can_validate_n1" invisible="1"/>
           <button name="action_refresh_integration_lines"
         type="object"
         string="Rafraîchir intégration"
@@ -111,15 +112,13 @@
         type="object"
         string="Valider"
         class="btn-success"
-        groups="ar_recrutement.group_ar_recrutement_manager"
-        invisible="state != 'n1'"/>
+        invisible="state != 'n1' or current_user_can_validate_n1 == False"/>
 
 <button name="action_open_refuse_wizard"
         type="object"
         string="Refuser"
         class="btn-danger"
-        groups="ar_recrutement.group_ar_recrutement_manager"
-        invisible="state != 'n1'"/>
+        invisible="state != 'n1' or current_user_can_validate_n1 == False"/>
 
            <button name="action_archiver_rupture"
         type="object"
@@ -227,6 +226,10 @@
           <group string="Renouvellement" class="ar_sortie_caisse_panel ar_recrutement_compact_panel" invisible="demande_type != 'renouvellement'">
             <field name="renouvellement_type" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
             <field name="renouvellement_duree" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
+            <button name="action_open_evaluation_appreciation_popup"
+                    type="object"
+                    string="ÉVALUATION / APPRÉCIATION"
+                    class="btn-primary"/>
           </group>
 
           <!-- =========================== -->
@@ -235,6 +238,10 @@
           <group string="Changement de type de contrat" class="ar_sortie_caisse_panel ar_recrutement_compact_panel" invisible="demande_type != 'changement_contrat'">
             <label for="changement_contrat" string="Changement de contrat"/>
             <field name="changement_contrat" nolabel="1" readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
+            <button name="action_open_evaluation_appreciation_popup"
+                    type="object"
+                    string="ÉVALUATION / APPRÉCIATION"
+                    class="btn-primary"/>
           </group>
 
 <group string="Demande de stagiaire"
@@ -1912,6 +1919,60 @@
                     <button string="Fermer" special="cancel" class="btn-secondary"/>
                 </footer>
             </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_ar_demande_recrutement_popup_evaluation_appreciation" model="ir.ui.view">
+    <field name="name">ar.demande.de.recrutement.popup.evaluation.appreciation</field>
+    <field name="model">ar.demande.de.recrutement</field>
+    <field name="arch" type="xml">
+        <form string="ÉVALUATION / APPRÉCIATION" class="ar_recrutement_modern ar_recrutement_popup ar_evaluation_appreciation_popup">
+            <sheet>
+                <field name="state" invisible="1"/>
+                <field name="current_user_can_act_as_demandeur" invisible="1"/>
+
+                <div class="ar_eval_legend">
+                    <strong>Legende :</strong>
+                    <span>1 = Pas satisfait</span>
+                    <span>2 = &#192; ameliorer</span>
+                    <span>3 = Satisfait</span>
+                    <span>4 = Tr&#232;s satisfait</span>
+                </div>
+
+                <group string="Critères d'Appréciation" class="ar_sortie_caisse_lines">
+                    <field name="evaluation_appreciation_line_ids" nolabel="1" colspan="2">
+                        <list editable="bottom" create="0" delete="0">
+                            <field name="sequence" column_invisible="1"/>
+                            <field name="critere" column_invisible="1"/>
+                            <field name="name" string="Critère d'Appréciation" readonly="1"/>
+                            <field name="note" string="Note" readonly="parent.state != 'demandeur' or parent.current_user_can_act_as_demandeur == False"/>
+                            <field name="commentaire" string="Commentaires" readonly="parent.state != 'demandeur' or parent.current_user_can_act_as_demandeur == False"/>
+                        </list>
+                    </field>
+                </group>
+
+                <group string="Autres remarques" class="ar_evaluation_remarks">
+                    <field name="evaluation_autres_remarques"
+                           nolabel="1"
+                           readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
+                </group>
+
+                <group string="Décision Finale">
+                    <field name="evaluation_decision_finale"
+                           widget="radio"
+                           readonly="state != 'demandeur' or current_user_can_act_as_demandeur == False"/>
+                </group>
+            </sheet>
+
+            <footer>
+                <button string="Télécharger"
+                        type="object"
+                        name="action_download_evaluation_appreciation"
+                        class="btn-info"/>
+                <button string="Enregistrer" special="save" class="btn-primary"/>
+                <button string="Fermer" special="cancel" class="btn-secondary"/>
+            </footer>
         </form>
     </field>
 </record>

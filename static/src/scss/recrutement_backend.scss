@@ -783,6 +783,69 @@
     }
 }
 
+.o_form_view.ar_recrutement_popup.ar_evaluation_appreciation_popup {
+    .ar_sortie_caisse_lines {
+        margin-bottom: 18px;
+    }
+
+    .ar_sortie_caisse_lines > .o_inner_group,
+    .ar_sortie_caisse_lines > .o_group,
+    .ar_sortie_caisse_lines .o_wrap_field,
+    .ar_sortie_caisse_lines .o_cell,
+    .ar_sortie_caisse_lines .o_field_widget {
+        display: block !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    .ar_sortie_caisse_lines .o_field_x2many_list,
+    .ar_sortie_caisse_lines .o_list_renderer {
+        max-width: 100%;
+        overflow-x: auto;
+        width: 100%;
+    }
+
+    .ar_sortie_caisse_lines .o_list_table {
+        min-width: 720px;
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .ar_sortie_caisse_lines .o_list_table th,
+    .ar_sortie_caisse_lines .o_list_table td {
+        overflow-wrap: anywhere;
+        padding: 10px 8px;
+        vertical-align: middle;
+        white-space: normal;
+    }
+
+    .ar_sortie_caisse_lines .o_list_table th[data-name='name'],
+    .ar_sortie_caisse_lines .o_list_table td[name='name'] {
+        width: 34%;
+    }
+
+    .ar_sortie_caisse_lines .o_list_table th[data-name='note'],
+    .ar_sortie_caisse_lines .o_list_table td[name='note'] {
+        width: 18%;
+    }
+
+    .ar_evaluation_remarks,
+    .ar_evaluation_remarks > .o_inner_group,
+    .ar_evaluation_remarks > .o_group,
+    .ar_evaluation_remarks .o_wrap_field,
+    .ar_evaluation_remarks .o_cell,
+    .ar_evaluation_remarks .o_field_widget {
+        display: block !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    .ar_evaluation_remarks textarea {
+        min-height: 110px;
+        width: 100% !important;
+    }
+}
+
 .o_form_view.ar_recrutement_popup.ar_followup_popup {
     .o_form_sheet_bg {
         overflow-x: hidden;

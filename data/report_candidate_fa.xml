@@ -65,6 +65,16 @@
     <field name="print_report_name">'Integration - %s' % (object.candidate_name or 'Candidat')</field>
 </record>
 
+<record id="action_report_evaluation_appreciation" model="ir.actions.report">
+    <field name="name">Evaluation transfert du contrat</field>
+    <field name="model">ar.demande.de.recrutement</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">ar_recrutement.report_evaluation_appreciation_template</field>
+    <field name="report_file">ar_recrutement.report_evaluation_appreciation_template</field>
+    <field name="paperformat_id" ref="ar_recrutement.paperformat_candidate_appreciation"/>
+    <field name="print_report_name">'Evaluation transfert du contrat - %s' % (object.name or 'Demande')</field>
+</record>
+
     <!-- ===================================================== -->
     <!-- TEMPLATE FA -->
     <!-- ===================================================== -->
@@ -643,6 +653,124 @@
                     <table class="fa-table">
                         <tr>
                             <td><span t-esc="o.epe_autres_remarques or ''"/></td>
+                        </tr>
+                    </table>
+
+                </div>
+            </t>
+        </t>
+    </t>
+</template>
+
+<template id="report_evaluation_appreciation_template">
+    <t t-call="web.html_container">
+        <t t-foreach="docs" t-as="o">
+            <t t-call="ar_recrutement.report_araymond_external_layout">
+                <div class="page">
+
+                    <style>
+                        .fa-title {
+                            text-align: center;
+                            font-size: 22px;
+                            font-weight: bold;
+                            margin-bottom: 18px;
+                            border-bottom: 2px solid #444;
+                            padding-bottom: 8px;
+                        }
+                        .fa-subtitle {
+                            font-size: 15px;
+                            font-weight: bold;
+                            background: #e9ecef;
+                            padding: 8px 10px;
+                            margin-top: 18px;
+                            margin-bottom: 0;
+                            border: 1px solid #cfd4da;
+                        }
+                        .fa-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 14px;
+                        }
+                        .fa-table th,
+                        .fa-table td {
+                            border: 1px solid #cfd4da;
+                            padding: 8px;
+                            vertical-align: top;
+                            font-size: 12px;
+                        }
+                        .fa-table th {
+                            background: #f1f3f5;
+                            font-weight: bold;
+                        }
+                        .fa-label {
+                            width: 35%;
+                            font-weight: bold;
+                            background: #f8f9fa;
+                        }
+                        .fa-value {
+                            width: 65%;
+                        }
+                    </style>
+
+                    <div class="fa-title">Evaluation transfert du contrat</div>
+
+                    <h3 class="fa-subtitle">Informations générales</h3>
+                    <table class="fa-table">
+                        <tr>
+                            <td class="fa-label">Référence</td>
+                            <td class="fa-value"><span t-esc="o.name or ''"/></td>
+                        </tr>
+                        <tr>
+                            <td class="fa-label">Type de demande</td>
+                            <td class="fa-value"><span t-esc="dict(o._fields['demande_type'].selection).get(o.demande_type, '')"/></td>
+                        </tr>
+                        <tr>
+                            <td class="fa-label">Demandeur</td>
+                            <td class="fa-value"><span t-esc="o.demandeur_id.name or ''"/></td>
+                        </tr>
+                        <tr>
+                            <td class="fa-label">Rattachement hiérarchique</td>
+                            <td class="fa-value"><span t-esc="o.rattachement_hierarchique_id.name or ''"/></td>
+                        </tr>
+                        <tr t-if="o.demande_type == 'renouvellement'">
+                            <td class="fa-label">Renouvellement</td>
+                            <td class="fa-value"><span t-esc="dict(o._fields['renouvellement_type'].selection).get(o.renouvellement_type, '')"/></td>
+                        </tr>
+                        <tr t-if="o.demande_type == 'renouvellement'">
+                            <td class="fa-label">Durée de renouvellement</td>
+                            <td class="fa-value"><span t-esc="o.renouvellement_duree or ''"/></td>
+                        </tr>
+                        <tr t-if="o.demande_type == 'changement_contrat'">
+                            <td class="fa-label">Changement de contrat</td>
+                            <td class="fa-value"><span t-esc="dict(o._fields['changement_contrat'].selection).get(o.changement_contrat, '')"/></td>
+                        </tr>
+                    </table>
+
+                    <h3 class="fa-subtitle">Critères d'Appréciation</h3>
+                    <table class="fa-table">
+                        <tr>
+                            <th>Critère</th>
+                            <th>Note</th>
+                            <th>Commentaires</th>
+                        </tr>
+                        <tr t-foreach="o.evaluation_appreciation_line_ids" t-as="line">
+                            <td><span t-esc="line.name or ''"/></td>
+                            <td><span t-esc="line.note or ''"/></td>
+                            <td><span t-esc="line.commentaire or ''"/></td>
+                        </tr>
+                    </table>
+
+                    <h3 class="fa-subtitle">Autres remarques</h3>
+                    <table class="fa-table">
+                        <tr>
+                            <td><span t-esc="o.evaluation_autres_remarques or ''"/></td>
+                        </tr>
+                    </table>
+
+                    <h3 class="fa-subtitle">Décision finale</h3>
+                    <table class="fa-table">
+                        <tr>
+                            <td><span t-esc="dict(o._fields['evaluation_decision_finale'].selection).get(o.evaluation_decision_finale, '')"/></td>
                         </tr>
                     </table>
 

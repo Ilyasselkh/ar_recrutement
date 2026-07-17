@@ -106,6 +106,11 @@ class ARDemandeDeRecrutement(models.Model):
         compute="_compute_current_user_can_act_as_demandeur",
         store=False,
     )
+    current_user_can_validate_n1 = fields.Boolean(
+        string="Peut valider N+1",
+        compute="_compute_current_user_can_validate_n1",
+        store=False,
+    )
     current_user_is_chef_equipe_affecte = fields.Boolean(
         string="Chef d'équipe affecté courant",
         compute="_compute_current_user_affectation_roles",
@@ -362,6 +367,17 @@ class ARDemandeDeRecrutement(models.Model):
                 rec.rattachement_hierarchique_id.id,
             )
 
+    @api.depends("demande_type", "manager_id", "rattachement_hierarchique_id")
+    @api.depends_context("uid")
+    def _compute_current_user_can_validate_n1(self):
+        current_user = self.env.user
+        is_manager = current_user.has_group("ar_recrutement.group_ar_recrutement_manager")
+        for rec in self:
+            if rec._is_contract_short_flow():
+                rec.current_user_can_validate_n1 = rec.rattachement_hierarchique_id == current_user
+            else:
+                rec.current_user_can_validate_n1 = is_manager and rec.manager_id == current_user
+
     @api.depends(
         "candidate_ids.chef_equipe_id",
         "candidate_ids.superviseur_affecte_id",
@@ -490,6 +506,12 @@ class ARDemandeDeRecrutement(models.Model):
     def _get_manager_email(self):
         self.ensure_one()
         return self._get_user_email(self.manager_id)
+
+    def _get_n1_validation_emails(self):
+        self.ensure_one()
+        if self._is_contract_short_flow():
+            return [self._get_user_email(self.rattachement_hierarchique_id)]
+        return [self._get_manager_email()]
 
     def _get_group_emails(self, group_xmlid):
         """Retourne la liste emails des users d'un groupe."""
@@ -677,7 +699,7 @@ class ARDemandeDeRecrutement(models.Model):
         if old_state == "demandeur" and old_step == "draft" and new_state == "n1" and new_step == "wait_validation":
             self._send_template(
                 "ar_recrutement.mail_template_rec_to_manager_validation",
-                [self._get_manager_email()],
+                self._get_n1_validation_emails(),
             )
             return
 
@@ -1331,6 +1353,22 @@ class ARDemandeDeRecrutement(models.Model):
         ("interim_to_cdd", "INTÉRIM => CDD"),
     ], string="Changement de contrat", tracking=True)
 
+    evaluation_appreciation_line_ids = fields.One2many(
+        "ar.demande.recrutement.evaluation.appreciation.line",
+        "demande_id",
+        string="Critères d'appréciation",
+        tracking=True,
+    )
+    evaluation_autres_remarques = fields.Text(string="Autres remarques", tracking=True)
+    evaluation_decision_finale = fields.Selection(
+        [
+            ("confirmation", "Confirmation"),
+            ("rupture_contrat", "Rupture du contrat"),
+        ],
+        string="Décision finale",
+        tracking=True,
+    )
+
     # ---- Lignes candidats ----
     candidate_ids = fields.One2many(
         "ar.demande.recrutement.candidate", "demande_id",
@@ -1440,6 +1478,46 @@ class ARDemandeDeRecrutement(models.Model):
             "target": "new",
         }
 
+    def _get_default_evaluation_appreciation_criteres(self):
+        return [
+            ("maitrise_technique", _("Maîtrise technique")),
+            ("capacite_adaptation", _("Capacité d'adaptation")),
+            ("engagement_dynamisme", _("Engagement et dynamisme")),
+            ("autonomie_initiative", _("Autonomie et prise d'initiative")),
+        ]
+
+    def _ensure_evaluation_appreciation_lines(self):
+        Line = self.env["ar.demande.recrutement.evaluation.appreciation.line"]
+        for rec in self:
+            existing = set(rec.evaluation_appreciation_line_ids.mapped("critere"))
+            sequence = 10
+            for critere, label in rec._get_default_evaluation_appreciation_criteres():
+                if critere not in existing:
+                    Line.create({
+                        "demande_id": rec.id,
+                        "critere": critere,
+                        "name": label,
+                        "sequence": sequence,
+                    })
+                sequence += 10
+
+    def action_open_evaluation_appreciation_popup(self):
+        self.ensure_one()
+        if not self._is_contract_short_flow():
+            raise AccessError(_("Cette évaluation est réservée au renouvellement et au changement de type de contrat."))
+        self._ensure_evaluation_appreciation_lines()
+        return self._open_recruitment_popup(
+            "ar_recrutement.view_ar_demande_recrutement_popup_evaluation_appreciation",
+            _("ÉVALUATION / APPRÉCIATION"),
+        )
+
+    def action_download_evaluation_appreciation(self):
+        self.ensure_one()
+        if not self._is_contract_short_flow():
+            raise AccessError(_("Cette évaluation est réservée au renouvellement et au changement de type de contrat."))
+        self._ensure_evaluation_appreciation_lines()
+        return self.env.ref("ar_recrutement.action_report_evaluation_appreciation").report_action(self)
+
     def action_open_entretien_popup(self):
         return self._open_recruitment_popup(
             "ar_recrutement.view_ar_demande_recrutement_popup_entretien",
@@ -1486,6 +1564,7 @@ class ARDemandeDeRecrutement(models.Model):
 
     def action_open_validate_n1_wizard(self):
         self.ensure_one()
+        self._check_can_validate_n1()
         return self._open_action_wizard("validate_n1")
 
     def action_open_submit_wizard(self):
@@ -1530,6 +1609,8 @@ class ARDemandeDeRecrutement(models.Model):
 
     def action_open_refuse_wizard(self):
         self.ensure_one()
+        if self.state == "n1":
+            self._check_can_validate_n1()
         return self._open_action_wizard("refuse")
 
     def action_demander_modification(self):
@@ -1573,6 +1654,33 @@ class ARDemandeDeRecrutement(models.Model):
         self.ensure_one()
         if not self.rattachement_hierarchique_id or self.rattachement_hierarchique_id.id != self.env.user.id:
             raise AccessError(_("Seule la personne renseignée dans 'Rattachement hiérarchique' peut valider cette étape."))
+
+    def _check_short_flow_required_fields(self):
+        self.ensure_one()
+        missing = []
+        if self.demande_type == "renouvellement":
+            if not self.renouvellement_type:
+                missing.append(_("Renouvellement"))
+            if not self.renouvellement_duree:
+                missing.append(_("Durée de renouvellement"))
+        elif self.demande_type == "changement_contrat":
+            if not self.changement_contrat:
+                missing.append(_("Changement de contrat"))
+        else:
+            return
+
+        if not self.objet_recrutement:
+            missing.append(_("Objet de recrutement"))
+        if not self.categorie_prof:
+            missing.append(_("Catégorie professionnelle"))
+        if not self.date_embauche_souhaitee:
+            missing.append(_("Date d'embauche souhaitée"))
+        if not self.motif_demande:
+            missing.append(_("Motif de la demande"))
+        if not self.rattachement_hierarchique_id:
+            missing.append(_("Rattachement hiérarchique"))
+
+        self._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
 
     @api.constrains("type_contrat", "duree_contrat")
     def _check_duree_contrat(self):
@@ -1635,6 +1743,9 @@ class ARDemandeDeRecrutement(models.Model):
             "qualites_personnelles",
             "formation_complementaire",
             "consequences_si_refus",
+            "evaluation_appreciation_line_ids",
+            "evaluation_autres_remarques",
+            "evaluation_decision_finale",
         }
         if demandeur_only_fields.intersection(vals):
             for rec in self:
@@ -1749,42 +1860,12 @@ class ARDemandeDeRecrutement(models.Model):
                     raise ValidationError(_("Remplacement: merci de renseigner la personne remplacée et la raison."))
 
             if rec.demande_type == "renouvellement":
-                missing = []
-                if not rec.renouvellement_type:
-                    missing.append(_("Renouvellement"))
-                if not rec.renouvellement_duree:
-                    missing.append(_("Durée de renouvellement"))
-                if not rec.objet_recrutement:
-                    missing.append(_("Objet de recrutement"))
-                if not rec.categorie_prof:
-                    missing.append(_("Catégorie professionnelle"))
-                if not rec.date_embauche_souhaitee:
-                    missing.append(_("Date d'embauche souhaitée"))
-                if not rec.motif_demande:
-                    missing.append(_("Motif de la demande"))
-                if not rec.rattachement_hierarchique_id:
-                    missing.append(_("Rattachement hiérarchique"))
-                rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
-                if not rec.renouvellement_duree:
-                    raise ValidationError(_("Renouvellement: merci de renseigner la durée."))
+                if rec.state != "demandeur":
+                    rec._check_short_flow_required_fields()
 
             if rec.demande_type == "changement_contrat":
-                missing = []
-                if not rec.changement_contrat:
-                    missing.append(_("Changement de contrat"))
-                if not rec.objet_recrutement:
-                    missing.append(_("Objet de recrutement"))
-                if not rec.categorie_prof:
-                    missing.append(_("Catégorie professionnelle"))
-                if not rec.date_embauche_souhaitee:
-                    missing.append(_("Date d'embauche souhaitée"))
-                if not rec.motif_demande:
-                    missing.append(_("Motif de la demande"))
-                if not rec.rattachement_hierarchique_id:
-                    missing.append(_("Rattachement hiérarchique"))
-                rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
-                if not rec.changement_contrat:
-                    raise ValidationError(_("Changement contrat: merci de sélectionner le type de changement."))
+                if rec.state != "demandeur":
+                    rec._check_short_flow_required_fields()
 
             if rec.demande_type == "demande_stagiaire":
                 if not rec.objet_recrutement:
@@ -1950,6 +2031,7 @@ class ARDemandeDeRecrutement(models.Model):
             # 1) Création -> N+1
             if rec.state == "demandeur" and rec.step == "draft":
                 rec._check_can_act_as_demandeur()
+                rec._check_short_flow_required_fields()
                 rec._check_stagiaire_lines(check_document_type=False, check_document_file=False)
                 rec.write({"state": "n1", "step": "wait_validation"})
                 continue
@@ -2072,14 +2154,21 @@ class ARDemandeDeRecrutement(models.Model):
         self.ensure_one()
         if not self.manager_id or self.manager_id.id != self.env.user.id:
             raise AccessError(_("Seul le manager N+1 du demandeur peut valider."))
+
+    def _check_can_validate_n1(self):
+        self.ensure_one()
+        if self._is_contract_short_flow():
+            self._check_is_real_rattachement_hierarchique()
+            return
+        if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_manager"):
+            raise AccessError(_("Vous n'etes pas autorise a valider en tant que Manager N+1."))
+        self._check_is_real_manager()
         
     def action_valider_n1(self):
         for rec in self:
-            if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_manager"):
-                raise AccessError(_("Vous n'etes pas autorise a valider en tant que Manager N+1."))
             if rec.state != "n1":
                 raise AccessError(_("Validation N+1 uniquement a l'etat Manager N+1."))
-            rec._check_is_real_manager()
+            rec._check_can_validate_n1()
             rec.write({
                 "state": "rh",
                 "step": "wait_validation",
@@ -2638,9 +2727,7 @@ class ARDemandeDeRecrutement(models.Model):
                 raise AccessError(_("Refus non autorisé dans cet état."))
 
             if rec.state == "n1":
-                if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_manager"):
-                    raise AccessError(_("Vous n'êtes pas autorisé à refuser en tant que Manager N+1."))
-                rec._check_is_real_manager()
+                rec._check_can_validate_n1()
 
             elif rec.state == "periode_essai_n1":
                 if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_manager"):
@@ -2729,6 +2816,60 @@ class ARDemandeDeRecrutement(models.Model):
             else:
                 rec.write({"state": "accepte", "step": "done"})
 
+
+
+class ARDemandeRecrutementEvaluationAppreciationLine(models.Model):
+    _name = "ar.demande.recrutement.evaluation.appreciation.line"
+    _description = "Évaluation / Appréciation - Demande de Recrutement"
+    _order = "sequence, id"
+
+    sequence = fields.Integer(default=10)
+    demande_id = fields.Many2one(
+        "ar.demande.de.recrutement",
+        string="Demande",
+        required=True,
+        ondelete="cascade",
+    )
+    critere = fields.Selection(
+        [
+            ("maitrise_technique", "Maîtrise technique"),
+            ("capacite_adaptation", "Capacité d'adaptation"),
+            ("engagement_dynamisme", "Engagement et dynamisme"),
+            ("autonomie_initiative", "Autonomie et prise d'initiative"),
+        ],
+        string="Critère",
+        required=True,
+    )
+    name = fields.Char(string="Critère d'appréciation", required=True)
+    note = fields.Selection(
+        [
+            ("1", "1"),
+            ("2", "2"),
+            ("3", "3"),
+            ("4", "4"),
+        ],
+        string="Note",
+    )
+    commentaire = fields.Text(string="Commentaires")
+
+    def _check_can_edit_evaluation_appreciation(self):
+        for rec in self:
+            if rec.demande_id.state == "demandeur":
+                rec.demande_id._check_can_act_as_demandeur()
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records._check_can_edit_evaluation_appreciation()
+        return records
+
+    def write(self, vals):
+        self._check_can_edit_evaluation_appreciation()
+        return super().write(vals)
+
+    def unlink(self):
+        self._check_can_edit_evaluation_appreciation()
+        return super().unlink()
 
 
 class ARDemandeRecrutementStagiaireLine(models.Model):
