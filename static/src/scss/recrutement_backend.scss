@@ -8,6 +8,14 @@
     --ar-surface: #ffffff;
     --ar-soft: #f5f8fb;
     --ar-section-height: 300px;
+    --ar-page-gutter: 24px;
+    --ar-panel-gap: 18px;
+}
+
+.modal .o_form_view.ar_recrutement_popup,
+.o_form_view.ar_recrutement_modern,
+.o_form_view.ar_recrutement_modern * {
+    box-sizing: border-box;
 }
 
 .ar_recrutement_kanban {
@@ -153,7 +161,7 @@
     .ar_recrutement_sheet {
         position: relative;
         max-width: none !important;
-        width: calc(100% - 32px) !important;
+        width: 100% !important;
         padding: 30px 34px 32px !important;
         border: 1px solid rgba(174, 190, 211, 0.72);
         border-radius: 8px;
@@ -238,15 +246,15 @@
     .ar_recrutement_contract_panel > div:not(.o_horizontal_separator) {
         flex: 0 0 auto !important;
     }
-    .ar_recrutement_compact_panel { align-self: start !important; height: auto !important; min-height: 0 !important; }
+    .ar_recrutement_compact_panel { align-self: stretch !important; height: 100% !important; min-height: 0 !important; }
     .ar_recrutement_short_flow_row {
-        align-items: start !important;
+        align-items: stretch !important;
     }
     .ar_recrutement_short_flow_row > .ar_sortie_caisse_panel,
     .ar_identity_request_row > .ar_recrutement_compact_panel,
     .ar_sortie_caisse_main_row > .ar_recrutement_compact_panel {
-        align-self: start !important;
-        height: auto !important;
+        align-self: stretch !important;
+        height: 100% !important;
         min-height: 0 !important;
     }
     .ar_recrutement_compact_panel > .o_inner_group,
@@ -256,11 +264,23 @@
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
+        flex: 1 1 auto !important;
+        height: 100% !important;
+        min-height: 0 !important;
+    }
+    .ar_recrutement_compact_panel .o_field_radio { margin-top: 10px; }
+    .ar_identity_request_row > .ar_stagiaire_request_panel {
+        align-self: start !important;
+        height: auto !important;
+        min-height: 0 !important;
+    }
+    .ar_stagiaire_request_panel > .o_inner_group,
+    .ar_stagiaire_request_panel > .o_group,
+    .ar_stagiaire_request_panel > .o_inner_group > .o_group {
         flex: 0 0 auto !important;
         height: auto !important;
         min-height: 0 !important;
     }
-    .ar_recrutement_compact_panel .o_field_radio { margin-top: 10px; }
     .ar_stagiaire_request_panel .ar_stagiaire_field_grid {
         display: grid !important;
         grid-template-columns: minmax(260px, 1fr) minmax(220px, 0.7fr);
@@ -271,8 +291,13 @@
         display: contents;
     }
     .ar_stagiaire_request_panel .o_wrap_field {
+        align-items: center;
+        display: grid !important;
+        gap: 8px 14px;
+        grid-template-columns: minmax(150px, 0.9fr) minmax(0, 1fr);
         margin: 0 !important;
         min-width: 0;
+        width: 100%;
     }
     .ar_stagiaire_request_panel .o_wrap_field:first-child,
     .ar_stagiaire_request_panel .o_wrap_field:nth-child(2) {
@@ -280,11 +305,15 @@
     }
     .ar_stagiaire_request_panel .o_wrap_label {
         margin-bottom: 5px;
+        min-width: 0;
     }
+    .ar_stagiaire_request_panel .o_wrap_input,
     .ar_stagiaire_request_panel .o_field_widget,
     .ar_stagiaire_request_panel .o_input,
     .ar_stagiaire_request_panel input,
     .ar_stagiaire_request_panel select {
+        max-width: 100% !important;
+        min-width: 0 !important;
         min-height: 34px;
         width: 100% !important;
     }
@@ -342,11 +371,12 @@
 
     .o_form_sheet_bg {
         background: transparent;
-        padding: 24px;
+        padding: var(--ar-page-gutter);
     }
 
     .o_form_sheet {
         max-width: 1320px;
+        width: 100%;
         border: 1px solid rgba(0, 114, 188, 0.12);
         border-radius: 8px;
         box-shadow: 0 18px 45px rgba(16, 24, 40, 0.12);
@@ -356,6 +386,7 @@
     .o_form_statusbar {
         border-bottom: 1px solid var(--ar-border);
         background: linear-gradient(90deg, #ffffff 0%, #f4f8fb 100%);
+        max-width: 100%;
         padding: 10px 16px;
     }
 
@@ -387,6 +418,7 @@
         box-shadow: 0 4px 12px rgba(16, 24, 40, 0.12);
         font-weight: 650;
         padding: 7px 13px;
+        white-space: normal;
     }
 
     header .btn-secondary {
@@ -421,6 +453,8 @@
 
     .o_group {
         margin-bottom: 16px;
+        max-width: 100%;
+        min-width: 0;
     }
 
     .o_inner_group {
@@ -429,6 +463,8 @@
         background: var(--ar-surface);
         padding: 14px 16px 10px;
         box-shadow: 0 8px 22px rgba(16, 24, 40, 0.06);
+        max-width: 100%;
+        min-width: 0;
     }
 
     .o_horizontal_separator {
@@ -455,6 +491,7 @@
         border-color: var(--ar-border);
         border-radius: 7px;
         background-color: #fbfdff;
+        max-width: 100%;
     }
 
     .o_field_widget input:focus,
@@ -520,6 +557,7 @@
     .o_list_renderer {
         border: 1px solid var(--ar-border);
         border-radius: 8px;
+        max-width: 100%;
         overflow-x: auto;
         overflow-y: hidden;
         box-shadow: 0 8px 22px rgba(16, 24, 40, 0.05);
@@ -768,18 +806,31 @@
 }
 
 .o_form_view.ar_recrutement_popup {
+    max-width: calc(100vw - 32px);
+
     .o_form_sheet_bg {
+        max-width: 100%;
+        overflow-x: hidden;
         padding: 16px;
     }
 
     .o_form_sheet {
+        max-width: 100%;
         box-shadow: none;
+        width: 100%;
     }
 
     footer {
         border-top: 1px solid var(--ar-border);
         background: #fbfdff;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
         padding: 12px 16px;
+    }
+
+    footer .btn {
+        min-height: 34px;
     }
 }
 
@@ -1037,6 +1088,43 @@
     }
 }
 
+@media (min-width: 1600px) {
+    .o_form_view.ar_recrutement_modern {
+        --ar-page-gutter: 32px;
+
+        .o_form_sheet {
+            max-width: 1480px;
+        }
+
+        .ar_sortie_caisse_main_row {
+            grid-template-columns: repeat(2, minmax(420px, 1fr));
+        }
+    }
+}
+
+@media (max-width: 1400px) {
+    .o_form_view.ar_recrutement_modern {
+        --ar-page-gutter: 18px;
+
+        .o_form_sheet {
+            max-width: 100%;
+        }
+
+        .ar_recrutement_sheet {
+            padding: 26px 26px 28px !important;
+        }
+
+        .ar_sortie_caisse_main_row {
+            grid-template-columns: repeat(2, minmax(320px, 1fr));
+        }
+
+        .ar_stagiaire_request_panel .ar_stagiaire_field_grid,
+        .ar_stagiaire_request_panel .o_wrap_field {
+            grid-template-columns: 1fr !important;
+        }
+    }
+}
+
 .o_form_view.ar_recrutement_popup.ar_followup_candidate_popup {
     .ar_followup_feedback_table .o_list_table th[data-name='feedback_rh'],
     .ar_followup_feedback_table .o_list_table td[name='feedback_rh'],
@@ -1185,6 +1273,13 @@
 
 @media (max-width: 1200px) {
     .o_form_view.ar_recrutement_modern {
+        --ar-page-gutter: 14px;
+        --ar-section-height: auto;
+
+        .ar_identity_request_row:has(> .ar_sortie_caisse_panel:not(.ar_sortie_caisse_identity):not(.o_invisible_modifier):not(.d-none)) {
+            grid-template-columns: minmax(280px, 1fr) minmax(300px, 1fr);
+        }
+
         .ar_sortie_caisse_main_row {
             grid-template-columns: repeat(2, minmax(280px, 1fr));
         }
@@ -1266,10 +1361,11 @@
     }
 
     .o_form_view.ar_recrutement_modern {
+        --ar-page-gutter: 10px;
         --ar-section-height: auto;
 
         .o_form_sheet_bg {
-            padding: 12px;
+            padding: var(--ar-page-gutter);
         }
 
         .o_form_sheet {
@@ -1283,28 +1379,13 @@
             width: 100% !important;
         }
 
-        .o_form_statusbar,
-        header {
-            overflow-x: auto;
-        }
-
-        header {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            padding: 8px 10px;
-        }
-
         header .btn {
             min-height: 34px;
             white-space: normal;
         }
 
-        .o_statusbar_status {
-            min-width: max-content;
-        }
-
         .ar_sortie_caisse_title,
+        .ar_identity_request_row:has(> .ar_sortie_caisse_panel:not(.ar_sortie_caisse_identity):not(.o_invisible_modifier):not(.d-none)),
         .ar_sortie_caisse_main_row {
             grid-template-columns: 1fr;
         }
@@ -1334,6 +1415,25 @@
             min-height: 0;
         }
 
+        .ar_recrutement_compact_panel,
+        .ar_recrutement_short_flow_row > .ar_sortie_caisse_panel,
+        .ar_identity_request_row > .ar_recrutement_compact_panel,
+        .ar_sortie_caisse_main_row > .ar_recrutement_compact_panel {
+            align-self: start !important;
+            height: auto !important;
+        }
+
+        .ar_recrutement_short_flow_row {
+            align-items: start !important;
+        }
+
+        .ar_recrutement_compact_panel > .o_inner_group,
+        .ar_recrutement_compact_panel > .o_group,
+        .ar_recrutement_compact_panel > .o_inner_group > .o_group {
+            flex: 0 0 auto !important;
+            height: auto !important;
+        }
+
         .ar_identity_request_row {
             grid-template-columns: 1fr;
         }
@@ -1341,10 +1441,6 @@
         .ar_recrutement_common {
             padding-left: 0;
             padding-right: 0;
-        }
-
-        .ar_stagiaire_request_panel .ar_stagiaire_field_grid {
-            grid-template-columns: 1fr;
         }
 
         .ar_stagiaire_request_panel .o_field_integer {
@@ -1359,12 +1455,39 @@
         .ar_equal_three_table .o_list_table {
             min-width: 680px !important;
         }
+
+        .ar_candidate_step_table .o_list_table {
+            min-width: 860px !important;
+            width: 860px !important;
+        }
+    }
+
+    .modal-dialog {
+        max-width: calc(100vw - 24px);
+        margin-left: 12px;
+        margin-right: 12px;
+    }
+
+    .modal .o_form_view.ar_recrutement_popup {
+        max-width: 100%;
+        width: 100% !important;
+    }
+
+    .o_form_view.ar_recrutement_popup.ar_mod_integration_popup {
+        max-width: 100%;
+        width: 100%;
+
+        div[name='candidate_mod_integration_line_ids'] .o_list_table {
+            min-width: 860px;
+        }
     }
 }
 
 @media (max-width: 768px) {
     .o_form_view.ar_recrutement_popup,
     .o_form_view.ar_recrutement_modern {
+        --ar-page-gutter: 8px;
+
         .o_inner_group,
         .ar_sortie_caisse_panel,
         .ar_sortie_caisse_lines {
@@ -1410,8 +1533,30 @@
         }
 
         footer .btn {
+            flex: 1 1 140px;
             min-height: 34px;
             white-space: normal;
+        }
+    }
+
+    .o_form_view.ar_recrutement_modern {
+        .ar_sortie_caisse_title h1 {
+            font-size: 22px;
+        }
+
+        .ar_sortie_caisse_amount .o_field_widget {
+            font-size: 21px;
+        }
+
+        .o_field_radio {
+            align-items: stretch;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .o_field_radio .form-check {
+            justify-content: flex-start;
+            width: 100%;
         }
     }
 
@@ -1436,8 +1581,10 @@
 
 @media (max-width: 480px) {
     .o_form_view.ar_recrutement_modern {
+        --ar-page-gutter: 6px;
+
         .o_form_sheet_bg {
-            padding: 6px;
+            padding: var(--ar-page-gutter);
         }
 
         .ar_recrutement_sheet {
@@ -1465,9 +1612,8 @@
             white-space: normal;
         }
 
-        header .btn,
         footer .btn {
-            flex: 1 1 auto;
+            flex: 1 1 100%;
             min-width: 0;
         }
 
@@ -1482,9 +1628,15 @@
         }
 
         footer .btn {
-            flex: 1 1 0;
+            flex: 1 1 100%;
             min-width: 0;
         }
+    }
+
+    .modal-dialog {
+        max-width: calc(100vw - 12px);
+        margin-left: 6px;
+        margin-right: 6px;
     }
 }
 
@@ -1541,6 +1693,97 @@
         footer .btn {
             flex: 1 1 0;
             min-width: 0;
+        }
+    }
+}
+
+@media (max-width: 420px) {
+    .o_list_view.ar_recrutement_colored_list,
+    .o_view_controller .ar_recrutement_colored_list {
+        .o_list_table {
+            min-width: 780px;
+        }
+
+        .o_list_table th[data-name="state"],
+        .o_list_table td[name="state"] {
+            max-width: 190px !important;
+            min-width: 190px !important;
+            width: 190px !important;
+        }
+
+        .o_list_table .badge,
+        .o_list_table .o_field_badge {
+            max-width: 150px;
+            width: 150px;
+        }
+    }
+
+    .o_form_view.ar_recrutement_modern {
+        .ar_recrutement_sheet {
+            padding: 14px 8px !important;
+        }
+
+        .ar_sortie_caisse_title h1 {
+            font-size: 19px;
+        }
+
+        .ar_sortie_caisse_panel,
+        .ar_sortie_caisse_lines,
+        .o_inner_group {
+            padding: 10px;
+        }
+
+        .ar_candidate_step_table .o_list_table {
+            min-width: 760px !important;
+            width: 760px !important;
+        }
+
+        .ar_hiring_date_table .o_list_table,
+        .ar_equal_three_table .o_list_table {
+            min-width: 600px !important;
+        }
+    }
+
+    .o_form_view.ar_recrutement_popup.ar_evaluation_appreciation_popup {
+        .ar_sortie_caisse_lines .o_list_table {
+            min-width: 620px;
+        }
+    }
+
+    .o_form_view.ar_recrutement_popup.ar_mod_integration_popup {
+        div[name='candidate_mod_integration_line_ids'] .o_list_table {
+            min-width: 760px;
+        }
+    }
+}
+
+@media (max-width: 360px) {
+    .modal-dialog {
+        max-width: calc(100vw - 8px);
+        margin-left: 4px;
+        margin-right: 4px;
+    }
+
+    .o_form_view.ar_recrutement_modern {
+        .ar_recrutement_sheet {
+            padding: 12px 6px !important;
+        }
+
+        .o_horizontal_separator,
+        .ar_sortie_caisse_panel .o_horizontal_separator,
+        .ar_sortie_caisse_lines .o_horizontal_separator {
+            font-size: 10px;
+        }
+
+    }
+
+    .o_form_view.ar_recrutement_popup {
+        .o_form_sheet_bg {
+            padding: 4px;
+        }
+
+        footer {
+            padding: 8px;
         }
     }
 }
