@@ -33,5 +33,21 @@
       <field name="domain_force">[(1,'=',1)]</field>
     </record>
 
+    <!-- Inspecteur Qualité: accès lecture pour remplir les lignes MOD concernées -->
+    <record id="rule_ar_recrutement_inspecteur_qualite_all" model="ir.rule">
+      <field name="name">Recrutement - Inspecteur Qualité: All</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="groups" eval="[(4, ref('ar_recrutement.group_ar_recrutement_inspecteur_qualite'))]"/>
+      <field name="domain_force">[(1,'=',1)]</field>
+    </record>
+
+    <!-- Chef d'équipe: accès lecture pour remplir les lignes MOD concernées -->
+    <record id="rule_ar_recrutement_chef_equipe_all" model="ir.rule">
+      <field name="name">Recrutement - Chef d'équipe: All</field>
+      <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+      <field name="groups" eval="[(4, ref('ar_recrutement.group_ar_recrutement_chef_equipe'))]"/>
+      <field name="domain_force">[(1,'=',1)]</field>
+    </record>
+
   </data>
 </odoo>

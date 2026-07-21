@@ -65,6 +65,16 @@
     <field name="print_report_name">'Integration - %s' % (object.candidate_name or 'Candidat')</field>
 </record>
 
+<record id="action_report_candidate_mod_integration" model="ir.actions.report">
+    <field name="name">Formulaire d'intégration MOD</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">ar_recrutement.report_candidate_mod_integration_template</field>
+    <field name="report_file">ar_recrutement.report_candidate_mod_integration_template</field>
+    <field name="paperformat_id" ref="ar_recrutement.paperformat_candidate_appreciation"/>
+    <field name="print_report_name">'Integration MOD - %s' % (object.candidate_name or 'Candidat')</field>
+</record>
+
 <record id="action_report_evaluation_appreciation" model="ir.actions.report">
     <field name="name">Evaluation transfert du contrat</field>
     <field name="model">ar.demande.de.recrutement</field>
@@ -880,6 +890,98 @@
                         </tbody>
                     </table>
 
+                </div>
+            </t>
+        </t>
+    </t>
+</template>
+
+<template id="report_candidate_mod_integration_template">
+    <t t-call="web.html_container">
+        <t t-foreach="docs" t-as="o">
+            <t t-call="ar_recrutement.report_araymond_external_layout">
+                <div class="page">
+                    <style>
+                        .mod-title {
+                            text-align: center;
+                            font-size: 22px;
+                            font-weight: bold;
+                            margin-bottom: 18px;
+                            border-bottom: 2px solid #444;
+                            padding-bottom: 8px;
+                        }
+                        .mod-subtitle {
+                            font-size: 15px;
+                            font-weight: bold;
+                            background: #e9ecef;
+                            padding: 8px 10px;
+                            margin-top: 18px;
+                            margin-bottom: 0;
+                            border: 1px solid #cfd4da;
+                        }
+                        .mod-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 14px;
+                        }
+                        .mod-table td,
+                        .mod-table th {
+                            border: 1px solid #cfd4da;
+                            padding: 7px;
+                            vertical-align: top;
+                            font-size: 11px;
+                        }
+                        .mod-table th {
+                            background: #f1f5f9;
+                            font-weight: bold;
+                        }
+                        .mod-label {
+                            width: 32%;
+                            font-weight: bold;
+                            background: #f8f9fa;
+                        }
+                        .mod-value {
+                            width: 68%;
+                        }
+                    </style>
+
+                    <div class="mod-title">FORMULAIRE D'INTEGRATION MOD</div>
+
+                    <h3 class="mod-subtitle">Informations générales</h3>
+                    <table class="mod-table">
+                        <tr>
+                            <td class="mod-label">Nom &amp; Prénom</td>
+                            <td class="mod-value"><span t-esc="o.candidate_name or ''"/></td>
+                        </tr>
+                        <tr>
+                            <td class="mod-label">Date d'embauche</td>
+                            <td class="mod-value"><span t-esc="o.hiring_date or ''"/></td>
+                        </tr>
+                    </table>
+
+                    <h3 class="mod-subtitle">Parcours d'intégration MOD</h3>
+                    <table class="mod-table">
+                        <thead>
+                            <tr>
+                                <th>Phase</th>
+                                <th>Activité programmée</th>
+                                <th>Responsabilités</th>
+                                <th>Date</th>
+                                <th>Commentaire</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="o.get_report_mod_integration_lines()" t-as="line">
+                                <tr>
+                                    <td><span t-esc="line.phase_name or ''"/></td>
+                                    <td><span t-esc="line.activity or ''"/></td>
+                                    <td><span t-esc="line.responsible or ''"/></td>
+                                    <td><span t-esc="line.date_integration or ''"/></td>
+                                    <td><span t-esc="line.commentaire or ''"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
                 </div>
             </t>
         </t>

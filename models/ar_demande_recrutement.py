@@ -156,6 +156,12 @@ class ARDemandeDeRecrutement(models.Model):
         string="Validation période d'essai"
     )
 
+    mod_integration_line_ids = fields.One2many(
+        "ar.demande.recrutement.mod.integration.line",
+        "demande_id",
+        string="Intégration MOD",
+    )
+
     dossier_candidat_line_ids = fields.One2many(
         "ar.demande.recrutement.dossier.candidat.line",
         "demande_id",
@@ -902,6 +908,7 @@ class ARDemandeDeRecrutement(models.Model):
 
         if (
             (old_state == "date_embauche" and old_step == "rh_hiring_date")
+            or (old_state == "visite_medicale" and old_step == "wait_validation")
             or (old_state == "envoie_annonce" and old_step == "wait_validation")
         ) and new_state == "parcours_integration" and new_step == "wait_validation":
             self._send_template(
@@ -1923,6 +1930,70 @@ class ARDemandeDeRecrutement(models.Model):
                 lines_to_remove.unlink()
             rec._cleanup_suivi_duplicate_lines()
 
+    def _get_default_mod_integration_activities(self):
+        return [
+            ("p1_accueil", "P1 : Accueil", "Présentation entreprise", "Service RH"),
+            ("p1_accueil", "P1 : Accueil", "Principes de code de conduite, conditions de travail & droit de l'employé", "Service RH"),
+            ("p1_accueil", "P1 : Accueil", "Organigramme", "Service RH"),
+            ("p1_accueil", "P1 : Accueil", "Politique Qualité & politique santé et sécurité", "Service RH"),
+            ("p1_accueil", "P1 : Accueil", "Visite Usine", "Service RH / Chef d'équipe"),
+            ("p1_accueil", "P1 : Accueil", "Explication process", "Chef d'équipe / Inspecteur Qualité"),
+            ("p2_formation_generale", "P2 : Formation générale", "Formation Sécurité au poste de travail (EPIs...)", "Inspecteur Qualité"),
+            ("p2_formation_generale", "P2 : Formation générale", "Formation qualité", "Chef d'équipe / Inspecteur Qualité"),
+            ("p2_formation_generale", "P2 : Formation générale", "Formation Standards", "Chef d'équipe / Inspecteur Qualité"),
+            ("p2_formation_generale", "P2 : Formation générale", "Formation sur Actions en cas de non-conformité", "Chef d'équipe / Inspecteur Qualité"),
+            ("p2_formation_generale", "P2 : Formation générale", "Evaluation MAS01RE024 (Fichier à joindre)", "Chef d'équipe / Inspecteur Qualité"),
+            ("p3_habilitation_niveau_1", "P3 : Habilitation niveau I", "Evaluation MAS01RE013 (Fichier à joindre)", "Chef d'équipe / Inspecteur Qualité"),
+        ]
+
+    def _sync_mod_integration_lines(self):
+        ModLine = self.env["ar.demande.recrutement.mod.integration.line"]
+        for rec in self:
+            if not rec._is_non_stagiaire_standard_flow() or rec.categorie_prof != "ouvrier":
+                continue
+
+            candidates = rec.candidate_ids.filtered(
+                lambda c: c.offre_decision == "accepte"
+                and c.hiring_date
+                and not c.is_refused_line
+            )
+            candidate_ids_to_keep = []
+            activities = rec._get_default_mod_integration_activities()
+            keys_to_keep = set()
+
+            existing_keys = {
+                (line.candidate_id.id, line.phase_code, line.activity)
+                for line in rec.mod_integration_line_ids
+                if line.candidate_id and line.phase_code and line.activity
+            }
+
+            for candidate in candidates:
+                candidate_ids_to_keep.append(candidate.id)
+                sequence = 10
+                for phase_code, phase_name, activity, responsible in activities:
+                    key = (candidate.id, phase_code, activity)
+                    keys_to_keep.add(key)
+                    if key not in existing_keys:
+                        ModLine.create({
+                            "demande_id": rec.id,
+                            "candidate_id": candidate.id,
+                            "sequence": sequence,
+                            "phase_code": phase_code,
+                            "phase_name": phase_name,
+                            "activity": activity,
+                            "responsible": responsible,
+                        })
+                        existing_keys.add(key)
+                    sequence += 10
+
+            rec.mod_integration_line_ids.filtered(
+                lambda line: (
+                    not line.candidate_id
+                    or line.candidate_id.id not in candidate_ids_to_keep
+                    or (line.candidate_id.id, line.phase_code, line.activity) not in keys_to_keep
+                )
+            ).unlink()
+
     def _cleanup_suivi_duplicate_lines(self):
         for rec in self:
             lines_by_candidate = {}
@@ -2465,16 +2536,13 @@ class ARDemandeDeRecrutement(models.Model):
                     missing.append(_("Date d'embauche & Matricule : Matricule à renseigner (%s)") % candidate.candidate_name)
                 rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
 
-                if rec.categorie_prof == "ouvrier":
-                    rec.write({"state": "feedback_rh", "step": "wait_validation"})
-                else:
-                    rec.write({"state": "dossier_candidat", "step": "wait_validation"})
-                    rec._ensure_dossier_candidat_lines()
+                rec.write({"state": "dossier_candidat", "step": "wait_validation"})
+                rec._ensure_dossier_candidat_lines()
                 continue
 
             if rec.state == "dossier_candidat" and rec.step == "wait_validation":
-                if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "non_cadre":
-                    raise AccessError(_("Cette étape est réservée aux demandes MOI hors stagiaire."))
+                if rec.demande_type == "demande_stagiaire" or rec.categorie_prof not in ("ouvrier", "non_cadre"):
+                    raise AccessError(_("Cette étape est réservée aux demandes MOD/MOI hors stagiaire."))
 
                 rec._ensure_dossier_candidat_lines()
                 missing = []
@@ -2496,8 +2564,8 @@ class ARDemandeDeRecrutement(models.Model):
                 continue
 
             if rec.state == "visite_medicale" and rec.step == "wait_validation":
-                if rec.demande_type == "demande_stagiaire" or rec.categorie_prof != "non_cadre":
-                    raise AccessError(_("Cette étape est réservée aux demandes MOI hors stagiaire."))
+                if rec.demande_type == "demande_stagiaire" or rec.categorie_prof not in ("ouvrier", "non_cadre"):
+                    raise AccessError(_("Cette étape est réservée aux demandes MOD/MOI hors stagiaire."))
 
                 candidates = rec._get_announcement_candidates()
                 if not candidates:
@@ -2510,7 +2578,12 @@ class ARDemandeDeRecrutement(models.Model):
                         missing.append(_("Visite médicale faite = Oui (%s)") % candidate.candidate_name)
                 rec._raise_missing_fields(_("Veuillez renseigner les champs obligatoires suivants :"), missing)
 
-                rec.write({"state": "envoie_annonce", "step": "wait_validation"})
+                if rec.categorie_prof == "ouvrier":
+                    rec._sync_integration_lines()
+                    rec._sync_mod_integration_lines()
+                    rec.write({"state": "parcours_integration", "step": "wait_validation"})
+                else:
+                    rec.write({"state": "envoie_annonce", "step": "wait_validation"})
                 continue
 
             if rec.state == "envoie_annonce" and rec.step == "wait_validation":
@@ -2532,6 +2605,19 @@ class ARDemandeDeRecrutement(models.Model):
 
             if rec.state == "parcours_integration" and rec.step == "wait_validation":
                 rec._sync_integration_lines()
+
+                if rec._is_non_stagiaire_standard_flow() and rec.categorie_prof == "ouvrier":
+                    rec._sync_mod_integration_lines()
+                    if not rec.mod_integration_line_ids:
+                        raise ValidationError(_("Aucune ligne d'intégration MOD n'a été générée."))
+                    lignes_invalides = rec.mod_integration_line_ids.filtered(lambda line: not line.date_integration)
+                    if lignes_invalides:
+                        rec._raise_missing_fields(
+                            _("Veuillez renseigner les champs obligatoires suivants :"),
+                            [_("Intégration MOD : Date")]
+                        )
+                    rec.write({"state": "feedback_rh", "step": "wait_validation"})
+                    continue
 
                 if not rec.integration_ids:
                     raise ValidationError(_("Aucune ligne d'intégration n'a été générée."))
@@ -3117,6 +3203,12 @@ class ARDemandeRecrutementCandidate(models.Model):
         string="Suivi collaborateur",
     )
 
+    candidate_mod_integration_line_ids = fields.One2many(
+        "ar.demande.recrutement.mod.integration.line",
+        "candidate_id",
+        string="Intégration MOD",
+    )
+
     candidate_validation_integration_ids = fields.One2many(
         "ar.demande.recrutement.integration",
         "candidate_id",
@@ -3500,6 +3592,22 @@ class ARDemandeRecrutementCandidate(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
+        user = self.env.user
+        is_mod_integration_actor = (
+            user.has_group("ar_recrutement.group_ar_recrutement_inspecteur_qualite")
+            or user.has_group("ar_recrutement.group_ar_recrutement_chef_equipe")
+        )
+        has_existing_candidate_write_role = (
+            user.has_group("ar_recrutement.group_ar_recrutement_demandeur")
+            or user.has_group("ar_recrutement.group_ar_recrutement_manager")
+            or user.has_group("ar_recrutement.group_ar_recrutement_rh")
+            or user.has_group("ar_recrutement.group_ar_recrutement_md")
+        )
+        if is_mod_integration_actor and not has_existing_candidate_write_role:
+            allowed_parent_fields = {"candidate_mod_integration_line_ids"}
+            if set(vals) - allowed_parent_fields:
+                raise AccessError(_("Vous pouvez modifier uniquement les lignes d'intégration MOD."))
+
         demandeur_fields = {"demandeur_decision", "retenu_final"}
         if demandeur_fields.intersection(vals):
             for rec in self:
@@ -3532,11 +3640,7 @@ class ARDemandeRecrutementCandidate(models.Model):
             for rec in self:
                 if not rec.demande_id or rec.demande_id.step != "demandeur_final_choice":
                     raise AccessError(_("La FA est modifiable uniquement à l'étape Validation demandeur."))
-                if rec.demande_id._is_non_stagiaire_standard_flow() and rec.demande_id.categorie_prof == "ouvrier":
-                    if rec.manager_affecte_id != self.env.user:
-                        raise AccessError(_("Seul le Manager affecté peut renseigner l'EPE pour les demandes MOD."))
-                else:
-                    rec.demande_id._check_can_act_as_demandeur()
+                rec.demande_id._check_can_act_as_demandeur()
         rhfa_fields = {
             "rhfa_date_entretien",
             "rhfa_presentation_generale",
@@ -4270,6 +4374,19 @@ class ARDemandeRecrutementCandidate(models.Model):
         self.ensure_one()
         return self.env.ref("ar_recrutement.action_report_candidate_rhfa").report_action(self)
 
+    def action_download_mod_integration(self):
+        self.ensure_one()
+        if not self.demande_id or self.demande_id.categorie_prof != "ouvrier":
+            raise AccessError(_("Le formulaire d'intégration MOD est réservé aux demandes MOD."))
+        self.demande_id.sudo()._sync_mod_integration_lines()
+        return self.env.ref("ar_recrutement.action_report_candidate_mod_integration").report_action(self)
+
+    def get_report_mod_integration_lines(self):
+        self.ensure_one()
+        return self.candidate_mod_integration_line_ids.filtered(
+            lambda line: line.demande_id == self.demande_id
+        ).sorted("sequence")
+
     @api.depends("demandeur_decision")
     def _compute_is_refused_line(self):
         for rec in self:
@@ -4679,6 +4796,12 @@ class ARDemandeRecrutementIntegration(models.Model):
         store=False,
     )
 
+    current_user_can_open_mod_integration = fields.Boolean(
+        string="Peut ouvrir l'intégration MOD",
+        compute="_compute_current_user_roles",
+        store=False,
+    )
+
     current_user_is_chef_equipe_affecte = fields.Boolean(
         string="Chef d'équipe affecté courant",
         compute="_compute_current_user_roles",
@@ -4714,10 +4837,16 @@ class ARDemandeRecrutementIntegration(models.Model):
         is_rh = self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh")
         is_manager = self.env.user.has_group("ar_recrutement.group_ar_recrutement_manager")
         is_md = self.env.user.has_group("ar_recrutement.group_ar_recrutement_md")
+        can_open_mod_integration = (
+            is_rh
+            or self.env.user.has_group("ar_recrutement.group_ar_recrutement_inspecteur_qualite")
+            or self.env.user.has_group("ar_recrutement.group_ar_recrutement_chef_equipe")
+        )
         for rec in self:
             rec.current_user_is_rh = is_rh
             rec.current_user_is_manager = is_manager
             rec.current_user_is_md = is_md
+            rec.current_user_can_open_mod_integration = can_open_mod_integration
             demande = rec.validation_demande_id or rec.demande_id
             rec.current_user_can_act_as_demandeur = bool(
                 demande and demande.current_user_can_act_as_demandeur
@@ -5018,6 +5147,32 @@ class ARDemandeRecrutementIntegration(models.Model):
             "target": "new",
         }
 
+    def action_open_mod_integration(self):
+        self.ensure_one()
+        demande = self.demande_id or self.validation_demande_id
+        if not demande or demande.categorie_prof != "ouvrier":
+            raise AccessError(_("Le formulaire d'intégration MOD est réservé aux demandes MOD."))
+        can_open = (
+            self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh")
+            or self.env.user.has_group("ar_recrutement.group_ar_recrutement_inspecteur_qualite")
+            or self.env.user.has_group("ar_recrutement.group_ar_recrutement_chef_equipe")
+        )
+        if not can_open:
+            raise AccessError(_("Vous n'avez pas accès au formulaire d'intégration MOD."))
+        if not self.candidate_id:
+            raise ValidationError(_("Aucun candidat n'est associé à cette ligne."))
+
+        demande.sudo()._sync_mod_integration_lines()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Intégration MOD"),
+            "res_model": "ar.demande.recrutement.candidate",
+            "view_mode": "form",
+            "view_id": self.env.ref("ar_recrutement.view_ar_demande_recrutement_candidate_mod_integration_form").id,
+            "res_id": self.candidate_id.id,
+            "target": "new",
+        }
+
     def action_open_epe(self):
         self.ensure_one()
         return self.candidate_id.action_open_epe()
@@ -5070,4 +5225,125 @@ class ARDemandeRecrutementIntegrationLine(models.Model):
     def get_service_accueillant_label(self):
         self.ensure_one()
         return dict(self._fields["service_accueillant"].selection).get(self.service_accueillant, "")
+
+
+class ARDemandeRecrutementModIntegrationLine(models.Model):
+    _name = "ar.demande.recrutement.mod.integration.line"
+    _description = "Ligne intégration MOD"
+    _order = "candidate_id, sequence, id"
+
+    demande_id = fields.Many2one(
+        "ar.demande.de.recrutement",
+        string="Demande",
+        required=True,
+        ondelete="cascade",
+        tracking=True,
+    )
+    candidate_id = fields.Many2one(
+        "ar.demande.recrutement.candidate",
+        string="Candidat",
+        required=True,
+        ondelete="cascade",
+        tracking=True,
+    )
+    candidate_name = fields.Char(
+        string="Nom & Prénom",
+        related="candidate_id.candidate_name",
+        store=True,
+        readonly=True,
+    )
+    hiring_date = fields.Date(
+        string="Date d'embauche",
+        related="candidate_id.hiring_date",
+        store=False,
+        readonly=True,
+    )
+    demande_state = fields.Selection(
+        related="demande_id.state",
+        string="État demande",
+        store=False,
+        readonly=True,
+    )
+    current_user_is_rh = fields.Boolean(
+        related="demande_id.current_user_is_rh",
+        string="Utilisateur RH",
+        store=False,
+        readonly=True,
+    )
+    current_user_can_edit_mod_line = fields.Boolean(
+        string="Peut renseigner la ligne",
+        compute="_compute_current_user_can_edit_mod_line",
+        store=False,
+    )
+    sequence = fields.Integer(string="Séquence", default=10)
+    phase_code = fields.Selection(
+        [
+            ("p1_accueil", "P1 : Accueil"),
+            ("p2_formation_generale", "P2 : Formation générale"),
+            ("p3_habilitation_niveau_1", "P3 : Habilitation niveau I"),
+        ],
+        string="Phase",
+        required=True,
+        tracking=True,
+    )
+    phase_name = fields.Char(string="Phase", required=True, tracking=True)
+    activity = fields.Char(string="Activité programmée", required=True, tracking=True)
+    responsible = fields.Char(string="Responsabilités", tracking=True)
+    date_integration = fields.Date(string="Date", tracking=True)
+    commentaire = fields.Text(string="Commentaire", tracking=True)
+    attachment_file = fields.Binary(string="Pièces jointes", attachment=True, tracking=True)
+    attachment_filename = fields.Char(string="Nom du fichier", tracking=True)
+
+    def _responsible_key(self):
+        self.ensure_one()
+        value = (self.responsible or "").lower()
+        replacements = {
+            "é": "e",
+            "è": "e",
+            "ê": "e",
+            "ë": "e",
+            "à": "a",
+            "â": "a",
+            "î": "i",
+            "ï": "i",
+            "ô": "o",
+            "ù": "u",
+            "û": "u",
+            "ç": "c",
+            "'": " ",
+        }
+        for source, target in replacements.items():
+            value = value.replace(source, target)
+        return value
+
+    def _current_user_can_edit_mod_line(self):
+        self.ensure_one()
+        responsible = self._responsible_key()
+        if not responsible:
+            return False
+
+        user = self.env.user
+        if "service rh" in responsible and user.has_group("ar_recrutement.group_ar_recrutement_rh"):
+            return True
+        if "inspecteur qualite" in responsible and user.has_group("ar_recrutement.group_ar_recrutement_inspecteur_qualite"):
+            return True
+        if "chef d equipe" in responsible and user.has_group("ar_recrutement.group_ar_recrutement_chef_equipe"):
+            return True
+        return False
+
+    @api.depends("responsible")
+    @api.depends_context("uid")
+    def _compute_current_user_can_edit_mod_line(self):
+        for rec in self:
+            rec.current_user_can_edit_mod_line = rec._current_user_can_edit_mod_line()
+
+    def write(self, vals):
+        editable_fields = {"date_integration", "commentaire", "attachment_file", "attachment_filename"}
+        if editable_fields.intersection(vals):
+            for rec in self:
+                if rec.demande_id.state != "parcours_integration":
+                    raise AccessError(_("L'intégration MOD est modifiable uniquement à l'étape Parcours d'Intégration."))
+                if not rec._current_user_can_edit_mod_line():
+                    raise AccessError(_("Vous pouvez renseigner uniquement les lignes MOD liées à votre responsabilité."))
+        return super().write(vals)
 

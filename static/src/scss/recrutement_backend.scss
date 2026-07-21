@@ -826,7 +826,21 @@
 
     .ar_sortie_caisse_lines .o_list_table th[data-name='note'],
     .ar_sortie_caisse_lines .o_list_table td[name='note'] {
-        width: 18%;
+        width: 26%;
+    }
+
+    .ar_sortie_caisse_lines .o_list_table td[name='note'] .o_field_selection_badge {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 8px;
+        justify-content: center;
+    }
+
+    .ar_sortie_caisse_lines .o_list_table td[name='note'] .o_selection_badge {
+        margin: 0;
+        min-width: 42px;
+        padding: 4px 8px;
+        text-align: center;
     }
 
     .ar_evaluation_remarks,
@@ -978,6 +992,48 @@
         min-width: 72px;
         padding: 5px 8px;
         white-space: normal;
+    }
+
+}
+
+.o_form_view.ar_recrutement_popup.ar_mod_integration_popup {
+    max-width: calc(100vw - 64px);
+    width: 1120px;
+
+    div[name='candidate_mod_integration_line_ids'],
+    div[name='candidate_mod_integration_line_ids'] .o_field_x2many_list,
+    div[name='candidate_mod_integration_line_ids'] .o_list_renderer {
+        display: block !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    div[name='candidate_mod_integration_line_ids'] .o_list_renderer {
+        overflow-x: auto;
+    }
+
+    div[name='candidate_mod_integration_line_ids'] .o_list_table {
+        min-width: 1040px;
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    div[name='candidate_mod_integration_line_ids'] .o_list_table th,
+    div[name='candidate_mod_integration_line_ids'] .o_list_table td {
+        overflow-wrap: anywhere;
+        padding: 9px 8px;
+        vertical-align: middle;
+        white-space: normal;
+    }
+
+    div[name='candidate_mod_integration_line_ids'] .o_list_table th[data-name='activity'],
+    div[name='candidate_mod_integration_line_ids'] .o_list_table td[name='activity'] {
+        width: 32%;
+    }
+
+    div[name='candidate_mod_integration_line_ids'] .o_list_table th[data-name='commentaire'],
+    div[name='candidate_mod_integration_line_ids'] .o_list_table td[name='commentaire'] {
+        width: 18%;
     }
 }
 

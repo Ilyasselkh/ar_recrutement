@@ -1608,6 +1608,47 @@
     </field>
 </record>
 
+<record id="view_ar_demande_recrutement_candidate_mod_integration_form" model="ir.ui.view">
+    <field name="name">ar.demande.recrutement.candidate.mod.integration.form</field>
+    <field name="model">ar.demande.recrutement.candidate</field>
+    <field name="arch" type="xml">
+        <form string="Intégration MOD" class="ar_recrutement_modern ar_recrutement_popup ar_mod_integration_popup">
+            <sheet>
+                <field name="demande_id" invisible="1"/>
+                <field name="demande_categorie_prof" invisible="1"/>
+                <group col="2">
+                    <field name="candidate_name" string="Nom &amp; Prénom" readonly="1"/>
+                    <field name="hiring_date" string="Date d'embauche" readonly="1"/>
+                </group>
+                <separator string="Parcours d'intégration MOD"/>
+                <field name="candidate_mod_integration_line_ids" nolabel="1" colspan="2" domain="[('demande_id', '=', demande_id)]">
+                    <list create="0" delete="0" editable="bottom">
+                        <field name="demande_state" invisible="1" column_invisible="1"/>
+                        <field name="current_user_is_rh" invisible="1" column_invisible="1"/>
+                        <field name="current_user_can_edit_mod_line" invisible="1" column_invisible="1"/>
+                        <field name="sequence" column_invisible="1"/>
+                        <field name="phase_name" string="Phase" readonly="1"/>
+                        <field name="activity" string="Activité programmée" readonly="1"/>
+                        <field name="responsible" string="Responsabilités" readonly="1"/>
+                        <field name="date_integration" string="Date" readonly="demande_state != 'parcours_integration' or current_user_can_edit_mod_line == False"/>
+                        <field name="commentaire" string="Commentaire" readonly="demande_state != 'parcours_integration' or current_user_can_edit_mod_line == False"/>
+                        <field name="attachment_file" string="Pièces jointes" filename="attachment_filename" readonly="demande_state != 'parcours_integration' or current_user_can_edit_mod_line == False"/>
+                        <field name="attachment_filename" column_invisible="1"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_download_mod_integration"
+                            type="object"
+                            string="Télécharger"
+                            class="btn-info"/>
+                    <button string="Enregistrer" special="save" class="btn-primary"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </sheet>
+        </form>
+    </field>
+</record>
+
 <record id="view_ar_demande_recrutement_candidate_popup_entretien" model="ir.ui.view">
     <field name="name">ar.demande.recrutement.candidate.popup.entretien</field>
     <field name="model">ar.demande.recrutement.candidate</field>
@@ -1837,6 +1878,7 @@
         <form string="Suivi collaborateur" class="ar_recrutement_modern ar_recrutement_popup ar_followup_popup ar_followup_candidate_popup">
             <sheet>
                 <field name="demande_id" invisible="1"/>
+                <field name="demande_categorie_prof" invisible="1"/>
                 <group>
                     <field name="candidate_name" readonly="1"/>
                 </group>
@@ -1844,10 +1886,13 @@
                     <field name="candidate_integration_ids" class="ar_followup_feedback_table" nolabel="1" colspan="2" domain="[('demande_id', '=', demande_id)]">
                         <list create="0" delete="0" editable="bottom">
                             <field name="demande_state" invisible="1" column_invisible="1"/>
+                            <field name="demande_categorie_prof" invisible="1" column_invisible="1"/>
                             <field name="current_user_is_rh" invisible="1" column_invisible="1"/>
                             <field name="current_user_is_md" invisible="1" column_invisible="1"/>
+                            <field name="current_user_can_open_mod_integration" invisible="1" column_invisible="1"/>
                             <field name="has_integration_form" invisible="1" column_invisible="1"/>
-                            <button name="action_open_integration" type="object" string="Int&#233;gration" class="btn-primary" invisible="(demande_state != 'parcours_integration' and has_integration_form == False)"/>
+                            <button name="action_open_integration" type="object" string="Int&#233;gration" class="btn-primary" invisible="demande_categorie_prof == 'ouvrier' or (demande_state != 'parcours_integration' and has_integration_form == False)"/>
+                            <button name="action_open_mod_integration" type="object" string="Int&#233;gration MOD" class="btn-primary" invisible="demande_categorie_prof != 'ouvrier' or demande_state != 'parcours_integration' or current_user_can_open_mod_integration == False"/>
                             <field name="feedback_rh" string="Feedback RH" readonly="demande_state != 'feedback_rh' or current_user_is_rh == False"/>
                             <field name="feedback_md" string="Feedback MD" readonly="demande_state != 'feedback_md' or current_user_is_md == False"/>
                         </list>
@@ -1946,7 +1991,10 @@
                             <field name="sequence" column_invisible="1"/>
                             <field name="critere" column_invisible="1"/>
                             <field name="name" string="Critère d'Appréciation" readonly="1"/>
-                            <field name="note" string="Note" readonly="parent.state != 'demandeur' or parent.current_user_can_act_as_demandeur == False"/>
+                            <field name="note"
+                                   string="Note"
+                                   widget="selection_badge"
+                                   readonly="parent.state != 'demandeur' or parent.current_user_can_act_as_demandeur == False"/>
                             <field name="commentaire" string="Commentaires" readonly="parent.state != 'demandeur' or parent.current_user_can_act_as_demandeur == False"/>
                         </list>
                     </field>
@@ -2143,15 +2191,19 @@
     <field name="arch" type="xml">
         <form string="Suivi collaborateur" class="ar_recrutement_modern ar_recrutement_popup ar_followup_popup ar_followup_request_popup">
             <sheet>
+                <field name="categorie_prof" invisible="1"/>
                 <group string="Intégration et feedback" class="ar_sortie_caisse_lines">
                     <field name="integration_ids" class="ar_followup_feedback_table" nolabel="1" colspan="2">
                         <list create="0" delete="0" editable="bottom">
                             <field name="demande_state" invisible="1" column_invisible="1"/>
+                            <field name="demande_categorie_prof" invisible="1" column_invisible="1"/>
                             <field name="current_user_is_rh" invisible="1" column_invisible="1"/>
                             <field name="current_user_is_md" invisible="1" column_invisible="1"/>
+                            <field name="current_user_can_open_mod_integration" invisible="1" column_invisible="1"/>
                             <field name="has_integration_form" invisible="1" column_invisible="1"/>
                             <field name="candidate_name" string="Nom des candidats" readonly="1"/>
-                            <button name="action_open_integration" type="object" string="Intégration" class="btn-primary" invisible="(demande_state != 'parcours_integration' and has_integration_form == False)"/>
+                            <button name="action_open_integration" type="object" string="Intégration" class="btn-primary" invisible="demande_categorie_prof == 'ouvrier' or (demande_state != 'parcours_integration' and has_integration_form == False)"/>
+                            <button name="action_open_mod_integration" type="object" string="Intégration MOD" class="btn-primary" invisible="demande_categorie_prof != 'ouvrier' or demande_state != 'parcours_integration' or current_user_can_open_mod_integration == False"/>
                             <field name="feedback_rh" string="Feedback RH" readonly="demande_state != 'feedback_rh' or current_user_is_rh == False"/>
                             <field name="feedback_md" string="Feedback MD" readonly="demande_state != 'feedback_md' or current_user_is_md == False"/>
                         </list>

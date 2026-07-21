@@ -30,13 +30,27 @@
       <field name="sequence">40</field>
     </record>
 
+    <record id="privilege_ar_recrutement_inspecteur_qualite" model="res.groups.privilege">
+      <field name="name">Recrutement - Inspecteur Qualité</field>
+      <field name="category_id" ref="ar_recrutement.module_category_ar_recrutement"/>
+      <field name="sequence">50</field>
+    </record>
+
+    <record id="privilege_ar_recrutement_chef_equipe" model="res.groups.privilege">
+      <field name="name">Recrutement - Chef d'équipe</field>
+      <field name="category_id" ref="ar_recrutement.module_category_ar_recrutement"/>
+      <field name="sequence">60</field>
+    </record>
+
     <function model="ir.model.data" name="write">
       <function model="ir.model.data" name="search">
         <value eval="[('module', '=', 'ar_recrutement'), ('name', 'in', [
           'group_ar_recrutement_demandeur',
           'group_ar_recrutement_manager',
           'group_ar_recrutement_rh',
-          'group_ar_recrutement_md'
+          'group_ar_recrutement_md',
+          'group_ar_recrutement_inspecteur_qualite',
+          'group_ar_recrutement_chef_equipe'
         ])]"/>
       </function>
       <value eval="{'noupdate': False}"/>
@@ -64,6 +78,18 @@
       <field name="name">Actif</field>
       <field name="sequence">10</field>
       <field name="privilege_id" ref="ar_recrutement.privilege_ar_recrutement_md"/>
+    </record>
+
+    <record id="group_ar_recrutement_inspecteur_qualite" model="res.groups">
+      <field name="name">Actif</field>
+      <field name="sequence">10</field>
+      <field name="privilege_id" ref="ar_recrutement.privilege_ar_recrutement_inspecteur_qualite"/>
+    </record>
+
+    <record id="group_ar_recrutement_chef_equipe" model="res.groups">
+      <field name="name">Actif</field>
+      <field name="sequence">10</field>
+      <field name="privilege_id" ref="ar_recrutement.privilege_ar_recrutement_chef_equipe"/>
     </record>
 
     <function model="res.groups" name="write">
@@ -107,6 +133,28 @@
         'name': 'Actif',
         'sequence': 10,
         'privilege_id': ref('ar_recrutement.privilege_ar_recrutement_md')
+      }"/>
+    </function>
+
+    <function model="res.groups" name="write">
+      <function model="res.groups" name="search">
+        <value eval="[('id', '=', ref('ar_recrutement.group_ar_recrutement_inspecteur_qualite'))]"/>
+      </function>
+      <value eval="{
+        'name': 'Actif',
+        'sequence': 10,
+        'privilege_id': ref('ar_recrutement.privilege_ar_recrutement_inspecteur_qualite')
+      }"/>
+    </function>
+
+    <function model="res.groups" name="write">
+      <function model="res.groups" name="search">
+        <value eval="[('id', '=', ref('ar_recrutement.group_ar_recrutement_chef_equipe'))]"/>
+      </function>
+      <value eval="{
+        'name': 'Actif',
+        'sequence': 10,
+        'privilege_id': ref('ar_recrutement.privilege_ar_recrutement_chef_equipe')
       }"/>
     </function>
   </data>
