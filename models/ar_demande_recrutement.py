@@ -27,6 +27,7 @@ class ARDemandeDeRecrutement(models.Model):
         ("candidat_retenu", "Entretien Technique"),
         ("validation_rh", "Entretien RH"),
         ("deliberation", "Délibération"),
+        ("entretien_md", "Entretien MD"),
         ("offre_candidat", "Offre du Candidat"),
         ("offre_en_cours", "Offre en Cours"),
         ("date_embauche", "Date d'Embauche"),
@@ -65,6 +66,7 @@ class ARDemandeDeRecrutement(models.Model):
         ("demandeur_final_choice", "Demandeur: Retenu"),
         ("rh_validate_final", "RH: Validation RH + FA RH"),
         ("rh_deliberation", "RH: Délibération"),
+        ("md_interview", "MD: Entretien MD"),
         ("rh_offer_candidate", "RH: Offre du candidat"),
         ("rh_offer_in_progress", "RH: Offre en cours"),
         ("rh_hiring_date", "RH: Date d'embauche"),
@@ -422,6 +424,7 @@ class ARDemandeDeRecrutement(models.Model):
             "candidat_retenu": "demandeur_final_choice",
             "validation_rh": "rh_validate_final",
             "deliberation": "rh_deliberation",
+            "entretien_md": "md_interview",
             "offre_candidat": "rh_offer_candidate",
             "offre_en_cours": "rh_offer_in_progress",
             "date_embauche": "rh_hiring_date",
@@ -709,6 +712,13 @@ class ARDemandeDeRecrutement(models.Model):
             )
             return
 
+        if old_state == "demandeur" and old_step == "draft" and new_state == "rh" and new_step == "wait_validation":
+            self._send_template(
+                "ar_recrutement.mail_template_rec_to_rh_processing",
+                self._get_group_emails(RH_GRP),
+            )
+            return
+
         if old_state == "n1" and new_state == "rh" and new_step == "wait_validation":
             self._send_template(
                 "ar_recrutement.mail_template_rec_manager_approved_to_demandeur",
@@ -790,6 +800,20 @@ class ARDemandeDeRecrutement(models.Model):
             return
 
         if old_state == "deliberation" and old_step == "rh_deliberation" and new_state == "offre_candidat" and new_step == "rh_offer_candidate":
+            self._send_template(
+                "ar_recrutement.mail_template_rec_to_rh_offer_candidate",
+                self._get_group_emails(RH_GRP),
+            )
+            return
+
+        if old_state == "deliberation" and old_step == "rh_deliberation" and new_state == "entretien_md" and new_step == "md_interview":
+            self._send_template(
+                "ar_recrutement.mail_template_rec_to_md_entretien_md",
+                self._get_group_emails(MD_GRP),
+            )
+            return
+
+        if old_state == "entretien_md" and old_step == "md_interview" and new_state == "offre_candidat" and new_step == "rh_offer_candidate":
             self._send_template(
                 "ar_recrutement.mail_template_rec_to_rh_offer_candidate",
                 self._get_group_emails(RH_GRP),
@@ -965,6 +989,17 @@ class ARDemandeDeRecrutement(models.Model):
             )
             self._send_template(
                 "ar_recrutement.mail_template_rec_feedback_rh_to_demandeur",
+                self._get_demandeur_recipient_emails(),
+            )
+            return
+
+        if old_state == "parcours_integration" and old_step == "wait_validation" and new_state == "chef_equipe_essai" and new_step == "wait_validation":
+            self._send_template(
+                "ar_recrutement.mail_template_rec_to_chef_equipe_essai",
+                self._get_trial_role_emails("chef_equipe_id"),
+            )
+            self._send_template(
+                "ar_recrutement.mail_template_rec_chef_equipe_essai_to_demandeur",
                 self._get_demandeur_recipient_emails(),
             )
             return
@@ -1206,6 +1241,13 @@ class ARDemandeDeRecrutement(models.Model):
             self._send_template(
                 "ar_recrutement.mail_template_rec_rupture_to_rh",
                 self._get_group_emails(RH_GRP),
+            )
+            return
+
+        if new_state == "accepte":
+            self._send_template(
+                "ar_recrutement.mail_template_rec_direction_generale_approved_to_demandeur",
+                self._get_demandeur_recipient_emails(),
             )
             return
 
@@ -1455,6 +1497,11 @@ class ARDemandeDeRecrutement(models.Model):
         self.ensure_one()
         return self.demande_type in ("renouvellement", "changement_contrat")
 
+    def _is_demandeur_md(self):
+        self.ensure_one()
+        demandeur = self.demandeur_id or self.env.user
+        return bool(demandeur.has_group("ar_recrutement.group_ar_recrutement_md"))
+
     def _open_action_wizard(self, action_type):
         self.ensure_one()
         return {
@@ -1609,6 +1656,10 @@ class ARDemandeDeRecrutement(models.Model):
     def action_open_offer_accept_wizard(self):
         self.ensure_one()
         return self._open_action_wizard("offer_accept")
+
+    def action_open_accept_anapec_wizard(self):
+        self.ensure_one()
+        return self._open_action_wizard("accept_anapec")
 
     def action_open_offer_refuse_wizard(self):
         self.ensure_one()
@@ -2099,12 +2150,15 @@ class ARDemandeDeRecrutement(models.Model):
     def action_soumettre(self):
         for rec in self:
 
-            # 1) Création -> N+1
+            # 1) Création -> N+1, sauf si le demandeur est MD
             if rec.state == "demandeur" and rec.step == "draft":
                 rec._check_can_act_as_demandeur()
                 rec._check_short_flow_required_fields()
                 rec._check_stagiaire_lines(check_document_type=False, check_document_file=False)
-                rec.write({"state": "n1", "step": "wait_validation"})
+                if rec._is_demandeur_md():
+                    rec.write({"state": "rh", "step": "wait_validation"})
+                else:
+                    rec.write({"state": "n1", "step": "wait_validation"})
                 continue
 
             # 2) Sélection candidats (Demandeur)
@@ -2616,7 +2670,10 @@ class ARDemandeDeRecrutement(models.Model):
                             _("Veuillez renseigner les champs obligatoires suivants :"),
                             [_("Intégration MOD : Date")]
                         )
-                    rec.write({"state": "feedback_rh", "step": "wait_validation"})
+                    if rec.type_contrat == "anapec":
+                        rec.write({"state": "accepte", "step": "done"})
+                        continue
+                    rec.write({"state": "chef_equipe_essai", "step": "wait_validation"})
                     continue
 
                 if not rec.integration_ids:
@@ -2728,6 +2785,73 @@ class ARDemandeDeRecrutement(models.Model):
                 rec.write({"state": "direction_generale", "step": "wait_validation"})
                 continue
 
+    def action_accepter_anapec(self):
+        for rec in self:
+            if not rec._is_non_stagiaire_standard_flow() or rec.type_contrat != "anapec":
+                raise AccessError(_("Cette action est réservée aux demandes Création de poste / Remplacement en contrat ANAPEC."))
+
+            if rec.categorie_prof == "ouvrier":
+                if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
+                    raise AccessError(_("Seul le groupe RH peut accepter une demande ANAPEC MOD à cette étape."))
+                if rec.state != "parcours_integration" or rec.step != "wait_validation":
+                    raise AccessError(_("Acceptation ANAPEC MOD uniquement à l'état Parcours d'Intégration."))
+
+                rec._sync_integration_lines()
+                rec._sync_mod_integration_lines()
+                if not rec.mod_integration_line_ids:
+                    raise ValidationError(_("Aucune ligne d'intégration MOD n'a été générée."))
+                lignes_invalides = rec.mod_integration_line_ids.filtered(lambda line: not line.date_integration)
+                if lignes_invalides:
+                    rec._raise_missing_fields(
+                        _("Veuillez renseigner les champs obligatoires suivants :"),
+                        [_("Intégration MOD : Date")]
+                    )
+                rec.write({"state": "accepte", "step": "done"})
+                continue
+
+            if rec.categorie_prof == "non_cadre":
+                if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_md"):
+                    raise AccessError(_("Seul le groupe MD peut accepter une demande ANAPEC MOI à cette étape."))
+                if rec.state != "feedback_md" or rec.step != "wait_validation":
+                    raise AccessError(_("Acceptation ANAPEC MOI uniquement à l'état Feedback MD."))
+
+                if not rec.integration_ids:
+                    raise ValidationError(_("Aucune ligne d'intégration trouvée."))
+                if rec.integration_ids.filtered(lambda l: not l.feedback_md):
+                    raise ValidationError(_("Veuillez renseigner le Feedback MD pour tous les candidats."))
+                rec.write({"state": "accepte", "step": "done"})
+                continue
+
+            raise ValidationError(_("Veuillez renseigner la catégorie professionnelle avant acceptation."))
+
+    def action_envoyer_entretien_md(self):
+        for rec in self:
+            if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
+                raise AccessError(_("Vous n'êtes pas autorisé à envoyer la demande au MD."))
+            if rec.state != "deliberation" or rec.step != "rh_deliberation":
+                raise AccessError(_("Cette action est autorisée uniquement à l'état Délibération."))
+            if not rec._is_non_stagiaire_standard_flow():
+                raise AccessError(_("L'entretien MD est réservé aux demandes Création de poste et Remplacement."))
+
+            deliberation_lines = rec.candidate_ids.filtered(
+                lambda c: c.demandeur_decision == "approuve"
+            )
+            if not deliberation_lines:
+                raise ValidationError(_("Aucun candidat approuvé dans Avis entretien."))
+
+            missing_deliberation = deliberation_lines.filtered(lambda c: not c.deliberation_decision)
+            if missing_deliberation:
+                rec._raise_missing_fields(
+                    _("Veuillez renseigner les champs obligatoires suivants :"),
+                    [_("Délibération")]
+                )
+
+            if not any(c.deliberation_decision == "oui" for c in deliberation_lines):
+                rec.write({"state": "cv_tech", "step": "rh_collect_candidates"})
+                continue
+
+            rec.write({"state": "entretien_md", "step": "md_interview"})
+
     def action_offre_acceptee(self):
         for rec in self:
             if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
@@ -2796,16 +2920,29 @@ class ARDemandeDeRecrutement(models.Model):
                 if rec.integration_ids.filtered(lambda l: not l.feedback_md):
                     raise ValidationError(_("Veuillez renseigner le Feedback MD pour tous les candidats."))
 
+                if rec._is_non_stagiaire_standard_flow() and rec.type_contrat == "anapec" and rec.categorie_prof == "non_cadre":
+                    rec.write({"state": "accepte", "step": "done"})
+                    continue
+
                 rec.write({"state": "periode_essai_n1", "step": "wait_validation"})
                 continue
 
-            raise AccessError(_("Validation MD autorisée uniquement aux états MD ou Feedback MD."))
+            if rec.state == "entretien_md":
+                if not rec._is_non_stagiaire_standard_flow():
+                    raise AccessError(_("L'entretien MD est réservé aux demandes Création de poste et Remplacement."))
+                if rec.step != "md_interview":
+                    raise AccessError(_("Validation MD autorisée uniquement à l'étape Entretien MD."))
+
+                rec.write({"state": "offre_candidat", "step": "rh_offer_candidate"})
+                continue
+
+            raise AccessError(_("Validation MD autorisée uniquement aux états MD, Entretien MD ou Feedback MD."))
 
     def action_refuser(self):
         for rec in self:
             if rec.state not in (
                 "n1", "rh", "md", "annonce", "cv_tech", "selection_candidats",
-                "entretien", "candidat_retenu", "validation_rh", "deliberation", "date_embauche", "affectation",
+                "entretien", "candidat_retenu", "validation_rh", "deliberation", "entretien_md", "date_embauche", "affectation",
                 "en_cours_stage", "matricule_a_renseigner", "dossier_candidat",
                 "visite_medicale", "envoie_annonce", "parcours_integration", "feedback_rh", "feedback_md",
             "periode_essai_n1", "periode_essai_rh", "direction_generale", "deliberation_finale"
@@ -2827,7 +2964,7 @@ class ARDemandeDeRecrutement(models.Model):
                 if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_rh"):
                     raise AccessError(_("Vous n'êtes pas autorisé à refuser en tant que RH."))
 
-            elif rec.state in ("md", "feedback_md", "direction_generale"):
+            elif rec.state in ("md", "entretien_md", "feedback_md", "direction_generale"):
                 if not self.env.user.has_group("ar_recrutement.group_ar_recrutement_md"):
                     raise AccessError(_("Vous n'êtes pas autorisé à refuser en tant que MD."))
 

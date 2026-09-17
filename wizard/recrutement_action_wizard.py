@@ -22,6 +22,7 @@ class ARDemandeRecrutementActionWizard(models.TransientModel):
         ("validate_direction_generale", "Valider Direction générale"),
         ("validate_periode_essai_n1", "Valider période d'essai N+1"),
         ("validate_deliberation_finale", "Valider délibération finale"),
+        ("accept_anapec", "Accepter ANAPEC"),
         ("offer_accept", "Accepter l'offre"),
         ("offer_refuse", "Refuser l'offre"),
         ("refuse", "Refuser"),
@@ -77,6 +78,9 @@ class ARDemandeRecrutementActionWizard(models.TransientModel):
             "validate_deliberation_finale": _(
                 "Merci de confirmer la validation de cette demande au niveau Délibération finale."
             ),
+            "accept_anapec": _(
+                "Merci de confirmer l'acceptation de cette demande ANAPEC."
+            ),
             "offer_accept": _(
                 "Merci de confirmer l'acceptation de l'offre. Le flux continuera vers l'etape Date d'embauche."
             ),
@@ -123,6 +127,9 @@ class ARDemandeRecrutementActionWizard(models.TransientModel):
 
         elif self.action_type == "validate_periode_essai_n1":
             self.demande_id.action_valider_periode_essai_n1()
+
+        elif self.action_type == "accept_anapec":
+            self.demande_id.action_accepter_anapec()
 
         elif self.action_type == "offer_accept":
             self.demande_id.action_offre_acceptee()
