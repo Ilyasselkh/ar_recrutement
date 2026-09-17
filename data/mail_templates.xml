@@ -1511,6 +1511,31 @@
     </field>
 </record>
 
+<record id="mail_template_rec_to_md_entretien_md" model="mail.template">
+    <field name="name">Recrutement - Entretien MD à valider</field>
+    <field name="model_id" ref="model_ar_demande_de_recrutement"/>
+    <field name="subject">[Recrutement] {{ object.name }} - Entretien MD à valider</field>
+    <field name="email_from">Recrutement Workflow &lt;DR-ARMaroc@araymond.com&gt;</field>
+    <field name="email_to"></field>
+    <field name="body_html" type="html">
+        <div>
+            <p>Bonjour,</p>
+            <p>La demande a été envoyée au MD après délibération. Merci de valider l'entretien MD pour continuer vers l'offre du candidat.</p>
+            <p><b>Référence :</b> <t t-out="object.name"/></p>
+            <p><b>Type de demande :</b> <t t-out="object.demande_type"/></p>
+            <p><b>Objet de recrutement :</b> <t t-out="object.objet_recrutement or ''"/></p>
+            <p><b>Département :</b> <t t-out="object.department_id.name or ''"/></p>
+            <t t-set="base_url" t-value="object.get_base_url()"/>
+            <div style="margin: 16px 0px;">
+                <a t-attf-href="{{ base_url }}/web#id={{ object.id }}&amp;model=ar.demande.de.recrutement&amp;view_type=form"
+                   style="background-color:#4f46e5;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                    Accéder à la demande
+                </a>
+            </div>
+        </div>
+    </field>
+</record>
+
 <record id="mail_template_rec_to_rh_offer_candidate" model="mail.template">
     <field name="name">Recrutement - Offre du Candidat à préparer (RH)</field>
     <field name="model_id" ref="model_ar_demande_de_recrutement"/>

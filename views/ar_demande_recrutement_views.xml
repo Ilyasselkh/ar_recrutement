@@ -10,7 +10,7 @@
                widget="badge"
                width="230px"
                decoration-muted="state in ('demandeur', 'refuse', 'archive_stage')"
-               decoration-info="state in ('n1', 'rh', 'md', 'annonce', 'cv_tech', 'selection_candidats', 'entretien', 'candidat_retenu', 'validation_rh', 'deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'affectation', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'chef_equipe_essai', 'superviseur_essai', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'accepte')"
+               decoration-info="state in ('n1', 'rh', 'md', 'annonce', 'cv_tech', 'selection_candidats', 'entretien', 'candidat_retenu', 'validation_rh', 'deliberation', 'entretien_md', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'affectation', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'chef_equipe_essai', 'superviseur_essai', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'accepte')"
                decoration-danger="state == 'rupture'"/>
         <field name="demande_type" string="Type de demande"/>
         <field name="demandeur_id" string="Demandeur"/>
@@ -74,7 +74,7 @@
         <header>
             <!-- Statusbar  -->
 <field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,accepte,refuse" invisible="demande_type not in ('renouvellement', 'changement_contrat')"/>
-<field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,offre_candidat,offre_en_cours,date_embauche,affectation,matricule_a_renseigner,dossier_candidat,visite_medicale,envoie_annonce,parcours_integration,feedback_rh,feedback_md,chef_equipe_essai,superviseur_essai,periode_essai_n1,periode_essai_rh,direction_generale,deliberation_finale,accepte,refuse,rupture" invisible="demande_type == 'demande_stagiaire' or demande_type in ('renouvellement', 'changement_contrat')"/>
+<field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,entretien_md,offre_candidat,offre_en_cours,date_embauche,affectation,matricule_a_renseigner,dossier_candidat,visite_medicale,envoie_annonce,parcours_integration,feedback_rh,feedback_md,chef_equipe_essai,superviseur_essai,periode_essai_n1,periode_essai_rh,direction_generale,deliberation_finale,accepte,refuse,rupture" invisible="demande_type == 'demande_stagiaire' or demande_type in ('renouvellement', 'changement_contrat')"/>
 <field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,offre_candidat,offre_en_cours,date_embauche,en_cours_stage,refuse,archive_stage" invisible="demande_type != 'demande_stagiaire' or stagiaire_duree_mois &lt;= 3"/>
 <field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,offre_candidat,offre_en_cours,date_embauche,en_cours_stage,refuse,archive_stage" invisible="demande_type != 'demande_stagiaire' or stagiaire_duree_mois &gt; 3"/>
         </header>
@@ -136,7 +136,13 @@
           <!-- RH -->
           <button name="action_open_validate_rh_wizard" type="object" string="Valider" class="btn-success"
     groups="ar_recrutement.group_ar_recrutement_rh"
-    invisible="state not in ('rh', 'annonce', 'cv_tech', 'entretien', 'validation_rh', 'deliberation', 'offre_candidat', 'date_embauche', 'affectation', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'periode_essai_rh')"/>
+    invisible="state not in ('rh', 'annonce', 'cv_tech', 'entretien', 'validation_rh', 'deliberation', 'offre_candidat', 'date_embauche', 'affectation', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'periode_essai_rh') or (state == 'parcours_integration' and demande_type in ('creation_poste', 'remplacement') and type_contrat == 'anapec' and categorie_prof == 'ouvrier')"/>
+<button name="action_open_accept_anapec_wizard" type="object" string="Accepter" class="btn-success"
+    groups="ar_recrutement.group_ar_recrutement_rh"
+    invisible="state != 'parcours_integration' or demande_type not in ('creation_poste', 'remplacement') or type_contrat != 'anapec' or categorie_prof != 'ouvrier'"/>
+<button name="action_envoyer_entretien_md" type="object" string="Envoyer au MD" class="btn-primary"
+    groups="ar_recrutement.group_ar_recrutement_rh"
+    invisible="state != 'deliberation' or demande_type not in ('creation_poste', 'remplacement')"/>
 <button name="action_send_announcement_mail" type="object" string="Envoie d'announcement" class="btn-primary"
     groups="ar_recrutement.group_ar_recrutement_rh"
     invisible="1"/>
@@ -150,7 +156,10 @@
           <!-- MD -->
           <button name="action_open_validate_md_wizard" type="object" string="Valider" class="btn-success"
         groups="ar_recrutement.group_ar_recrutement_md"
-        invisible="state not in ('md', 'feedback_md')"/>
+        invisible="state not in ('md', 'entretien_md', 'feedback_md') or (state == 'feedback_md' and demande_type in ('creation_poste', 'remplacement') and type_contrat == 'anapec' and categorie_prof == 'non_cadre')"/>
+<button name="action_open_accept_anapec_wizard" type="object" string="Accepter" class="btn-success"
+        groups="ar_recrutement.group_ar_recrutement_md"
+        invisible="state != 'feedback_md' or demande_type not in ('creation_poste', 'remplacement') or type_contrat != 'anapec' or categorie_prof != 'non_cadre'"/>
 
 <button name="action_open_validate_direction_generale_wizard" type="object" string="Valider" class="btn-success"
         groups="ar_recrutement.group_ar_recrutement_md"
@@ -158,7 +167,7 @@
 <button name="action_open_validate_deliberation_finale_wizard" type="object" string="Valider" class="btn-success"
         groups="ar_recrutement.group_ar_recrutement_rh"
         invisible="state != 'deliberation_finale'"/>
-<button name="action_open_refuse_wizard" type="object" string="Refuser" class="btn-danger" groups="ar_recrutement.group_ar_recrutement_md" invisible="state not in ('md', 'feedback_md', 'direction_generale')"/>
+<button name="action_open_refuse_wizard" type="object" string="Refuser" class="btn-danger" groups="ar_recrutement.group_ar_recrutement_md" invisible="state not in ('md', 'entretien_md', 'feedback_md', 'direction_generale')"/>
           <button name="action_open_validate_chef_equipe_essai_wizard"
         type="object"
         string="Valider"
@@ -415,7 +424,7 @@
 
 <group string="Suivi du recrutement"
        class="ar_sortie_caisse_panel ar_sortie_caisse_lines ar_candidate_step_table"
-       invisible="state not in ('cv_tech', 'selection_candidats', 'entretien', 'candidat_retenu', 'validation_rh', 'deliberation', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'affectation', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'chef_equipe_essai', 'superviseur_essai', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'archive_stage', 'accepte', 'refuse')">
+       invisible="state not in ('cv_tech', 'selection_candidats', 'entretien', 'candidat_retenu', 'validation_rh', 'deliberation', 'entretien_md', 'offre_candidat', 'offre_en_cours', 'date_embauche', 'affectation', 'en_cours_stage', 'matricule_a_renseigner', 'dossier_candidat', 'visite_medicale', 'envoie_annonce', 'parcours_integration', 'feedback_rh', 'feedback_md', 'chef_equipe_essai', 'superviseur_essai', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'archive_stage', 'accepte', 'refuse')">
     <field name="candidate_ids" nolabel="1" colspan="2">
         <list editable="bottom" decoration-muted="is_refused_line">
             <field name="is_refused_line" invisible="1" column_invisible="1"/>
@@ -1531,7 +1540,7 @@
             <field name="demande_id" invisible="1"/>
             <field name="action_type" invisible="1"/>
 
-            <div class="ar_rec_wizard_message" invisible="action_type not in ('submit', 'validate_n1', 'validate_rh', 'validate_md', 'validate_direction_generale', 'validate_chef_equipe_essai', 'validate_superviseur_essai', 'validate_deliberation_finale', 'validate_periode_essai_n1', 'offer_accept')">
+            <div class="ar_rec_wizard_message" invisible="action_type not in ('submit', 'validate_n1', 'validate_rh', 'validate_md', 'validate_direction_generale', 'validate_chef_equipe_essai', 'validate_superviseur_essai', 'validate_deliberation_finale', 'validate_periode_essai_n1', 'accept_anapec', 'offer_accept')">
                 <div class="ar_rec_wizard_icon ar_rec_wizard_icon_validate">OK</div>
                 <h2>Confirmer la validation</h2>
                 <p><field name="message" nolabel="1" readonly="1"/></p>
@@ -1912,7 +1921,8 @@
                             <field name="is_trial_history" invisible="1" column_invisible="1"/>
                             <field name="validation_chef_equipe_essai" string="Chef d'équipe" column_invisible="parent.demande_categorie_prof != 'ouvrier'" readonly="(demande_state != 'chef_equipe_essai' or current_user_is_chef_equipe_affecte == False or is_trial_history == True)"/>
                             <field name="validation_superviseur_essai" string="Superviseur" column_invisible="parent.demande_categorie_prof != 'ouvrier'" readonly="(demande_state != 'superviseur_essai' or current_user_is_superviseur_affecte == False or is_trial_history == True)"/>
-                            <field name="validation_n1_essai" string="N+1" readonly="(demande_state != 'periode_essai_n1' or ((demande_categorie_prof == 'ouvrier' and current_user_is_manager_affecte == False) or (demande_categorie_prof != 'ouvrier' and current_user_can_act_as_demandeur == False)) or is_trial_history == True)"/>
+                            <field name="validation_n1_essai" string="Manager" column_invisible="parent.demande_categorie_prof != 'ouvrier'" readonly="(demande_state != 'periode_essai_n1' or current_user_is_manager_affecte == False or is_trial_history == True)"/>
+                            <field name="validation_n1_essai" string="N+1" column_invisible="parent.demande_categorie_prof == 'ouvrier'" readonly="(demande_state != 'periode_essai_n1' or current_user_can_act_as_demandeur == False or is_trial_history == True)"/>
                             <button name="action_open_epe" type="object" string="EPE" class="btn-success" invisible="demande_state not in ('chef_equipe_essai', 'superviseur_essai', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
                             <field name="validation_rh_essai" string="RH" readonly="(demande_state != 'periode_essai_rh' or current_user_is_rh == False or is_trial_history == True)"/>
                             <field name="validation_direction_generale" string="Direction générale" column_invisible="parent.demande_categorie_prof == 'ouvrier'" readonly="(demande_state != 'direction_generale' or current_user_is_md == False or is_trial_history == True)"/>
@@ -2224,7 +2234,8 @@
                             <field name="candidate_name" string="Nom du candidat" readonly="1"/>
                             <field name="validation_chef_equipe_essai" string="Chef d'équipe" column_invisible="parent.categorie_prof != 'ouvrier'" readonly="(demande_state != 'chef_equipe_essai' or current_user_is_chef_equipe_affecte == False or is_trial_history == True)"/>
                             <field name="validation_superviseur_essai" string="Superviseur" column_invisible="parent.categorie_prof != 'ouvrier'" readonly="(demande_state != 'superviseur_essai' or current_user_is_superviseur_affecte == False or is_trial_history == True)"/>
-                            <field name="validation_n1_essai" string="N+1" readonly="(demande_state != 'periode_essai_n1' or ((demande_categorie_prof == 'ouvrier' and current_user_is_manager_affecte == False) or (demande_categorie_prof != 'ouvrier' and current_user_can_act_as_demandeur == False)) or is_trial_history == True)"/>
+                            <field name="validation_n1_essai" string="Manager" column_invisible="parent.categorie_prof != 'ouvrier'" readonly="(demande_state != 'periode_essai_n1' or current_user_is_manager_affecte == False or is_trial_history == True)"/>
+                            <field name="validation_n1_essai" string="N+1" column_invisible="parent.categorie_prof == 'ouvrier'" readonly="(demande_state != 'periode_essai_n1' or current_user_can_act_as_demandeur == False or is_trial_history == True)"/>
                             <button name="action_open_epe" type="object" string="EPE" class="btn-success" invisible="demande_state not in ('chef_equipe_essai', 'superviseur_essai', 'periode_essai_n1', 'periode_essai_rh', 'direction_generale', 'deliberation_finale', 'rupture', 'accepte')"/>
                             <field name="validation_rh_essai" string="RH" readonly="(demande_state != 'periode_essai_rh' or current_user_is_rh == False or is_trial_history == True)"/>
                             <field name="validation_direction_generale" string="Direction générale" column_invisible="parent.categorie_prof == 'ouvrier'" readonly="(demande_state != 'direction_generale' or current_user_is_md == False or is_trial_history == True)"/>
