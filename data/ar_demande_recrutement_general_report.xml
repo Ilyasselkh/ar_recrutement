@@ -388,8 +388,8 @@
                                         <th>Visite m&#233;dicale</th>
                                         <th>Announcement</th>
                                         <th>Date d'envoi</th>
-                                        <th>Feedback RH</th>
-                                        <th>Feedback MD</th>
+                                        <th t-if="o.categorie_prof != 'ouvrier'">Feedback RH</th>
+                                        <th t-if="o.categorie_prof != 'ouvrier'">Feedback MD</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -402,8 +402,8 @@
                                         </td>
                                         <td><span t-esc="'Envoye' if cand.announcement_sent else '-'"/></td>
                                         <td><span t-esc="cand.announcement_sent_date or ''"/></td>
-                                        <td><span t-esc="candidate_integration.feedback_rh or ''"/></td>
-                                        <td><span t-esc="candidate_integration.feedback_md or ''"/></td>
+                                        <td t-if="o.categorie_prof != 'ouvrier'"><span t-esc="candidate_integration.feedback_rh or ''"/></td>
+                                        <td t-if="o.categorie_prof != 'ouvrier'"><span t-esc="candidate_integration.feedback_md or ''"/></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -644,8 +644,8 @@
                                     <tr>
                                         <th>Candidat</th>
                                         <th>Département</th>
-                                        <th>Feedback RH</th>
-                                        <th>Feedback manager</th>
+                                        <th t-if="o.categorie_prof != 'ouvrier'">Feedback RH</th>
+                                        <th t-if="o.categorie_prof != 'ouvrier'">Feedback manager</th>
                                         <th>Essai N+1</th>
                                         <th>Essai RH</th>
                                         <th>Délibération</th>
@@ -657,8 +657,8 @@
                                         <tr>
                                             <td><span t-esc="integ.candidate_name or ''"/></td>
                                             <td><span t-esc="integ.integration_department_id.name or ''"/></td>
-                                            <td><span t-esc="integ.feedback_rh or ''"/></td>
-                                            <td><span t-esc="integ.feedback_md or ''"/></td>
+                                            <td t-if="o.categorie_prof != 'ouvrier'"><span t-esc="integ.feedback_rh or ''"/></td>
+                                            <td t-if="o.categorie_prof != 'ouvrier'"><span t-esc="integ.feedback_md or ''"/></td>
                                             <td><span t-esc="dict(integ._fields['validation_n1_essai'].selection).get(integ.validation_n1_essai, '')"/></td>
                                             <td><span t-esc="dict(integ._fields['validation_rh_essai'].selection).get(integ.validation_rh_essai, '')"/></td>
                                             <td><span t-esc="dict(integ._fields['validation_deliberation_finale'].selection).get(integ.validation_deliberation_finale, '')"/></td>

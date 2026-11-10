@@ -71,15 +71,16 @@
     <field name="model">ar.demande.de.recrutement</field>
     <field name="arch" type="xml">
       <form string="Demande de Recrutement" class="ar_recrutement_modern">
-        <header>
+        <header class="ar_workflow_header">
             <!-- Statusbar  -->
 <field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,accepte,refuse" invisible="demande_type not in ('renouvellement', 'changement_contrat')"/>
-<field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,entretien_md,offre_candidat,offre_en_cours,date_embauche,affectation,matricule_a_renseigner,dossier_candidat,visite_medicale,envoie_annonce,parcours_integration,feedback_rh,feedback_md,chef_equipe_essai,superviseur_essai,periode_essai_n1,periode_essai_rh,direction_generale,deliberation_finale,accepte,refuse,rupture" invisible="demande_type == 'demande_stagiaire' or demande_type in ('renouvellement', 'changement_contrat')"/>
+<field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,entretien_md,offre_candidat,offre_en_cours,date_embauche,affectation,matricule_a_renseigner,dossier_candidat,visite_medicale,envoie_annonce,parcours_integration,feedback_rh,feedback_md,periode_essai_n1,periode_essai_rh,direction_generale,deliberation_finale,accepte,refuse,rupture" invisible="demande_type == 'demande_stagiaire' or demande_type in ('renouvellement', 'changement_contrat') or categorie_prof == 'ouvrier'"/>
+<field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,entretien_md,offre_candidat,offre_en_cours,date_embauche,affectation,matricule_a_renseigner,dossier_candidat,visite_medicale,envoie_annonce,parcours_integration,chef_equipe_essai,superviseur_essai,periode_essai_n1,periode_essai_rh,deliberation_finale,accepte,refuse,rupture" invisible="demande_type == 'demande_stagiaire' or demande_type in ('renouvellement', 'changement_contrat') or categorie_prof != 'ouvrier'"/>
 <field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,md,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,offre_candidat,offre_en_cours,date_embauche,en_cours_stage,refuse,archive_stage" invisible="demande_type != 'demande_stagiaire' or stagiaire_duree_mois &lt;= 3"/>
 <field name="state" widget="statusbar" statusbar_visible="demandeur,n1,rh,annonce,cv_tech,selection_candidats,entretien,candidat_retenu,validation_rh,deliberation,offre_candidat,offre_en_cours,date_embauche,en_cours_stage,refuse,archive_stage" invisible="demande_type != 'demande_stagiaire' or stagiaire_duree_mois &gt; 3"/>
         </header>
 
-        <header>
+        <header class="ar_action_header">
           <field name="current_user_can_validate_n1" invisible="1"/>
           <button name="action_refresh_integration_lines"
         type="object"
@@ -1891,7 +1892,18 @@
                 <group>
                     <field name="candidate_name" readonly="1"/>
                 </group>
-                <group string="Int&#233;gration et feedback" class="ar_sortie_caisse_lines">
+                <group string="Int&#233;gration MOD" class="ar_sortie_caisse_lines" invisible="demande_categorie_prof != 'ouvrier'">
+                    <field name="candidate_integration_ids" class="ar_followup_feedback_table" nolabel="1" colspan="2" domain="[('demande_id', '=', demande_id)]">
+                        <list create="0" delete="0" editable="bottom">
+                            <field name="demande_state" invisible="1" column_invisible="1"/>
+                            <field name="demande_categorie_prof" invisible="1" column_invisible="1"/>
+                            <field name="current_user_can_open_mod_integration" invisible="1" column_invisible="1"/>
+                            <field name="has_integration_form" invisible="1" column_invisible="1"/>
+                            <button name="action_open_mod_integration" type="object" string="Int&#233;gration MOD" class="btn-primary" invisible="current_user_can_open_mod_integration == False or (demande_state != 'parcours_integration' and has_integration_form == False)"/>
+                        </list>
+                    </field>
+                </group>
+                <group string="Int&#233;gration et feedback" class="ar_sortie_caisse_lines" invisible="demande_categorie_prof == 'ouvrier'">
                     <field name="candidate_integration_ids" class="ar_followup_feedback_table" nolabel="1" colspan="2" domain="[('demande_id', '=', demande_id)]">
                         <list create="0" delete="0" editable="bottom">
                             <field name="demande_state" invisible="1" column_invisible="1"/>
@@ -1900,8 +1912,7 @@
                             <field name="current_user_is_md" invisible="1" column_invisible="1"/>
                             <field name="current_user_can_open_mod_integration" invisible="1" column_invisible="1"/>
                             <field name="has_integration_form" invisible="1" column_invisible="1"/>
-                            <button name="action_open_integration" type="object" string="Int&#233;gration" class="btn-primary" invisible="demande_categorie_prof == 'ouvrier' or (demande_state != 'parcours_integration' and has_integration_form == False)"/>
-                            <button name="action_open_mod_integration" type="object" string="Int&#233;gration MOD" class="btn-primary" invisible="demande_categorie_prof != 'ouvrier' or demande_state != 'parcours_integration' or current_user_can_open_mod_integration == False"/>
+                            <button name="action_open_integration" type="object" string="Int&#233;gration" class="btn-primary" invisible="demande_state != 'parcours_integration' and has_integration_form == False"/>
                             <field name="feedback_rh" string="Feedback RH" readonly="demande_state != 'feedback_rh' or current_user_is_rh == False"/>
                             <field name="feedback_md" string="Feedback MD" readonly="demande_state != 'feedback_md' or current_user_is_md == False"/>
                         </list>
@@ -2202,7 +2213,19 @@
         <form string="Suivi collaborateur" class="ar_recrutement_modern ar_recrutement_popup ar_followup_popup ar_followup_request_popup">
             <sheet>
                 <field name="categorie_prof" invisible="1"/>
-                <group string="Intégration et feedback" class="ar_sortie_caisse_lines">
+                <group string="Intégration MOD" class="ar_sortie_caisse_lines" invisible="categorie_prof != 'ouvrier'">
+                    <field name="integration_ids" class="ar_followup_feedback_table" nolabel="1" colspan="2">
+                        <list create="0" delete="0" editable="bottom">
+                            <field name="demande_state" invisible="1" column_invisible="1"/>
+                            <field name="demande_categorie_prof" invisible="1" column_invisible="1"/>
+                            <field name="current_user_can_open_mod_integration" invisible="1" column_invisible="1"/>
+                            <field name="has_integration_form" invisible="1" column_invisible="1"/>
+                            <field name="candidate_name" string="Nom des candidats" readonly="1"/>
+                            <button name="action_open_mod_integration" type="object" string="Intégration MOD" class="btn-primary" invisible="current_user_can_open_mod_integration == False or (demande_state != 'parcours_integration' and has_integration_form == False)"/>
+                        </list>
+                    </field>
+                </group>
+                <group string="Intégration et feedback" class="ar_sortie_caisse_lines" invisible="categorie_prof == 'ouvrier'">
                     <field name="integration_ids" class="ar_followup_feedback_table" nolabel="1" colspan="2">
                         <list create="0" delete="0" editable="bottom">
                             <field name="demande_state" invisible="1" column_invisible="1"/>
@@ -2212,8 +2235,7 @@
                             <field name="current_user_can_open_mod_integration" invisible="1" column_invisible="1"/>
                             <field name="has_integration_form" invisible="1" column_invisible="1"/>
                             <field name="candidate_name" string="Nom des candidats" readonly="1"/>
-                            <button name="action_open_integration" type="object" string="Intégration" class="btn-primary" invisible="demande_categorie_prof == 'ouvrier' or (demande_state != 'parcours_integration' and has_integration_form == False)"/>
-                            <button name="action_open_mod_integration" type="object" string="Intégration MOD" class="btn-primary" invisible="demande_categorie_prof != 'ouvrier' or demande_state != 'parcours_integration' or current_user_can_open_mod_integration == False"/>
+                            <button name="action_open_integration" type="object" string="Intégration" class="btn-primary" invisible="demande_state != 'parcours_integration' and has_integration_form == False"/>
                             <field name="feedback_rh" string="Feedback RH" readonly="demande_state != 'feedback_rh' or current_user_is_rh == False"/>
                             <field name="feedback_md" string="Feedback MD" readonly="demande_state != 'feedback_md' or current_user_is_md == False"/>
                         </list>

@@ -363,6 +363,9 @@
 }
 
 .o_form_view.ar_recrutement_modern {
+    --ar-action-sticky-top: 48px;
+    --ar-workflow-sticky-top: 0px;
+
     min-height: 100%;
     overflow: auto;
     background:
@@ -387,7 +390,35 @@
         border-bottom: 1px solid var(--ar-border);
         background: linear-gradient(90deg, #ffffff 0%, #f4f8fb 100%);
         max-width: 100%;
+        overflow: visible;
         padding: 10px 16px;
+    }
+
+    .ar_workflow_header {
+        background: #fff;
+        border-bottom: 1px solid var(--ar-border);
+        box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
+        min-height: 48px;
+        overflow: visible;
+        position: sticky;
+        top: var(--ar-workflow-sticky-top);
+        z-index: 31;
+    }
+
+    .ar_workflow_header .o_form_statusbar {
+        border-bottom: 0;
+        box-shadow: none;
+    }
+
+    .ar_action_header {
+        background: rgba(248, 251, 253, 0.96);
+        border-bottom: 1px solid var(--ar-border);
+        box-shadow: 0 8px 18px rgba(16, 24, 40, 0.08);
+        min-height: 48px;
+        overflow: visible;
+        position: sticky;
+        top: var(--ar-action-sticky-top);
+        z-index: 30;
     }
 
     .o_statusbar_status {
